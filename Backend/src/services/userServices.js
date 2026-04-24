@@ -253,3 +253,72 @@ export const updateRole = async (req, res) => {
         })
     }
 }
+
+export const verifyUser = async (req, res) => {
+    const { id } = req.params;
+    const { isVerified } = req.body;
+    if (!id && !isVerified) {
+        return res.json({
+            message: "id and isVerified is required",
+            status: 400
+        })
+    }
+    const user = await User.findByIdAndUpdate(id, { isVerified }, new: true);
+    if (!user) {
+        return res.json({
+            message: "user not found",
+            status: 404
+        })
+    } else {
+        console.log("user id is found")
+    }
+    try {
+        return res.json({
+            message: "user verified successfully",
+            data: user,
+            status: 200,
+            isVerified: user.isVerified
+        })
+    } catch (error) {
+        return res.json({
+            message: "user verified failed",
+            error: error.message,
+            status: 500
+        })
+    }
+}
+
+export const  userloggout =  async(req, res) => {
+    const{id}= req.params;
+    const {token} = req.body;
+    if(!token && ! id){
+        return res.json({
+            message: "token and id is required",
+            status: 400
+        })
+    }
+    const user = await User.findByIdAndUpdate(id, { token }, new: true);
+    if (!user) {
+        return res.json({
+            message: "user not found",
+            status: 404
+        })
+    } else {
+        console.log("user id is found")
+    }
+    try {
+        return res.json({
+            message: "user loggout successfully",
+            data: user,
+            status: 200,
+            token: user.token
+        })
+    } catch (error) {
+        return res.json({
+            message: "user loggout failed",
+            error: error.message,
+            status: 500
+        })
+    }
+
+}
