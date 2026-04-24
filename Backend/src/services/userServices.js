@@ -1,6 +1,11 @@
 import User from "../models/users/UserModel.js";
 import { validationResult } from "express-validator";
 import bcrypt from "bcrypt"
+import jwt from "jsonwebtoken";
+import otpGenerator from "otp-generator";
+import nodemailer from "nodemailer";
+import { userRegisterationSchema, userLoginSchema } from "../validoators/User/UserValidation.js";
+import sendOtpByEmail from "../emails/emailServiceOtp.js";
 export const registeringUser = async (req, res) => {
     const { name, email, phone, password, profile, category, shopName, shopAddress, shopLogo } = req.body;
     if (!name || !email || !phone || !password || !profile || !category || !shopName || !shopAddress || !shopLogo) {
@@ -9,33 +14,62 @@ export const registeringUser = async (req, res) => {
             status: 400
         })
     };
-    const userExists = await User.find(email);
-    if (userExists.length > 0) {
+    const result = userRegisterationSchema.validate(req.body);
+    if (result.error) {
+        return res.json({
+            message: result.error.details[0].message,
+            status: 400
+        })
+    }
+    const userExists = await User.findOne({ email });
+    if (userExists) {
         return res.json({
             message: "user already exists",
             status: 400
         })
     }
-    const comparepass = await bcrypt.compare(password, existsUser.password);
-    if (comparepass) {
-        return res.json({
-            message: "password is correct",
-            status: 200
-        })
-    }
-    const hashpass = await bcrypt.hash(password, salt(10));
+    const otpGenerator =  otpGenerator.generate(6,{
+        lowercaseOtp: false,
+        uppercaseOtp: false, 
+        specialcharacters: false,
+        digits: true
+    });
+    const emailOtp = otpGenerator.generate(6,{
+        lowercaseOtp: false,
+        uppercaseOtp: false, 
+        specialcharacters: false,
+        digits: true
+    });
+
+    const phoneOtp = otpGenerator.generate(6,{
+        lowercaseOtp: false,
+        uppercaseOtp: false, 
+        specialcharacters: false,
+        digits: true
+    });
+const sendeotpemail = await sendOtpByEmail(email, emailOtp);
+if (!sendeotpemail) {
+    return res.json({
+        message: "OTP sent failed",
+        status: 500
+    })
+}
+    const saveOtp = await Otp.create({
+        email: email,
+        emailOtp: emailOtp,
+        phone: phone,
+        phoneOtp: phoneOtp,
+    })
+
+    const saltValue = await bcrypt.genSalt(10);
+    const hashpass = await bcrypt.hash(password, saltValue);
     if (!hashpass) {
         return res.json({
             message: "password hashing failed",
             status: 500
         })
     }
-    if (!salt) {
-        return res.json({
-            message: "salt generation failed",
-            status: 500
-        })
-    }
+    // salt generation check removed since we generate it above
     const saveUser = await User.create({
         name,
         email,
@@ -63,37 +97,66 @@ export const registeringUser = async (req, res) => {
         }
     }
 
-    await saveUser();
+   
 
 
 }
 
-export const LoginUser =  async (req,  res) => {
-    const {name ,  email, password} =  req.body;
-    if(!name || !email || !password){
+export const LoginUser = async (req, res) => {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) {
         return res.json({
             message: "all fields are required",
             status: 400
         })
     };
-    const userExists = await User.find(email);
-    if(userExists.length > 0){
+    const result = userLoginSchema.validate(req.body);
+    if (result.error){
         return res.json({
-            message: "user already exists",
-            status: 400
+            message: result.error.details[0].message,
+            status:400
         })
     }
-    const comparepass = await bcrypt.compare(password, existsUser.password);
-    if(comparepass){
+    const userExists = await User.findOne({ email });
+    if (!userExists) {
+        return res.json({
+            message: "user not found",
+            status: 404
+        })
+    }
+    const comparepass = await bcrypt.compare(password, userExists.password);
+    if (comparepass) {
+        const token = jwt.sign({ id: userExists._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
         return res.json({
             message: "password is correct",
-            status: 200
+            status: 200,
+            token,
+            user: userExists
+        })
+    } else {
+        return res.json({
+            message: "invalid password",
+            status: 401
+        })
+    }
+    try {
+        return res.json({
+            message: "login success",
+            data: userExists,
+            status: 200,
+            token: token
+        })
+    } catch (error) {
+        return res.json({
+            message: "login failed",
+            error: error.message,
+            status: 500
         })
     }
 }
 
 
-export const getAlluser = async (res, req) => {
+export const getAlluser = async (req, res) => {
     const user = await User.find({});
     try {
         return res.json({
@@ -111,7 +174,7 @@ export const getAlluser = async (res, req) => {
     }
 }
 
-export const getoneUser = async (res, req) => {
+export const getoneUser = async (req, res) => {
     const { id } = req.params;
     const user = await User.findById(id);
     if (!id && !user) {
