@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const sellerShema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true },
     phone: { type: String, required: true },
@@ -18,5 +18,5 @@ const sellerShema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
 });
 
-const Seller = mongoose.model("Seller", sellerShema);
-export default Seller;
+const User = mongoose.model("User", userShema);
+export default User;
