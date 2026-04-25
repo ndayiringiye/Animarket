@@ -6,6 +6,8 @@ const UserSchema = new mongoose.Schema({
     phone: { type: String, required: true },
     password: { type: String, required: true },
     profile: { type: String, required: true },
+    gender: { type: String, required: true },
+    profile_img: { type: String, required: true },
     isVerified: { type: Boolean, default: false },
     id_Number: { type: String, required: true },
     id_proof_img: { type: String, required: true },

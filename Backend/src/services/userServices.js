@@ -7,8 +7,8 @@ import nodemailer from "nodemailer";
 import { userRegisterationSchema, userLoginSchema } from "../validoators/User/UserValidation.js";
 import sendOtpByEmail from "../emails/emailServiceOtp.js";
 export const registeringUser = async (req, res) => {
-    const { name, email, phone, password, profile, category, shopName, shopAddress, shopLogo } = req.body;
-    if (!name || !email || !phone || !password || !profile || !category || !shopName || !shopAddress || !shopLogo) {
+    const { name, email, phone, password, profile, gender, profile_img, id_Number, id_proof_img, category, shopName, shopAddress, shopLogo } = req.body;
+    if (!name || !email || !phone || !password || !profile || !gender || !profile_img || !id_Number || !id_proof_img || !category || !shopName || !shopAddress || !shopLogo) {
         return res.json({
             message: "all fields are required",
             status: 400
@@ -76,6 +76,10 @@ if (!sendeotpemail) {
         phone,
         password: hashpass,
         profile,
+        gender,
+        profile_img,
+        id_Number,
+        id_proof_img,
         category,
         shopName,
         shopAddress,

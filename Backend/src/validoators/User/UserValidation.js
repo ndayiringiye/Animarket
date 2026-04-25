@@ -1,7 +1,7 @@
 import {check} from "express-validator";
 import User from "../model/UserModel.js";
 import { isValidObjectId } from "mongoose";
-import joi from "joi";
+import joi, { number } from "joi";
 
 const userRegisterationSchema = joi.object({
     name: joi.string().required().capitalized().min(3).max(30),
@@ -16,7 +16,7 @@ const userRegisterationSchema = joi.object({
         "any.required": "Phone number is required",
         "string.empty": "Phone number is required"
     }),
-    password: joi.string().required().strongPassword().messages({
+    password: joi.string().capitalize().uppercase().lowercase().numbers().symbols().numbers().required().strongPassword().messages({
         "string.length": "Password must be at least 8 characters",
         "any.required": "Password is required",
         "string.empty": "Password is required"
@@ -31,9 +31,35 @@ const userRegisterationSchema = joi.object({
     }).pattern(/[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/).messages({
         "string.pattern.base": "Password must contain at least one special character"
     }),
-    profile: joi.string().required().messages({
+    profile: joi.string().enum(["seller", "admin", "customer", "farmer", "veterinary"]).required().messages({
         "any.required": "Profile is required",
         "string.empty": "Profile is required"
+    }),
+    gender: joi.string().enum(["male", "female", "other"]).required().messages({
+        "any.required": "Gender is required",
+        "string.empty": "Gender is required"
+    }),
+    profile_img: joi.string().required().messages({
+        "any.required": "Profile image is required",
+        "string.empty": "Profile image is required"
+    }),
+    id_Number: joi.string().required().messages({
+        "any.required": "ID Number is required",
+        "string.empty": "ID Number is required"
+    }).length(12).pattern(/^[0-9]+$/).required().messages({
+        "string.length": "ID Number must be 12 digits",
+        "string.pattern.base": "ID Number must be 12 digits",
+        "any.required": "ID Number is required",
+        "string.empty": "ID Number is required"
+    }).number().length(11).min(11).max(15).pattern(/^[0-9]+$/).messages({
+        "string.length": "ID Number must be 12 digits",
+        "string.pattern.base": "ID Number must be 12 digits",
+        "any.required": "ID Number is required",
+        "string.empty": "ID Number is required"
+    }),
+    id_proof_img: joi.string().image().document().extantion(["jpeg", "jpg", "png"]).required().messages({
+        "any.required": "ID proof image is required",
+        "string.empty": "ID proof image is required"
     }),
     category: joi.string().required().messages({
         "any.required": "Category is required",
