@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 const AnimalSchema = new mongoose.Schema({
-    // 🧠 CORE IDENTITY
     name: { type: String, required: true },
     type: { 
         type: String, 
@@ -12,7 +11,6 @@ const AnimalSchema = new mongoose.Schema({
     gender: { type: String, enum: ["male", "female"], required: true },
     age: { type: Number, required: true },
 
-    // 💰 MARKET VALUE
     price: { type: Number, required: true },
     currency: { type: String, default: "RWF" },
 

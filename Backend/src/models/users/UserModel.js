@@ -13,7 +13,7 @@ const UserSchema = new mongoose.Schema({
     id_proof_img: { type: String, required: true },
     category: { type: String, required: true, enum: ["Goat", "cow", "pigs", "sheep"] },
     shopName: { type: String, required: true },
-    shopAddress: { type: String, required: true },
+    shopAddress: { type: String,enum:["home","market", "farm"] required: true },
     shopLogo: { type: String, required: true },
     status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
     role: {

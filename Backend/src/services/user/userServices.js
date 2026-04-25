@@ -1,10 +1,10 @@
-import User from "../models/users/UserModel.js";
+import User from "../../models/users/UserModel.js";
 import { validationResult } from "express-validator";
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken";
 import otpGenerator from "otp-generator";
 import nodemailer from "nodemailer";
-import { userRegisterationSchema, userLoginSchema } from "../validoators/User/UserValidation.js";
+import { userRegisterationSchema, userLoginSchema } from "../../validoators/User/UserValidation.js";
 import sendOtpByEmail from "../emails/emailServiceOtp.js";
 export const registeringUser = async (req, res) => {
     const { name, email, phone, password, profile, gender, profile_img, id_Number, id_proof_img, category, shopName, shopAddress, shopLogo } = req.body;
@@ -28,32 +28,32 @@ export const registeringUser = async (req, res) => {
             status: 400
         })
     }
-    const otpGenerator =  otpGenerator.generate(6,{
+    const otpGenerator = otpGenerator.generate(6, {
         lowercaseOtp: false,
-        uppercaseOtp: false, 
+        uppercaseOtp: false,
         specialcharacters: false,
         digits: true
     });
-    const emailOtp = otpGenerator.generate(6,{
+    const emailOtp = otpGenerator.generate(6, {
         lowercaseOtp: false,
-        uppercaseOtp: false, 
+        uppercaseOtp: false,
         specialcharacters: false,
         digits: true
     });
 
-    const phoneOtp = otpGenerator.generate(6,{
+    const phoneOtp = otpGenerator.generate(6, {
         lowercaseOtp: false,
-        uppercaseOtp: false, 
+        uppercaseOtp: false,
         specialcharacters: false,
         digits: true
     });
-const sendeotpemail = await sendOtpByEmail(email, emailOtp);
-if (!sendeotpemail) {
-    return res.json({
-        message: "OTP sent failed",
-        status: 500
-    })
-}
+    const sendeotpemail = await sendOtpByEmail(email, emailOtp);
+    if (!sendeotpemail) {
+        return res.json({
+            message: "OTP sent failed",
+            status: 500
+        })
+    }
     const saveOtp = await Otp.create({
         email: email,
         emailOtp: emailOtp,
@@ -69,7 +69,6 @@ if (!sendeotpemail) {
             status: 500
         })
     }
-    // salt generation check removed since we generate it above
     const saveUser = await User.create({
         name,
         email,
@@ -101,7 +100,7 @@ if (!sendeotpemail) {
         }
     }
 
-   
+
 
 
 }
@@ -115,10 +114,10 @@ export const LoginUser = async (req, res) => {
         })
     };
     const result = userLoginSchema.validate(req.body);
-    if (result.error){
+    if (result.error) {
         return res.json({
             message: result.error.details[0].message,
-            status:400
+            status: 400
         })
     }
     const userExists = await User.findOne({ email });
@@ -292,10 +291,10 @@ export const verifyUser = async (req, res) => {
     }
 }
 
-export const  userloggout =  async(req, res) => {
-    const{id}= req.params;
-    const {token} = req.body;
-    if(!token && ! id){
+export const userloggout = async (req, res) => {
+    const { id } = req.params;
+    const { token } = req.body;
+    if (!token && !id) {
         return res.json({
             message: "token and id is required",
             status: 400
