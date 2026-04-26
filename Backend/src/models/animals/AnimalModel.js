@@ -2,10 +2,10 @@ import mongoose from "mongoose";
 
 const AnimalSchema = new mongoose.Schema({
     name: { type: String, required: true },
-    type: { 
-        type: String, 
-        required: true, 
-        enum: ["cow", "goat", "sheep", "pig", "horse", "chicken"] 
+    type: {
+        type: String,
+        required: true,
+        enum: ["cow", "goat", "sheep", "pig", "horse", "chicken"]
     },
     breed: { type: String, required: true },
     gender: { type: String, enum: ["male", "female"], required: true },
@@ -13,8 +13,7 @@ const AnimalSchema = new mongoose.Schema({
 
     price: { type: Number, required: true },
     currency: { type: String, default: "RWF" },
-
-    aiEstimatedValue: { type: Number, default: 0 }, 
+    aiEstimatedValue: { type: Number, default: 0 },
     health: {
         vaccinated: { type: Boolean, default: false },
         vaccinationRecords: [
@@ -24,11 +23,11 @@ const AnimalSchema = new mongoose.Schema({
                 verifiedByVet: Boolean,
                 vaccinationProof: {
                     type: String,
-                    enum: ["image","video","pdf","text"],
+                    enum: ["image", "video", "pdf", "text"],
                 },
-                extention:{
-                    type:String,
-                    enum:["png","jpg","jpeg","mp4","pdf","text"]
+                extention: {
+                    type: String,
+                    enum: ["png", "jpg", "jpeg", "mp4", "pdf", "text"]
                 }
             }
         ],
@@ -66,17 +65,17 @@ const AnimalSchema = new mongoose.Schema({
     previousOwnerName: { type: String, required: false },
     previousOwnerPhone: { type: String, required: false },
     previousOwnerAgreementPhoto: { type: String, required: false },
-   previousOwnerIdType: { type: String, required: false },
-   previousOwnerIdNumber: { type: String, required: false },
-   previousOwnerIdPhoto: { type: String, required: false },
-   previousOwnerGender: { type: String, required: false },
-   previousOwnerAge: { type: Number, required: false },
+    previousOwnerIdType: { type: String, required: false },
+    previousOwnerIdNumber: { type: String, required: false },
+    previousOwnerIdPhoto: { type: String, required: false },
+    previousOwnerGender: { type: String, required: false },
+    previousOwnerAge: { type: Number, required: false },
     images: [String],
     videos: [String],
- weight:{ 
-    type:Number,
-    required:false,
- },
+    weight: {
+        type: Number,
+        required: false,
+    },
     isAvailable: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
 
