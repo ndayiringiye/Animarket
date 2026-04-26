@@ -5,7 +5,7 @@ import { animalIsVerified } from "../../validoators/Animal/animalvalidator.js";
 export const AnimalService = async (req, res) => {
     const { name, type, gender, age, owner, price, currence, health, location, weight, previoudsOwners } = req.body;
     const { id } = req.params;
-    if (!Animal.id) {
+    if (!Animal.id ||  id.empty()) {
         return res.json({
             error: "id is missing ",
             status: 404
