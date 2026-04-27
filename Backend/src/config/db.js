@@ -6,15 +6,14 @@ dotenv.config();
 const connectDb = async () => {
     try {
         const conn = await mongoose.connect(process.env.MONGO_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
+            dbName: "Animarketing",
+            serverSelectionTimeoutMS: 5000,
         });
-
         console.log("Database connected successfully:", conn.connection.host);
 
     } catch (error) {
         console.error("Database connection failed:", error.message);
-        process.exit(1); 
+        process.exit(1);
     }
 };
 

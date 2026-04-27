@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import otpGenerator from "otp-generator";
 import nodemailer from "nodemailer";
 import { userRegisterationSchema, userLoginSchema } from "../../validoators/User/UserValidation.js";
-import sendOtpByEmail from "../emails/emailServiceOtp.js";
+import sendOtpByEmail from "../../services/emails/emailServiceOtp.js";
 export const registeringUser = async (req, res) => {
     const { name, email, phone, password, profile, gender, profile_img, id_Number, id_proof_img, category, shopName, shopAddress, shopLogo } = req.body;
     if (!name || !email || !phone || !password || !profile || !gender || !profile_img || !id_Number || !id_proof_img || !category || !shopName || !shopAddress || !shopLogo) {
@@ -232,7 +232,7 @@ export const updateRole = async (req, res) => {
             status: 400
         })
     }
-    const user = await User.findByIdAndUpdate(id, { role }, new: true);
+    const user = await User.findByIdAndUpdate(id, { role });
     if (!user) {
         return res.json({
             message: "user not found",
@@ -266,7 +266,7 @@ export const verifyUser = async (req, res) => {
             status: 400
         })
     }
-    const user = await User.findByIdAndUpdate(id, { isVerified }, new: true);
+    const user = await User.findByIdAndUpdate(id, { isVerified }, { new: true });
     if (!user) {
         return res.json({
             message: "user not found",
@@ -300,7 +300,7 @@ export const userloggout = async (req, res) => {
             status: 400
         })
     }
-    const user = await User.findByIdAndUpdate(id, { token }, new: true);
+    const user = await User.findByIdAndUpdate(id, { token }, { new: true });
     if (!user) {
         return res.json({
             message: "user not found",
