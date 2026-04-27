@@ -3,8 +3,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export const sendOtpByEmail = async(email,otp) => {
-    try{
+const sendOtpByEmail = async (email, otp) => {
+    try {
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
@@ -148,7 +148,8 @@ export const sendOtpByEmail = async(email,otp) => {
         await transporter.sendMail(mailOptions);
         console.log("OTP sent successfully");
     }
-    catch(error){
-        console.log("OTP sent failed",error.message);
+    catch (error) {
+        console.log("OTP sent failed", error.message);
     }
 }
+export default sendOtpByEmail;

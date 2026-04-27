@@ -3,15 +3,36 @@ import { protectRolePostAnimal } from "../../Middlewares/user/protect Role.js";
 import { animalIsVerified } from "../../validoators/Animal/animalvalidator.js";
 
 export const AnimalService = async (req, res) => {
-    const { name, type, gender, age, owner, price, currence, health, location, weight, previoudsOwners } = req.body;
+    const {  name,
+        type,
+        gender,
+        age,
+        owner,
+        price,
+        currency,          
+        health,
+        location,
+        weight,
+        previousOwners,     
+        breed,
+        images,
+        videos,
+        previousOwnerName,
+        previousOwnerPhone,
+        previousOwnerAgreementPhoto,
+        previousOwnerIdType,
+        previousOwnerIdNumber,
+        previousOwnerIdPhoto,
+        previousOwnerGender,
+        previousOwnerAge, } = req.body;
     const { id } = req.params;
-    if (!Animal.id ||  id.empty()) {
+    if (!id || id.empty()) {
         return res.json({
             error: "id is missing ",
             status: 404
         })
     }
-    if (!name || !type || !gender || !age || !owner || price || currence || location || !health || weight || !previoudsOwners) {
+    if (!name || !type || !gender || !age || !owner || price || currency || location || !health || weight || !previousOwners) {
         return res.json({
             error: "All animal details are required",
             status: 404
@@ -25,7 +46,7 @@ export const AnimalService = async (req, res) => {
                 status: 404
             })
         }
-        const animal = await animal.create({ id, protectRolePostAnimal });
+        const animal = await animal.create({ name, type, gender, age, owner, price, location, health, weight});
         const saveAnimal = await animal.save();
         return res.json({
             message: "animal created successfully",

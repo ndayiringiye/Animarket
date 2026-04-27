@@ -17,7 +17,7 @@ const UserSchema = new mongoose.Schema({
     shopLogo: { type: String, required: true },
     status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
     role: {
-        enum: ["seller", "admin", "customer", "farmer", "veterinary"], default: "customer"
+        type: String, enum: ["seller", "admin", "customer", "farmer", "veterinary"], default: "customer"
     },
     createdAt: { type: Date, default: Date.now },
 });
