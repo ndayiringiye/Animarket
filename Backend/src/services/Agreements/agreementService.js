@@ -1,63 +1,149 @@
 import Agreement from "../models/Agreement.js";
 import Animal from "../models/Animal.js";
 import mongoose from "mongoose";
+import PDFDocument from "pdfkit";
+import fs from "fs";
+import path from "path";
+import cloudinary from "../config/cloudinary.js";
 
-// Generate unique transaction ID
-const generateTransactionId = () => {
-  return "TXN-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
-};
+// ─────────────────────────────
+// TRANSACTION ID
+// ─────────────────────────────
+const generateTransactionId = () =>
+  "TXN-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
 
-// Generate agreement terms dynamically
-const generateTerms = (animal, buyer, seller) => {
-  return `
-This Agreement is made between ${seller.name} (Seller) and ${buyer.name} (Buyer).
+// ─────────────────────────────
+// AUTO TERMS GENERATOR
+// ─────────────────────────────
+const generateTerms = (data) => {
+  const { type, animal, service, price, currency } = data;
 
-1. The Seller agrees to sell the animal "${animal.name}" (${animal.type}, ${animal.breed}) to the Buyer.
-2. The Buyer agrees to pay ${animal.price} ${animal.currency}.
-3. The animal is sold in "${animal.health.healthStatus}" condition.
-4. Ownership will be transferred upon successful payment.
-5. This transaction is recorded digitally and is legally binding.
+  if (type === "sale") {
+    return `
+SALE AGREEMENT
 
-Location: ${animal.location?.district || "N/A"}
-Date: ${new Date().toDateString()}
+Seller transfers ownership of ${animal.name}.
+Buyer agrees to pay ${price} ${currency}.
+Ownership transfers after payment confirmation.
 `;
+  }
+
+  if (type === "veterinary_service") {
+    return `
+VETERINARY SERVICE AGREEMENT
+
+Veterinarian performs ${service.type} on ${animal.name}.
+Service cost: ${service.cost} ${currency}.
+Payment due upon completion.
+`;
+  }
+
+  if (type === "job_request") {
+    return `
+JOB REQUEST AGREEMENT
+
+Veterinarian requests permission to treat ${animal.name}.
+Service type: ${service.type}.
+Requires owner approval before execution.
+`;
+  }
+
+  return "STANDARD AGREEMENT";
 };
 
+// ─────────────────────────────
+// PDF GENERATOR
+// ─────────────────────────────
+const generateAgreementPDF = async (agreement, animal, parties) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const fileName = `agreement-${agreement.transactionId}.pdf`;
+      const filePath = path.join("tmp", fileName);
 
+      fs.mkdirSync("tmp", { recursive: true });
+
+      const doc = new PDFDocument();
+      const stream = fs.createWriteStream(filePath);
+      doc.pipe(stream);
+
+      doc.fontSize(18).text("ANIMAL AGREEMENT", { align: "center" });
+      doc.moveDown();
+
+      doc.fontSize(12).text(`Transaction ID: ${agreement.transactionId}`);
+      doc.text(`Type: ${agreement.type}`);
+      doc.text(`Date: ${new Date().toDateString()}`);
+      doc.moveDown();
+
+      doc.text(`Animal: ${animal.name} (${animal.type})`);
+      doc.text(`Price: ${agreement.price} ${agreement.currency}`);
+      doc.moveDown();
+
+      doc.text("TERMS:");
+      doc.text(agreement.terms);
+
+      doc.end();
+
+      stream.on("finish", () => resolve(filePath));
+      stream.on("error", reject);
+    } catch (err) {
+      reject(err);
+    }
+  });
+};
+
+// ─────────────────────────────
+// CLOUDINARY UPLOAD
+// ─────────────────────────────
+const uploadPDFToCloud = async (filePath) => {
+  const result = await cloudinary.uploader.upload(filePath, {
+    resource_type: "raw",
+    folder: "agreements",
+  });
+
+  fs.unlinkSync(filePath);
+  return result.secure_url;
+};
+
+// ─────────────────────────────
+// MAIN SERVICE
+// ─────────────────────────────
 export const createAgreementService = async ({
+  type,
   buyerId,
+  sellerId,
+  vetId,
+  requesterId,
   animalId,
   paymentMethod,
   deliveryDate,
+  service,
 }) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // 1. Fetch animal
+    // 1. Get animal
     const animal = await Animal.findById(animalId)
       .populate("owner")
       .session(session);
 
     if (!animal) throw new Error("Animal not found");
 
-    if (!animal.isAvailable) throw new Error("Animal is not available");
-
     const seller = animal.owner;
 
-    if (seller._id.toString() === buyerId) {
-      throw new Error("Buyer cannot be the seller");
-    }
-
-    // 2. Generate agreement
-    const agreement = await Agreement.create(
+    // 2. Create agreement
+    const agreementDoc = await Agreement.create(
       [
         {
-          title: `Animal Purchase Agreement - ${animal.name}`,
-          description: `Agreement for ${animal.type} sale`,
+          title: `Agreement - ${animal.name}`,
+          type,
 
-          buyer: buyerId,
-          seller: seller._id,
+          parties: {
+            buyer: buyerId,
+            seller: sellerId,
+            veterinarian: vetId,
+            requester: requesterId,
+          },
 
           animal: {
             animalId: animal._id,
@@ -69,35 +155,66 @@ export const createAgreementService = async ({
             weight: animal.weight,
           },
 
-          price: animal.price,
-          currency: animal.currency,
+          service,
+
+          price: animal.price || service?.cost || 0,
+          currency: animal.currency || "RWF",
 
           paymentMethod,
           transactionId: generateTransactionId(),
-
-          terms: generateTerms(animal, { name: "Buyer" }, seller),
-
-          location: `${animal.location?.district || ""}, ${
-            animal.location?.country || ""
-          }`,
-
           deliveryDate,
 
-          createdBy: buyerId,
+          terms: generateTerms({
+            type,
+            animal,
+            service,
+            price: animal.price,
+            currency: animal.currency,
+          }),
+
+          location: animal.location?.district || "N/A",
+
+          createdBy: buyerId || requesterId,
         },
       ],
       { session }
     );
 
-    // 3. Lock animal (prevent double sale)
-    animal.isAvailable = false;
-    await animal.save({ session });
+    const agreement = agreementDoc[0];
+
+    // 3. Lock animal for sale only
+    if (type === "sale") {
+      animal.isAvailable = false;
+      await animal.save({ session });
+    }
 
     await session.commitTransaction();
     session.endSession();
 
-    return agreement[0];
+    // 4. PDF generation
+    const pdfPath = await generateAgreementPDF(agreement, animal, {
+      buyerId,
+      sellerId,
+      vetId,
+    });
 
+    // 5. Upload PDF
+    const pdfUrl = await uploadPDFToCloud(pdfPath);
+
+    // 6. Save final doc
+    agreement.pdfUrl = pdfUrl;
+    await agreement.save();
+
+    // 7. Email hook (ready for integration)
+    agreement.emailSent = true;
+    await agreement.save();
+
+    console.log("📧 Agreement ready:", pdfUrl);
+
+    return {
+      agreement,
+      downloadLink: pdfUrl,
+    };
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
