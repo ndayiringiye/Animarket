@@ -41,7 +41,7 @@ const agreementSchema = new Schema(
       },
       name: String,
       type: String, // cow, goat, sheep, etc.
-      enum:["cow",  "Goat",  "sheep", "pigs"],
+      enum: ["cow", "goat", "sheep", "pig", "horse", "chicken"],
       breed: String,
       age: Number,
       healthStatus: String,
