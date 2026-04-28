@@ -6,6 +6,7 @@ import otpGenerator from "otp-generator";
 import nodemailer from "nodemailer";
 import { userRegisterationSchema, userLoginSchema } from "../../validoators/User/UserValidation.js";
 import sendOtpByEmail from "../../services/emails/emailServiceOtp.js";
+
 export const registeringUser = async (req, res) => {
     const { name, email, phone, password, profile, gender, profile_img, id_Number, id_proof_img, category, shopName, shopAddress, shopLogo } = req.body;
     if (!name || !email || !phone || !password || !profile || !gender || !profile_img || !id_Number || !id_proof_img || !category || !shopName || !shopAddress || !shopLogo) {

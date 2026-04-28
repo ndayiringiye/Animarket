@@ -1,70 +1,55 @@
-import joi from "express-validator"
-import Animal from "../../models/animals/AnimalModel"
+import Joi from "joi";
 
-export const animalIsVerified =  joi.Object({
-    name: joi.string().capitalize().length(6).required(),
-    type: joi.string().required().special().message({
-        "Animal.type":"animals inclusion cow, goat, pig, sheep, cheken should be atleas one of them"
-    }),
-    gender: joi.string().required().special().message({
-        "Animal.gender":"animals gender should be male or female"
-    }), 
+export const animalIsVerified = Joi.object({
+  name: Joi.string().min(2).max(50).required(),
 
-   owner : joi.string().required().message({
-    "Animal":"proper owner is required"
-   }),
+  type: Joi.string()
+    .valid("cow", "goat", "pig", "sheep", "chicken")
+    .required(),
 
-   price : joi.number().required().message({
-    "Animal.price":"animals price should be more than 0"
-   }),
+  gender: Joi.string()
+    .valid("male", "female")
+    .required(),
 
-   location: joi.string().required().message({
-    "Animal.location":"animals location is required"
-   }),
-   
-   image: joi.string().image().required().message({
-    "Animal.image":"animals image is required"
-   }),
-   age: joi.number().required().message({
-    "Animal.age":"animals age is required"
-   }),
-   previousOwners:  joi.string().required().message({
-    "Animal.previousOwners":"animals previousOwners is required"
-   }),
-   health: joi.string().required().message({
-    "Animal.health":"animals health is required"
-   }),
-   weight: joi.number().required().message({
-    "Animal.weight":"animals weight is required"
-   }),
-   isAvailable: joi.boolean().required().message({
-    "Animal.isAvailable":"animals isAvailable is required"
-   }),
-   isVerified: joi.boolean().required().message({
-    "Animal.isVerified":"animals isVerified is required"
-   }),
-   verificationLevel: joi.string().required().message({
-    "Animal.verificationLevel":"animals verificationLevel is required"
-   }),
-   marketDemandScore: joi.number().required().message({
-    "Animal.marketDemandScore":"animals marketDemandScore is required"
-   }),
-   popularityScore: joi.number().required().message({
-    "Animal.popularityScore":"animals popularityScore is required"
-   }),
-   createdAt: joi.date().required().message({
-    "Animal.createdAt":"animals createdAt is required"
-   }),
-   updatedAt: joi.date().required().message({
-    "Animal.updatedAt":"animals updatedAt is required"
-   }),
+  owner: Joi.string().required(),
 
-videos: joi.array().items(joi.string().required()).optional().message({
-    "Animal.videos":"animals videos should be an array of strings"
-}),
+  price: Joi.number().positive().required(),
 
-images: joi.array().items(joi.string().required()).optional().message({
-    "Animal.images":"animals images should be an array of strings"
-}),
+  currency: Joi.string().default("RWF"),
 
-})
+  location: Joi.string().required(),
+
+  age: Joi.number().min(0).required(),
+
+  breed: Joi.string().allow("", null),
+
+  weight: Joi.number().positive().required(),
+
+  health: Joi.string()
+    .valid("excellent", "good", "fair", "poor")
+    .required(),
+
+  isAvailable: Joi.boolean().default(true),
+
+  previousOwners: Joi.array().items(Joi.string()).default([]),
+
+  previousOwnerName: Joi.string().allow("", null),
+
+  previousOwnerPhone: Joi.string().allow("", null),
+
+  previousOwnerAgreementPhoto: Joi.string().allow("", null),
+
+  previousOwnerIdType: Joi.string().allow("", null),
+
+  previousOwnerIdNumber: Joi.string().allow("", null),
+
+  previousOwnerIdPhoto: Joi.string().allow("", null),
+
+  previousOwnerGender: Joi.string().valid("male", "female").allow(null),
+
+  previousOwnerAge: Joi.number().min(0).allow(null),
+
+  images: Joi.array().items(Joi.string().uri()).default([]),
+
+  videos: Joi.array().items(Joi.string().uri()).default([])
+});
