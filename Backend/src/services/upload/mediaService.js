@@ -1,7 +1,7 @@
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
 
-// Upload single file (image or video)
+// Upload single file
 export const uploadToCloudinary = (file, folder = "animarket") => {
   return new Promise((resolve, reject) => {
     const resourceType = file.mimetype.startsWith("video")
@@ -15,7 +15,13 @@ export const uploadToCloudinary = (file, folder = "animarket") => {
       },
       (error, result) => {
         if (error) return reject(error);
-        resolve(result);
+
+        // IMPORTANT: return full metadata
+        resolve({
+          url: result.secure_url,
+          public_id: result.public_id,
+          resource_type: result.resource_type,
+        });
       }
     );
 
@@ -25,6 +31,7 @@ export const uploadToCloudinary = (file, folder = "animarket") => {
 
 // Upload multiple files
 export const uploadMultipleFiles = async (files, folder) => {
-  const uploads = files.map((file) => uploadToCloudinary(file, folder));
-  return Promise.all(uploads);
+  return Promise.all(
+    files.map((file) => uploadToCloudinary(file, folder))
+  );
 };

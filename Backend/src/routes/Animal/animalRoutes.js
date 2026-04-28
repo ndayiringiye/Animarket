@@ -1,8 +1,8 @@
 import express from "express";
 
 import {
-  createAnimal,
-  getAllAnimals,
+  animalRegistering,
+  getAnimals,
   getAnimalById,
   updateAnimal,
   deleteAnimal
@@ -12,11 +12,13 @@ import { verifyToken } from "../../middleware/auth/verifyToken.js";
 import { protectRolePostAnimal } from "../../middleware/auth/protectRolePostAnimal.js";
 import { isAdmin } from "../../middleware/auth/isAdmin.js";
 
+import upload from "../../middleware/upload/upload.js"; // ✅ ADD THIS
+
 const router = express.Router();
 
 /**
  * ─────────────────────────────────────────────
- * 🐄 CREATE ANIMAL
+ * 🐄 CREATE ANIMAL (WITH FILE UPLOAD)
  * seller | farmer only
  * ─────────────────────────────────────────────
  */
@@ -24,7 +26,8 @@ router.post(
   "/animal/register",
   verifyToken,
   protectRolePostAnimal,
-  createAnimal
+  upload.array("media", 5), // ✅ images/videos (max 5 files)
+  animalRegistering
 );
 
 /**
@@ -32,24 +35,18 @@ router.post(
  * 📦 GET ALL ANIMALS (PUBLIC MARKETPLACE)
  * ─────────────────────────────────────────────
  */
-router.get(
-  "/animals",
-  getAllAnimals
-);
+router.get("/animals", getAnimals);
 
 /**
  * ─────────────────────────────────────────────
  * 🔍 GET SINGLE ANIMAL
  * ─────────────────────────────────────────────
  */
-router.get(
-  "/animals/:id",
-  getAnimalById
-);
+router.get("/animals/:id", getAnimalById);
 
 /**
  * ─────────────────────────────────────────────
- * ✏️ UPDATE ANIMAL
+ * ✏️ UPDATE ANIMAL (WITH OPTIONAL FILE UPLOAD)
  * seller | farmer only
  * ─────────────────────────────────────────────
  */
@@ -57,6 +54,7 @@ router.put(
   "/animals/:id",
   verifyToken,
   protectRolePostAnimal,
+  upload.array("media", 5), // ✅ allow replacing/adding media
   updateAnimal
 );
 
@@ -83,7 +81,7 @@ router.get(
   "/admin/animals",
   verifyToken,
   isAdmin,
-  getAllAnimals
+  getAnimals
 );
 
 export default router;
