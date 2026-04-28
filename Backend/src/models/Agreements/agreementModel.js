@@ -18,19 +18,15 @@ const agreementSchema = new Schema(
     },
 
     // Parties involved
-    buyer: {
+    user: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
       index: true,
+      enum:["seller", "admin", "customer", "farmer", "veterinary"]
     },
 
-    seller: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-      index: true,
-    },
+   
 
     // Animal snapshot (important: don't rely only on reference)
     animal: {
