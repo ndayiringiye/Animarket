@@ -4,57 +4,51 @@ const { Schema } = mongoose;
 
 const agreementSchema = new Schema(
   {
-    // Basic agreement info
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 100,
-    },
+    
+    title: { type: String, required: true, trim: true, maxlength: 120 },
+    description: { type: String, trim: true },
 
-    description: {
-      type: String,
-      trim: true,
-    },
 
-    // Parties involved
-    user: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+    type: {
+      type: String,
+      enum: ["sale", "veterinary_service", "job_request"],
       required: true,
       index: true,
-      enum:["seller", "admin", "customer", "farmer", "veterinary"]
     },
 
-   
+    parties: {
+      buyer: { type: Schema.Types.ObjectId, ref: "User" },
+      seller: { type: Schema.Types.ObjectId, ref: "User" },
+      veterinarian: { type: Schema.Types.ObjectId, ref: "User" },
+      requester: { type: Schema.Types.ObjectId, ref: "User" },
+    },
 
-    // Animal snapshot (important: don't rely only on reference)
+  
     animal: {
-      animalId: {
-        type: Schema.Types.ObjectId,
-        ref: "Animal",
-        required: true,
-      },
+      animalId: { type: Schema.Types.ObjectId, ref: "Animal", required: true },
       name: String,
-      type: String, // cow, goat, sheep, etc.
-      enum: ["cow", "goat", "sheep", "pig", "horse", "chicken"],
+      type: {
+        type: String,
+        enum: ["cow", "goat", "sheep", "pig", "horse", "chicken"],
+      },
       breed: String,
       age: Number,
       healthStatus: String,
       weight: Number,
     },
 
-    // Pricing & payment
-    price: {
-      type: Number,
-      required: true,
-      min: 0,
+    service: {
+      type: {
+        type: String,
+        enum: ["vaccination", "checkup", "treatment", "consultation"],
+      },
+      notes: String,
+      cost: Number,
     },
 
-    currency: {
-      type: String,
-      default: "RWF",
-    },
+   
+    price: { type: Number, required: true, min: 0 },
+    currency: { type: String, default: "RWF" },
 
     paymentMethod: {
       type: String,
@@ -68,64 +62,39 @@ const agreementSchema = new Schema(
       default: "pending",
     },
 
-    transactionId: {
-      type: String,
-      required: true,
-      unique: true,
+    transactionId: { type: String, required: true, unique: true },
+
+    signatures: {
+      buyer: String,
+      seller: String,
+      vet: String,
     },
 
-    // Agreement terms
-    terms: {
-      type: String,
-      required: true,
-    },
+ 
+    location: { type: String, required: true },
+    deliveryDate: Date,
 
-    // Digital signatures (very important for trust)
-    buyerSignature: {
-      type: String,
-    },
 
-    sellerSignature: {
-      type: String,
-    },
-
-    // Logistics
-    location: {
-      type: String,
-      required: true,
-    },
-
-    deliveryDate: {
-      type: Date,
-    },
-
-    // Status lifecycle
     status: {
       type: String,
       enum: ["pending", "accepted", "rejected", "completed", "cancelled"],
       default: "pending",
-      index: true,
     },
 
-    // Audit & tracking
-    createdBy: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-    },
+  
+    pdfUrl: String,
+    emailSent: { type: Boolean, default: false },
 
-    updatedBy: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-    },
+   
+    createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+    updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
-  {
-    timestamps: true, // createdAt & updatedAt
-  }
+  { timestamps: true }
 );
 
-// Index for faster queries
-agreementSchema.index({ buyer: 1, seller: 1 });
+
 agreementSchema.index({ transactionId: 1 });
+agreementSchema.index({ "parties.buyer": 1, "parties.seller": 1 });
 
 const Agreement = mongoose.model("Agreement", agreementSchema);
 
