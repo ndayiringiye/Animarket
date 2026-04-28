@@ -1,173 +1,97 @@
 import express from "express";
-
-import {
-  createAgreementService
-} from "../../services/agreementService.js";
-
 import Agreement from "../../models/Agreement.js";
 
 import { verifyToken } from "../../middleware/auth/verifyToken.js";
-import { isAdmin } from "../../middleware/auth/isAdmin.js";
+import { authorizeAgreementRole } from "../../middleware/auth/authorizeAgreementRole.js";
+
+import { createAgreementService } from "../../services/agreementService.js";
+import { signAgreement } from "../../services/signatureService.js";
+import { releaseEscrowPayment } from "../../services/escrowService.js";
 
 const router = express.Router();
 
 
-// ─────────────────────────────────────────────
-// 🧾 CREATE AGREEMENT (SALE / VET / JOB REQUEST)
-// ─────────────────────────────────────────────
-router.post("/agreements", verifyToken, async (req, res) => {
-  try {
-    const {
-      type,
-      buyerId,
-      sellerId,
-      vetId,
-      requesterId,
-      animalId,
-      paymentMethod,
-      deliveryDate,
-      service
-    } = req.body;
+// ─────────────────────────────
+// 🧾 CREATE AGREEMENT
+// ─────────────────────────────
+router.post(
+  "/agreements",
+  verifyToken,
+  authorizeAgreementRole("buyer", "farmer", "veterinary"),
+  async (req, res) => {
+    try {
+      const result = await createAgreementService({
+        ...req.body,
+        buyerId: req.user.id,
+      });
 
-    const result = await createAgreementService({
-      type,
-      buyerId,
-      sellerId,
-      vetId,
-      requesterId,
-      animalId,
-      paymentMethod,
-      deliveryDate,
-      service,
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "Agreement created successfully",
-      data: result,
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+      res.status(201).json({
+        success: true,
+        data: result,
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
   }
-});
+);
 
 
-router.get("/agreements", verifyToken, async (req, res) => {
+// ─────────────────────────────
+// ✍️ SIGN AGREEMENT
+// ─────────────────────────────
+router.put("/agreements/:id/sign", verifyToken, async (req, res) => {
   try {
-    const agreements = await Agreement.find()
-      .populate("parties.buyer")
-      .populate("parties.seller")
-      .populate("parties.veterinarian")
-      .populate("animal.animalId")
-      .sort({ createdAt: -1 });
+    const { signature } = req.body;
 
-    res.status(200).json({
-      success: true,
-      count: agreements.length,
-      data: agreements,
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-});
-
-
-
-router.get("/agreements/:id", verifyToken, async (req, res) => {
-  try {
-    const agreement = await Agreement.findById(req.params.id)
-      .populate("parties.buyer")
-      .populate("parties.seller")
-      .populate("parties.veterinarian")
-      .populate("animal.animalId");
+    const agreement = await Agreement.findById(req.params.id);
 
     if (!agreement) {
-      return res.status(404).json({
-        success: false,
-        message: "Agreement not found",
-      });
+      return res.status(404).json({ message: "Agreement not found" });
     }
 
-    res.status(200).json({
+    signAgreement(agreement, req.user, signature);
+
+    await agreement.save();
+
+    res.json({
       success: true,
+      message: "Agreement signed",
       data: agreement,
     });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
 
+// ─────────────────────────────
+// ✅ COMPLETE AGREEMENT (RELEASE ESCROW)
+// ─────────────────────────────
+router.put(
+  "/agreements/:id/complete",
+  verifyToken,
+  async (req, res) => {
+    try {
+      const agreement = await Agreement.findById(req.params.id);
 
-router.put("/agreements/:id/status", verifyToken, async (req, res) => {
-  try {
-    const { status } = req.body;
+      if (!agreement) {
+        return res.status(404).json({ message: "Not found" });
+      }
 
-    const agreement = await Agreement.findByIdAndUpdate(
-      req.params.id,
-      { status, updatedBy: req.user.id },
-      { new: true }
-    );
+      await releaseEscrowPayment(agreement);
 
-    if (!agreement) {
-      return res.status(404).json({
-        success: false,
-        message: "Agreement not found",
+      agreement.status = "completed";
+      await agreement.save();
+
+      res.json({
+        success: true,
+        message: "Agreement completed & payment released",
+        data: agreement,
       });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
     }
-
-    res.status(200).json({
-      success: true,
-      message: "Agreement status updated",
-      data: agreement,
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
   }
-});
-
-
-// ─────────────────────────────────────────────
-// 🧾 DELETE AGREEMENT (ADMIN ONLY)
-// ─────────────────────────────────────────────
-router.delete("/agreements/:id", verifyToken, isAdmin, async (req, res) => {
-  try {
-    const agreement = await Agreement.findByIdAndDelete(req.params.id);
-
-    if (!agreement) {
-      return res.status(404).json({
-        success: false,
-        message: "Agreement not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Agreement deleted successfully",
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-});
+);
 
 export default router;
