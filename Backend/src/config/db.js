@@ -5,7 +5,7 @@ dotenv.config();
 
 const connectDb = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
+    const conn = await mongoose.connect("mongodb+srv://ndayiringiyedavid120_db_user:tjuz0pcsqOf8XisC@cluster0.cyoeixv.mongodb.net/Animarketing?retryWrites=true&w=majority", {
       dbName: "Animarketing",
     });
 

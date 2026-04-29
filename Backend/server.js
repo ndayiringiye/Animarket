@@ -3,7 +3,8 @@ import dotenv from "dotenv"
 import cors from "cors"
 import connectDB from "../Backend/src/config/db.js"
 import userRoutes from "./src/routes/userRoutes.js"
-
+import animalRoute from "../Backend/src/routes/Animal/animalRoutes.js"
+import agreement from "../Backend/src/routes/Agreements/agreementRoutes.js"
 const app = express();
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.get("/", (req , res ) =>{
 });
 
 app.use("/api/users", userRoutes);
+app.use("/api/animal",  animalRoute);
 
 app.listen(PORT, async ()=>{
     await connectDB()
