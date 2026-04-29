@@ -166,3 +166,34 @@ export const joinMeetingService = async (meetingId, userId) => {
         token: meeting.videoCall.participantToken
     };
 };
+
+export const endMeetingService = async (meetingId, userId) => {
+    const meeting = await Meeting.findById(meetingId);
+
+    if (!meeting) throw new Error("Meeting not found");
+
+    if (meeting.organizer.toString() !== userId) {
+        throw new Error("Only organizer can end meeting");
+    }
+
+    meeting.status = "completed";
+    await meeting.save();
+
+    return meeting;
+};
+
+export const addFeedbackService = async (meetingId, userId, data) => {
+    const meeting = await Meeting.findById(meetingId);
+
+    if (!meeting) throw new Error("Meeting not found");
+
+    meeting.feedback.push({
+        user: userId,
+        rating: data.rating,
+        comment: data.comment
+    });
+
+    await meeting.save();
+
+    return meeting;
+};
