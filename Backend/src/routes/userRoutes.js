@@ -1,7 +1,7 @@
 import express from 'express';
 import * as userController from '../controllers/users/userController.js';
-import { verifyToken, isAdmin } from '../middleware/authMiddleware.js';
-import { verifyToken, isAdmin } from '../middleware/authMiddleware.js';
+import { verifyToken } from '../Middlewares/Auth/authMiddleware.js';
+import {isAdmin} from "../Middlewares/Admin/amindMiddleware.js"
 const router = express.Router();
 
 router.post('/register', userController.registerUser);
