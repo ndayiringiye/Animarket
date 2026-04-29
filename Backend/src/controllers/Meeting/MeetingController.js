@@ -10,78 +10,47 @@ export const createMeetingController = async (req, res) => {
         const {
             title,
             description,
-            participants = [],
-            meetingType = "general",
+            participants,
+            meetingType,
             animalId,
             meetingDate,
-            durationMinutes = 30,
-            provider = "webrtc"
+            durationMinutes,
+            provider
         } = req.body;
 
         const userId = req.user?.id;
 
-     
         if (!userId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        
-        if (!title || !meetingDate) {
-            return res.status(400).json({
-                message: "Title and meetingDate are required"
-            });
-        }
-
-        if (!participants.length) {
-            return res.status(400).json({
-                message: "At least one participant is required"
-            });
-        }
-
-      
         const organizer = await User.findById(userId);
         if (!organizer) {
             return res.status(404).json({ message: "Organizer not found" });
         }
 
-       
-        const uniqueParticipants = new Map();
+        if (!participants || participants.length === 0) {
+            return res.status(400).json({ message: "Participants required" });
+        }
+
+        const validParticipants = [];
 
         for (const p of participants) {
-            if (!p.user || !p.role) {
-                return res.status(400).json({
-                    message: "Each participant must have user and role"
-                });
-            }
-
-            if (uniqueParticipants.has(p.user)) continue;
-
             const user = await User.findById(p.user);
+
             if (!user) {
                 return res.status(404).json({
                     message: `User not found: ${p.user}`
                 });
             }
 
-            uniqueParticipants.set(p.user, {
+            validParticipants.push({
                 user: user._id,
                 role: p.role,
                 status: "invited"
             });
         }
 
-      
-        if (!uniqueParticipants.has(userId)) {
-            uniqueParticipants.set(userId, {
-                user: organizer._id,
-                role: organizer.role,
-                status: "accepted"
-            });
-        }
-
-        const validParticipants = Array.from(uniqueParticipants.values());
-
-     
         let animal = null;
         if (animalId) {
             animal = await Animal.findById(animalId);
@@ -90,26 +59,18 @@ export const createMeetingController = async (req, res) => {
             }
         }
 
-     
         const meetingUUID = uuidv4();
 
         const hostToken = crypto.randomBytes(16).toString("hex");
         const participantToken = crypto.randomBytes(16).toString("hex");
 
-        let meetingLink = "";
-
-        if (provider === "zoom") {
-
-            meetingLink = `https://zoom.us/j/${meetingUUID}`;
-        } else {
-     
-            meetingLink = `${process.env.FRONTEND_URL}/meeting/${meetingUUID}`;
-        }
-
         const videoCall = {
-            provider,
+            provider: provider || "webrtc",
             meetingId: meetingUUID,
-            meetingLink,
+            meetingLink:
+                provider === "zoom"
+                    ? `https://zoom.us/j/${meetingUUID}`
+                    : `${process.env.FRONTEND_URL}/meeting/${meetingUUID}`,
             hostToken,
             participantToken
         };
@@ -122,7 +83,7 @@ export const createMeetingController = async (req, res) => {
             meetingType,
             animal: animal?._id,
             meetingDate,
-            durationMinutes,
+            durationMinutes: durationMinutes || 30,
             videoCall,
             status: "pending"
         });
@@ -134,11 +95,205 @@ export const createMeetingController = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Create Meeting Error:", error);
         return res.status(500).json({
             success: false,
-            message: "Internal server error",
+            message: "Server error",
             error: error.message
         });
+    }
+};
+
+export const getUserMeetingsController = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const meetings = await Meeting.find({
+            $or: [
+                { organizer: userId },
+                { "participants.user": userId }
+            ]
+        })
+            .populate("organizer", "name email")
+            .populate("participants.user", "name email")
+            .populate("animal");
+
+        return res.status(200).json({
+            success: true,
+            data: meetings
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+export const getSingleMeetingController = async (req, res) => {
+    try {
+        const { meetingId } = req.params;
+
+        const meeting = await Meeting.findById(meetingId)
+            .populate("organizer")
+            .populate("participants.user")
+            .populate("animal");
+
+        if (!meeting) {
+            return res.status(404).json({ message: "Meeting not found" });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: meeting
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+
+export const acceptMeetingController = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { meetingId } = req.params;
+
+        const meeting = await Meeting.findById(meetingId);
+        if (!meeting) {
+            return res.status(404).json({ message: "Meeting not found" });
+        }
+
+        const participant = meeting.participants.find(
+            (p) => p.user.toString() === userId
+        );
+
+        if (!participant) {
+            return res.status(403).json({ message: "Not invited" });
+        }
+
+        participant.status = "accepted";
+        await meeting.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Meeting accepted",
+            data: meeting
+        });
+
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+
+export const joinMeetingController = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { meetingId } = req.params;
+
+        const meeting = await Meeting.findById(meetingId);
+
+        if (!meeting) {
+            return res.status(404).json({ message: "Meeting not found" });
+        }
+
+        const participant = meeting.participants.find(
+            (p) => p.user.toString() === userId
+        );
+
+        if (!participant) {
+            return res.status(403).json({ message: "Access denied" });
+        }
+
+        meeting.joinCount += 1;
+        meeting.lastJoinedAt = new Date();
+        meeting.status = "ongoing";
+
+        participant.status = "joined";
+
+        await meeting.save();
+
+        return res.status(200).json({
+            success: true,
+            meetingLink: meeting.videoCall.meetingLink,
+            token: meeting.videoCall.participantToken
+        });
+
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+
+// ===============================
+// ⏹ END MEETING
+// ===============================
+export const endMeetingController = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { meetingId } = req.params;
+
+        const meeting = await Meeting.findById(meetingId);
+
+        if (!meeting) {
+            return res.status(404).json({ message: "Meeting not found" });
+        }
+
+        if (meeting.organizer.toString() !== userId) {
+            return res.status(403).json({
+                message: "Only organizer can end meeting"
+            });
+        }
+
+        meeting.status = "completed";
+        await meeting.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Meeting ended",
+            data: meeting
+        });
+
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+
+// ===============================
+// ⭐ FEEDBACK
+// ===============================
+export const addFeedbackController = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { meetingId } = req.params;
+        const { rating, comment } = req.body;
+
+        const meeting = await Meeting.findById(meetingId);
+
+        if (!meeting) {
+            return res.status(404).json({ message: "Meeting not found" });
+        }
+
+        meeting.feedback.push({
+            user: userId,
+            rating,
+            comment
+        });
+
+        await meeting.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Feedback added",
+            data: meeting
+        });
+
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
     }
 };
