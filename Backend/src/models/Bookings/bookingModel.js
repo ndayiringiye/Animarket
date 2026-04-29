@@ -98,6 +98,20 @@ const BookingSchema = new mongoose.Schema({
         ],
         default: "not_scheduled"
     },
+trackingHistory: [
+    {
+        status: String,
+        message: String,
+        updatedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+        },
+        timestamp: {
+            type: Date,
+            default: Date.now
+        }
+    }
+],
 
     deliveryDate: Date,
     status: {
@@ -136,7 +150,6 @@ const BookingSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-
     updatedAt: {
         type: Date,
         default: Date.now
