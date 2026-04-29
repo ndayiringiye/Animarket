@@ -25,7 +25,7 @@ export const createMeetingController = async (req, res) => {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        // 📌 2. BASIC VALIDATION
+        
         if (!title || !meetingDate) {
             return res.status(400).json({
                 message: "Title and meetingDate are required"

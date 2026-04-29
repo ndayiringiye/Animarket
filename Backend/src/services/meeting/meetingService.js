@@ -101,3 +101,17 @@ export const createMeetingService = async (req, res) => {
         return res.status(500).json({ message: "Server error", error });
     }
 };
+
+
+export const getUserMeetingsService = async (userId) => {
+    return await Meeting.find({
+        $or: [
+            { organizer: userId },
+            { "participants.user": userId }
+        ]
+    })
+    .populate("organizer", "name email")
+    .populate("participants.user", "name email")
+    .populate("animal");
+};
+
