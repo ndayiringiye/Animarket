@@ -5,6 +5,7 @@ import connectDB from "../Backend/src/config/db.js"
 import userRoutes from "./src/routes/userRoutes.js"
 import animalRoute from "../Backend/src/routes/Animal/animalRoutes.js"
 import agreement from "../Backend/src/routes/Agreements/agreementRoutes.js"
+import meetingRoute from "./src/controllers/Meeting/MeetingController.js"
 const app = express();
 dotenv.config();
 
@@ -19,7 +20,7 @@ app.get("/", (req , res ) =>{
 
 app.use("/api/users", userRoutes);
 app.use("/api/animal",  animalRoute);
-
+app.use("api/meeting",  meetingRoute);
 app.listen(PORT, async ()=>{
     await connectDB()
  try {
