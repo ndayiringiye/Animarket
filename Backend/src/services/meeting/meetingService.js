@@ -115,3 +115,30 @@ export const getUserMeetingsService = async (userId) => {
     .populate("animal");
 };
 
+export const getSingleMeetingService = async (meetingId) => {
+    const meeting = await Meeting.findById(meetingId)
+        .populate("organizer")
+        .populate("participants.user")
+        .populate("animal");
+
+    if (!meeting) throw new Error("Meeting not found");
+
+    return meeting;
+};
+
+export const acceptMeetingService = async (meetingId, userId) => {
+    const meeting = await Meeting.findById(meetingId);
+    if (!meeting) throw new Error("Meeting not found");
+
+    const participant = meeting.participants.find(
+        (p) => p.user.toString() === userId
+    );
+
+    if (!participant) throw new Error("Not invited");
+
+    participant.status = "accepted";
+    await meeting.save();
+
+    return meeting;
+};
+
