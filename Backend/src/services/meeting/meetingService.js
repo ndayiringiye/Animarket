@@ -142,3 +142,27 @@ export const acceptMeetingService = async (meetingId, userId) => {
     return meeting;
 };
 
+export const joinMeetingService = async (meetingId, userId) => {
+    const meeting = await Meeting.findById(meetingId);
+
+    if (!meeting) throw new Error("Meeting not found");
+
+    const participant = meeting.participants.find(
+        (p) => p.user.toString() === userId
+    );
+
+    if (!participant) throw new Error("Access denied");
+
+    meeting.joinCount += 1;
+    meeting.lastJoinedAt = new Date();
+    meeting.status = "ongoing";
+
+    participant.status = "joined";
+
+    await meeting.save();
+
+    return {
+        meetingLink: meeting.videoCall.meetingLink,
+        token: meeting.videoCall.participantToken
+    };
+};
