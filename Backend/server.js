@@ -5,7 +5,7 @@ import connectDB from "../Backend/src/config/db.js"
 import userRoutes from "./src/routes/userRoutes.js"
 import animalRoute from "../Backend/src/routes/Animal/animalRoutes.js"
 import agreement from "./src/routes/Agreements/agreementRoutes.js"
-import meetingRoute from "./src/routes/Meeting/meetingRoutes.js"
+import meetingRoute from "./src/routes/Meeting/meetingRoute.js"
 const app = express();
 dotenv.config();
 

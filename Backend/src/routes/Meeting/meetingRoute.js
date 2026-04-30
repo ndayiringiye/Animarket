@@ -8,9 +8,9 @@ import {
   joinMeetingController,
   endMeetingController,
   addFeedbackController
-} from "./src/controllers/Meeting/MeetingController.js";
+} from "../../controllers/Meeting/MeetingController.js";
 
-import { authenticateUser } from "../../middlewares/auth.middleware.js";
+import { authenticateUser } from "../../Middlewares/Auth/authMiddleware.js";
 
 const router = express.Router();
 
@@ -24,7 +24,6 @@ router.get("/:meetingId", getSingleMeetingController);
 
 router.put("/:meetingId/accept", acceptMeetingController);
 
-router.put("/:meetingId/reject", rejectMeetingController);
 
 router.get("/:meetingId/join", joinMeetingController);
 
@@ -33,16 +32,16 @@ router.put("/:meetingId/end", endMeetingController);
 
 router.post("/:meetingId/feedback", addFeedbackController);
 
-router.put("/:meetingId/start", startMeetingController);
-router.put("/:meetingId/cancel", cancelMeetingController);
+// router.put("/:meetingId/start", startMeetingController);
+// router.put("/:meetingId/cancel", cancelMeetingController);
 
-ADMIN
-router.get("/admin/all", getAllMeetingsAdminController);
+// ADMIN
+// router.get("/admin/all", getAllMeetingsAdminController);
 
-VETERINARY
-router.get("/vet/consultations", vetMeetingsController);
+// VETERINARY
+// router.get("/vet/consultations", vetMeetingsController);
 
-LOGISTICS (future)
-router.post("/:meetingId/delivery-schedule", scheduleDeliveryController);
+// LOGISTICS (future)
+// router.post("/:meetingId/delivery-schedule", scheduleDeliveryController);
 
 export default router;

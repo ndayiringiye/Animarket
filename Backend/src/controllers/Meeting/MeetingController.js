@@ -5,7 +5,7 @@ import Meeting from "../../models/Meetings/meettingModels.js";
 import { v4 as uuidv4 } from "uuid";
 import crypto from "crypto";
 
- const createMeetingController = async (req, res) => {
+const createMeetingController = async (req, res) => {
     try {
         const {
             title,
@@ -103,7 +103,7 @@ import crypto from "crypto";
     }
 };
 
- const getUserMeetingsController = async (req, res) => {
+const getUserMeetingsController = async (req, res) => {
     try {
         const userId = req.user.id;
 
@@ -130,7 +130,7 @@ import crypto from "crypto";
     }
 };
 
-export const getSingleMeetingController = async (req, res) => {
+const getSingleMeetingController = async (req, res) => {
     try {
         const { meetingId } = req.params;
 
@@ -157,7 +157,7 @@ export const getSingleMeetingController = async (req, res) => {
 };
 
 
- const acceptMeetingController = async (req, res) => {
+const acceptMeetingController = async (req, res) => {
     try {
         const userId = req.user.id;
         const { meetingId } = req.params;
@@ -190,7 +190,7 @@ export const getSingleMeetingController = async (req, res) => {
 };
 
 
- const joinMeetingController = async (req, res) => {
+const joinMeetingController = async (req, res) => {
     try {
         const userId = req.user.id;
         const { meetingId } = req.params;
@@ -232,7 +232,7 @@ export const getSingleMeetingController = async (req, res) => {
 // ===============================
 // ⏹ END MEETING
 // ===============================
-export const endMeetingController = async (req, res) => {
+const endMeetingController = async (req, res) => {
     try {
         const userId = req.user.id;
         const { meetingId } = req.params;
@@ -267,7 +267,7 @@ export const endMeetingController = async (req, res) => {
 // ===============================
 // ⭐ FEEDBACK
 // ===============================
- const addFeedbackController = async (req, res) => {
+const addFeedbackController = async (req, res) => {
     try {
         const userId = req.user.id;
         const { meetingId } = req.params;
@@ -298,12 +298,12 @@ export const endMeetingController = async (req, res) => {
     }
 };
 
-export default {
+export {
     addFeedbackController,
     createMeetingController,
     getSingleMeetingController,
-    getUserMeetingsController,  
+    getUserMeetingsController,
     acceptMeetingController,
     joinMeetingController,
-    endMeetingController    
-}
+    endMeetingController
+};
