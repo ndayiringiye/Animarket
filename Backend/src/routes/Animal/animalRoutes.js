@@ -12,7 +12,7 @@ import { verifyToken } from "../../Middlewares/Auth/authMiddleware.js";
 import { protectRolePostAnimal } from "../../utils/Roles/userRole.js";
 import { isAdmin } from "../../Middlewares/Admin/amindMiddleware.js";
 
-import { upload } from "../../controllers/upload/mediaController.js";
+import upload  from "../../Middlewares/user/uplaodMiddleware.js"; // ✅ now correct
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ router.post(
   "/animal/register",
   verifyToken,
   protectRolePostAnimal,
-  upload.array("media", 5),
+  upload.array("media", 5), // ✅ now works
   animalRegistering
 );
 

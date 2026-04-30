@@ -19,6 +19,8 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+// ✅ CREATE INSTANCE
 const upload = multer({ storage, fileFilter });
 
-export default upload;
+// ✅ EXPORT NAMED (fixes your issue 100%)
+export default upload ;

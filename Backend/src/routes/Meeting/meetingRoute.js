@@ -1,15 +1,14 @@
 import express from "express";
 
 import {
-    createMeetingController,
-    getUserMeetingsController,
-    getSingleMeetingController,
-    acceptMeetingController,
-    rejectMeetingController,
-    joinMeetingController,
-    endMeetingController,
-    addFeedbackController
-} from "../../controllers/meetings/meeting.controller.js";
+  createMeetingController,
+  getUserMeetingsController,
+  getSingleMeetingController,
+  acceptMeetingController,
+  joinMeetingController,
+  endMeetingController,
+  addFeedbackController
+} from "./src/controllers/Meeting/MeetingController.js";
 
 import { authenticateUser } from "../../middlewares/auth.middleware.js";
 
