@@ -1,6 +1,9 @@
 import { sendAgreementEmail } from "../../services/emails/emailService.js";
 import { processEscrowPayment, releaseEscrowPayment } from "../../services/score/escrowService.js";
 
+
+
+const createAgreementService = async (agreementData) => {
 // inside createAgreementService AFTER creation
 
 // 🔒 STEP 1: escrow lock
@@ -15,3 +18,6 @@ await sendAgreementEmail(emails, pdfUrl);
 
 agreement.emailSent = true;
 await agreement.save();
+};
+
+export { createAgreementService };
