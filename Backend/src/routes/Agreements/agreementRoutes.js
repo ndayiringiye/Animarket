@@ -1,12 +1,12 @@
 import express from "express";
-import Agreement from "../../models/Agreement.js";
+import Agreement from "../../models/Agreements/agreementModel.js";
 
-import { verifyToken } from "../../middleware/auth/verifyToken.js";
-import { authorizeAgreementRole } from "../../middleware/auth/authorizeAgreementRole.js";
+import { verifyToken } from "../../Middlewares/Auth/authMiddleware.js";
+import { authorizeAgreementRole } from "../../Middlewares/Auth/authorizationAgreement.js";
 
-import { createAgreementService } from "../../services/agreementService.js";
-import { signAgreement } from "../../services/signatureService.js";
-import { releaseEscrowPayment } from "../../services/escrowService.js";
+import { createAgreementService } from "../../services/Agreements/agreementService.js";
+import { signAgreement } from "../../services/signals/signatureService.js";
+import { releaseEscrowPayment } from "../../services/score/escrowService.js";
 
 const router = express.Router();
 

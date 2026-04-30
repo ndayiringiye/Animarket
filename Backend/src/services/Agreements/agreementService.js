@@ -1,5 +1,5 @@
-import { sendAgreementEmail } from "./emailService.js";
-import { processEscrowPayment, releaseEscrowPayment } from "./escrowService.js";
+import { sendAgreementEmail } from "../../services/emails/emailService.js";
+import { processEscrowPayment, releaseEscrowPayment } from "../../services/score/escrowService.js";
 
 // inside createAgreementService AFTER creation
 

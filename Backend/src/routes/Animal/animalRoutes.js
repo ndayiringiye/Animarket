@@ -8,11 +8,11 @@ import {
   deleteAnimal
 } from "../../controllers/animals/animalController.js";
 
-import { verifyToken } from "../../middleware/auth/verifyToken.js";
-import { protectRolePostAnimal } from "../../middleware/auth/protectRolePostAnimal.js";
-import { isAdmin } from "../../middleware/auth/isAdmin.js";
+import { verifyToken } from "../../Middlewares/Auth/authMiddleware.js";
+import { protectRolePostAnimal } from "../../utils/Roles/userRole.js";
+import { isAdmin } from "../../Middlewares/Admin/amindMiddleware.js";
 
-import upload from "../../middleware/upload/upload.js"; // ✅ ADD THIS
+import upload from "../../controllers/upload/mediaController.js"; 
 
 const router = express.Router();
 
