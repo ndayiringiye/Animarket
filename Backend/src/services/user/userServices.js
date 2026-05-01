@@ -36,23 +36,29 @@ export const registeringUser = async (req, res) => {
         const shopLogoFile = req.files?.shopLogo?.[0];
 
         let profile_img = profileImgBody;
+        let profile_img_public_id = null;
         let id_proof_img = idProofBody;
+        let id_proof_img_public_id = null;
         let shopLogo = shopLogoBody;
+        let shopLogo_public_id = null;
 
         try {
             if (profileFile) {
                 const uploaded = await uploadToCloudinary(profileFile, "animarket/users/profile_images");
                 profile_img = uploaded.url;
+                profile_img_public_id = uploaded.public_id;
             }
 
             if (idProofFile) {
                 const uploaded = await uploadToCloudinary(idProofFile, "animarket/users/id_proofs");
                 id_proof_img = uploaded.url;
+                id_proof_img_public_id = uploaded.public_id;
             }
 
             if (shopLogoFile) {
                 const uploaded = await uploadToCloudinary(shopLogoFile, "animarket/users/shop_logos");
                 shopLogo = uploaded.url;
+                shopLogo_public_id = uploaded.public_id;
             }
         } catch (error) {
             return res.status(500).json({ message: "Cloudinary upload failed", error: error.message, status: 500 });
@@ -89,16 +95,16 @@ export const registeringUser = async (req, res) => {
         }
 
         const emailOtp = otpGenerator.generate(6, {
-            lowerCaseAlphabets: false, 
-            upperCaseAlphabets: false, 
-            specialChars: false, 
+            lowerCaseAlphabets: false,
+            upperCaseAlphabets: false,
+            specialChars: false,
             digits: true
         });
 
         const phoneOtp = otpGenerator.generate(6, {
-            lowerCaseAlphabets: false, 
-            upperCaseAlphabets: false, 
-            specialChars: false, 
+            lowerCaseAlphabets: false,
+            upperCaseAlphabets: false,
+            specialChars: false,
             digits: true
         });
 
@@ -116,9 +122,24 @@ export const registeringUser = async (req, res) => {
 
         const saltValue = await bcrypt.genSalt(10);
         const hashpass = await bcrypt.hash(password, saltValue);
-        
+
         const saveUser = await User.create({
-            name, email, phone, password: hashpass, profile, gender, profile_img, id_Number, id_proof_img, category, shopName, shopAddress, shopLogo
+            name,
+            email,
+            phone,
+            password: hashpass,
+            profile,
+            gender,
+            profile_img,
+            profile_img_public_id,
+            id_Number,
+            id_proof_img,
+            id_proof_img_public_id,
+            category,
+            shopName,
+            shopAddress,
+            shopLogo,
+            shopLogo_public_id
         });
 
         if (saveUser) {

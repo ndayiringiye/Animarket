@@ -5,11 +5,16 @@ dotenv.config();
 
 const sendOtpByEmail = async (email, otp) => {
     try {
+        const { EMAIL_USER, EMAIL_PASS } = process.env;
+        if (!EMAIL_USER || !EMAIL_PASS) {
+            throw new Error("Missing EMAIL_USER or EMAIL_PASS environment variables for OTP email delivery.");
+        }
+
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
+                user: EMAIL_USER,
+                pass: EMAIL_PASS
             },
             connectionTimeout: 10000,
             greetingTimeout: 10000,
