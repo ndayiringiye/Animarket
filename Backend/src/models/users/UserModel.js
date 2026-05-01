@@ -22,6 +22,10 @@ const UserSchema = new mongoose.Schema({
     role: {
         type: String, enum: ["seller", "admin", "customer", "farmer", "veterinary"], default: "customer"
     },
+    resetToken: { type: String, default: null },
+    resetTokenExpiry: { type: Date, default: null },
+    resetOTP: { type: String, default: null },
+    resetOTPExpiry: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now },
 });
 

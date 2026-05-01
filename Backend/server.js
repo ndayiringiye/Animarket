@@ -8,6 +8,7 @@ import userRoutes from "./src/routes/userRoutes.js";
 import animalRoute from "./src/routes/Animal/animalRoutes.js";
 import agreement from "./src/routes/Agreements/agreementRoutes.js";
 import meetingRoute from "./src/routes/Meeting/meetingRoute.js";
+import hotelRoutes from "./src/routes/Hotels/hotelRoutes.js";
 const app = express();
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.get("/", (req , res ) =>{
 app.use("/api/users", userRoutes);
 app.use("/api/animal", animalRoute);
 app.use("/api/meeting", meetingRoute);
+app.use("/api/hotels", hotelRoutes);
 
 const startServer = async () => {
   try {
