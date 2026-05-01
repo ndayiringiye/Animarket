@@ -34,3 +34,33 @@ export const verifyToken = async (req, res, next) => {
         });
     }
 };
+
+export const authenticateUser = async (req, res, next) => {
+  try {
+    // req.userId must be set by verifyToken
+    if (!req.userId) {
+      return res.status(401).json({
+        message: "Unauthorized. No user ID found."
+      });
+    }
+
+    const user = await User.findById(req.userId).select("-password");
+
+    if (!user) {
+      return res.status(401).json({
+        message: "User not found."
+      });
+    }
+
+    // attach full user object
+    req.user = user;
+
+    next();
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Authentication failed",
+      error: error.message
+    });
+  }
+};

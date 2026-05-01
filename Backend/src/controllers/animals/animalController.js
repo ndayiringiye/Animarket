@@ -1,69 +1,127 @@
-import { AnimalService } from "../../services/animals/AnimalsService.js";
-
+import {
+  createAnimal,
+  getAllAnimals,
+  getAnimalById,
+  updateAnimal,
+  deleteAnimal
+} from "../../services/animals/AnimalsService.js";
 
 export const animalRegistering = async (req, res) => {
   try {
-    const animal = await AnimalService.createAnimal(req.body);
+    const animal = await createAnimal(req.body);
 
     return res.status(201).json({
-      message: "Animal registered successfully",
       status: 201,
+      message: "Animal registered successfully",
       data: animal
     });
 
   } catch (error) {
     return res.status(500).json({
-      message: "Animal registration failed",
       status: 500,
+      message: "Animal registration failed",
       error: error.message
     });
   }
 };
 
-
 export const getAnimals = async (req, res) => {
   try {
-    const animals = await AnimalService.getAllAnimals(req.query);
+    const result = await getAllAnimals(req.query);
 
     return res.status(200).json({
-      message: "Animals fetched successfully",
       status: 200,
-      data: animals
+      message: "Animals fetched successfully",
+      ...result 
     });
 
   } catch (error) {
     return res.status(500).json({
-      message: "Fetching animals failed",
       status: 500,
+      message: "Fetching animals failed",
       error: error.message
     });
   }
 };
 
-
-export const getAnimalById = async (req, res) => {
+export const getSingleAnimal = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const animal = await AnimalService.getAnimalById(id);
+    const animal = await getAnimalById(id);
 
     if (!animal) {
       return res.status(404).json({
-        message: "Animal not found",
-        status: 404
+        status: 404,
+        message: "Animal not found"
       });
     }
 
     return res.status(200).json({
-      message: "Animal fetched successfully",
       status: 200,
+      message: "Animal fetched successfully",
       data: animal
     });
 
   } catch (error) {
     return res.status(500).json({
-      message: "Fetching animal failed",
       status: 500,
+      message: "Fetching animal failed",
+      error: error.message
+    });
+  }
+};
+
+export const updateAnimalController = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const updatedAnimal = await updateAnimal(id, req.body);
+
+    if (!updatedAnimal) {
+      return res.status(404).json({
+        status: 404,
+        message: "Animal not found"
+      });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      message: "Animal updated successfully",
+      data: updatedAnimal
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      message: "Updating animal failed",
+      error: error.message
+    });
+  }
+};
+
+export const deleteAnimalController = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deleted = await deleteAnimal(id);
+
+    if (!deleted) {
+      return res.status(404).json({
+        status: 404,
+        message: "Animal not found"
+      });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      message: "Animal deleted successfully"
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      message: "Deleting animal failed",
       error: error.message
     });
   }

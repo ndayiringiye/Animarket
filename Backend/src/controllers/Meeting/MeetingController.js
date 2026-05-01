@@ -1,11 +1,11 @@
 import User from "../../models/users/UserModel.js";
 import Animal from "../../models/animals/AnimalModel.js";
-import Meeting from "../../models/meetings/MeetingModel.js";
+import Meeting from "../../models/Meetings/meettingModels.js";
 
 import { v4 as uuidv4 } from "uuid";
 import crypto from "crypto";
 
-export const createMeetingController = async (req, res) => {
+const createMeetingController = async (req, res) => {
     try {
         const {
             title,
@@ -103,7 +103,7 @@ export const createMeetingController = async (req, res) => {
     }
 };
 
-export const getUserMeetingsController = async (req, res) => {
+const getUserMeetingsController = async (req, res) => {
     try {
         const userId = req.user.id;
 
@@ -130,7 +130,7 @@ export const getUserMeetingsController = async (req, res) => {
     }
 };
 
-export const getSingleMeetingController = async (req, res) => {
+const getSingleMeetingController = async (req, res) => {
     try {
         const { meetingId } = req.params;
 
@@ -157,7 +157,7 @@ export const getSingleMeetingController = async (req, res) => {
 };
 
 
-export const acceptMeetingController = async (req, res) => {
+const acceptMeetingController = async (req, res) => {
     try {
         const userId = req.user.id;
         const { meetingId } = req.params;
@@ -190,7 +190,7 @@ export const acceptMeetingController = async (req, res) => {
 };
 
 
-export const joinMeetingController = async (req, res) => {
+const joinMeetingController = async (req, res) => {
     try {
         const userId = req.user.id;
         const { meetingId } = req.params;
@@ -232,7 +232,7 @@ export const joinMeetingController = async (req, res) => {
 // ===============================
 // ⏹ END MEETING
 // ===============================
-export const endMeetingController = async (req, res) => {
+const endMeetingController = async (req, res) => {
     try {
         const userId = req.user.id;
         const { meetingId } = req.params;
@@ -267,7 +267,7 @@ export const endMeetingController = async (req, res) => {
 // ===============================
 // ⭐ FEEDBACK
 // ===============================
-export const addFeedbackController = async (req, res) => {
+const addFeedbackController = async (req, res) => {
     try {
         const userId = req.user.id;
         const { meetingId } = req.params;
@@ -296,4 +296,14 @@ export const addFeedbackController = async (req, res) => {
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
+};
+
+export {
+    addFeedbackController,
+    createMeetingController,
+    getSingleMeetingController,
+    getUserMeetingsController,
+    acceptMeetingController,
+    joinMeetingController,
+    endMeetingController
 };

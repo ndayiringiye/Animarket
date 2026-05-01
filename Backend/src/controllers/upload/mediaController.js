@@ -1,4 +1,4 @@
-export const uploadMedia = async (req, res) => {
+ const upload = async (req, res) => {
   try {
     const { animalId } = req.params;
 
@@ -65,3 +65,5 @@ export const uploadMedia = async (req, res) => {
     });
   }
 };
+
+export  {upload};

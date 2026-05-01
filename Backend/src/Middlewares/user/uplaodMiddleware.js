@@ -7,9 +7,14 @@ const fileFilter = (req, file, cb) => {
     "image/png",
     "image/jpeg",
     "image/jpg",
+    "image/gif",
     "video/mp4",
     "video/mov",
-    "video/avi"
+    "video/avi",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain"
   ];
 
   if (allowedTypes.includes(file.mimetype)) {
@@ -19,6 +24,8 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+// ✅ CREATE INSTANCE
 const upload = multer({ storage, fileFilter });
 
-export default upload;
+// ✅ EXPORT NAMED (fixes your issue 100%)
+export default upload ;

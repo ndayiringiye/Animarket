@@ -8,13 +8,16 @@ const UserSchema = new mongoose.Schema({
     profile: { type: String, required: true },
     gender: { type: String, required: true },
     profile_img: { type: String, required: true },
+    profile_img_public_id: { type: String },
     isVerified: { type: Boolean, default: false },
     id_Number: { type: String, required: true },
     id_proof_img: { type: String, required: true },
+    id_proof_img_public_id: { type: String },
     category: { type: String, required: true, enum: ["Goat", "cow", "pigs", "sheep"] },
     shopName: { type: String, required: true },
-    shopAddress: { type: String, enum: ["home", "market", "farm"], required: true },
+    shopAddress: { type: String, required: true },
     shopLogo: { type: String, required: true },
+    shopLogo_public_id: { type: String },
     status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
     role: {
         type: String, enum: ["seller", "admin", "customer", "farmer", "veterinary"], default: "customer"

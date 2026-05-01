@@ -1,163 +1,191 @@
 import User from "../../models/users/UserModel.js";
+import Otp from "../../models/Otp/otpModel.js"; 
 import { validationResult } from "express-validator";
-import bcrypt from "bcrypt"
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import otpGenerator from "otp-generator";
 import nodemailer from "nodemailer";
 import { userRegisterationSchema, userLoginSchema } from "../../validoators/User/UserValidation.js";
 import sendOtpByEmail from "../../services/emails/emailServiceOtp.js";
+import { uploadToCloudinary } from "../upload/mediaService.js";
 
 export const registeringUser = async (req, res) => {
-    const { name, email, phone, password, profile, gender, profile_img, id_Number, id_proof_img, category, shopName, shopAddress, shopLogo } = req.body;
-    if (!name || !email || !phone || !password || !profile || !gender || !profile_img || !id_Number || !id_proof_img || !category || !shopName || !shopAddress || !shopLogo) {
-        return res.json({
-            message: "all fields are required",
-            status: 400
-        })
-    };
-    const result = userRegisterationSchema.validate(req.body);
-    if (result.error) {
-        return res.json({
-            message: result.error.details[0].message,
-            status: 400
-        })
-    }
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-        return res.json({
-            message: "user already exists",
-            status: 400
-        })
-    }
-    const otpGenerator = otpGenerator.generate(6, {
-        lowercaseOtp: false,
-        uppercaseOtp: false,
-        specialcharacters: false,
-        digits: true
-    });
-    const emailOtp = otpGenerator.generate(6, {
-        lowercaseOtp: false,
-        uppercaseOtp: false,
-        specialcharacters: false,
-        digits: true
-    });
+    try {
+        if (!req.body) {
+            return res.status(400).json({ message: "Request body is required", status: 400 });
+        }
 
-    const phoneOtp = otpGenerator.generate(6, {
-        lowercaseOtp: false,
-        uppercaseOtp: false,
-        specialcharacters: false,
-        digits: true
-    });
-    const sendeotpemail = await sendOtpByEmail(email, emailOtp);
-    if (!sendeotpemail) {
-        return res.json({
-            message: "OTP sent failed",
-            status: 500
-        })
-    }
-    const saveOtp = await Otp.create({
-        email: email,
-        emailOtp: emailOtp,
-        phone: phone,
-        phoneOtp: phoneOtp,
-    })
+        const {
+            name,
+            email,
+            phone,
+            password,
+            profile,
+            gender,
+            profile_img: profileImgBody,
+            id_Number,
+            id_proof_img: idProofBody,
+            category,
+            shopName,
+            shopAddress,
+            shopLogo: shopLogoBody
+        } = req.body;
 
-    const saltValue = await bcrypt.genSalt(10);
-    const hashpass = await bcrypt.hash(password, saltValue);
-    if (!hashpass) {
-        return res.json({
-            message: "password hashing failed",
-            status: 500
-        })
-    }
-    const saveUser = await User.create({
-        name,
-        email,
-        phone,
-        password: hashpass,
-        profile,
-        gender,
-        profile_img,
-        id_Number,
-        id_proof_img,
-        category,
-        shopName,
-        shopAddress,
-        shopLogo
-    })
-    if (saveUser) {
+        const profileFile = req.files?.profile_img?.[0];
+        const idProofFile = req.files?.id_proof_img?.[0];
+        const shopLogoFile = req.files?.shopLogo?.[0];
+
+        let profile_img = profileImgBody;
+        let profile_img_public_id = null;
+        let id_proof_img = idProofBody;
+        let id_proof_img_public_id = null;
+        let shopLogo = shopLogoBody;
+        let shopLogo_public_id = null;
+
         try {
-            return res.json({
+            if (profileFile) {
+                const uploaded = await uploadToCloudinary(profileFile, "animarket/users/profile_images");
+                profile_img = uploaded.url;
+                profile_img_public_id = uploaded.public_id;
+            }
+
+            if (idProofFile) {
+                const uploaded = await uploadToCloudinary(idProofFile, "animarket/users/id_proofs");
+                id_proof_img = uploaded.url;
+                id_proof_img_public_id = uploaded.public_id;
+            }
+
+            if (shopLogoFile) {
+                const uploaded = await uploadToCloudinary(shopLogoFile, "animarket/users/shop_logos");
+                shopLogo = uploaded.url;
+                shopLogo_public_id = uploaded.public_id;
+            }
+        } catch (error) {
+            return res.status(500).json({ message: "Cloudinary upload failed", error: error.message, status: 500 });
+        }
+
+        if (!name || !email || !password || !profile || !gender || !profile_img || !id_Number || !id_proof_img || !category || !shopName || !shopAddress || !shopLogo) {
+            return res.status(400).json({ message: "all fields are required", status: 400 });
+        }
+
+        const payload = {
+            name,
+            email,
+            phone,
+            password,
+            profile,
+            gender,
+            profile_img,
+            id_Number,
+            id_proof_img,
+            category,
+            shopName,
+            shopAddress,
+            shopLogo
+        };
+
+        const result = userRegisterationSchema.validate(payload);
+        if (result.error) {
+            return res.status(400).json({ message: result.error.details[0].message, status: 400 });
+        }
+
+        const userExists = await User.findOne({ email });
+        if (userExists) {
+            return res.json({ message: "user already exists", status: 400 });
+        }
+
+        const emailOtp = otpGenerator.generate(6, {
+            lowerCaseAlphabets: false,
+            upperCaseAlphabets: false,
+            specialChars: false,
+            digits: true
+        });
+
+        const phoneOtp = otpGenerator.generate(6, {
+            lowerCaseAlphabets: false,
+            upperCaseAlphabets: false,
+            specialChars: false,
+            digits: true
+        });
+
+        const sendeotpemail = await sendOtpByEmail(email, emailOtp);
+        if (!sendeotpemail) {
+            return res.status(500).json({ message: "OTP sent failed", status: 500 });
+        }
+
+        const saveOtp = await Otp.create({
+            email: email,
+            emailOtp: emailOtp,
+            phone: phone,
+            phoneOtp: phoneOtp,
+        });
+
+        const saltValue = await bcrypt.genSalt(10);
+        const hashpass = await bcrypt.hash(password, saltValue);
+
+        const saveUser = await User.create({
+            name,
+            email,
+            phone,
+            password: hashpass,
+            profile,
+            gender,
+            profile_img,
+            profile_img_public_id,
+            id_Number,
+            id_proof_img,
+            id_proof_img_public_id,
+            category,
+            shopName,
+            shopAddress,
+            shopLogo,
+            shopLogo_public_id
+        });
+
+        if (saveUser) {
+            return res.status(200).json({
                 message: "user registered successfully",
                 data: saveUser,
                 status: 200
-            })
-        } catch (error) {
-            return res.json({
-                message: "user registration failed",
-                error: error.message,
-                status: 500
-            })
+            });
         }
+
+        return res.status(500).json({ message: "User registration failed", status: 500 });
+    } catch (error) {
+        console.error("Registration error:", error);
+        return res.status(500).json({ message: "Internal server error", error: error.message, status: 500 });
     }
-
-
-
-
-}
+};
 
 export const LoginUser = async (req, res) => {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
-        return res.json({
-            message: "all fields are required",
-            status: 400
-        })
-    };
+        return res.json({ message: "all fields are required", status: 400 });
+    }
+
     const result = userLoginSchema.validate(req.body);
     if (result.error) {
-        return res.json({
-            message: result.error.details[0].message,
-            status: 400
-        })
+        return res.json({ message: result.error.details[0].message, status: 400 });
     }
+
     const userExists = await User.findOne({ email });
     if (!userExists) {
-        return res.json({
-            message: "user not found",
-            status: 404
-        })
+        return res.json({ message: "user not found", status: 404 });
     }
+
     const comparepass = await bcrypt.compare(password, userExists.password);
     if (comparepass) {
         const token = jwt.sign({ id: userExists._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
         return res.json({
-            message: "password is correct",
+            message: "login success",
             status: 200,
             token,
             user: userExists
-        })
+        });
     } else {
-        return res.json({
-            message: "invalid password",
-            status: 401
-        })
+        return res.json({ message: "invalid password", status: 401 });
     }
-    try {
-        return res.json({
-            message: "login success",
-            data: userExists,
-            status: 200,
-            token: token
-        })
-    } catch (error) {
-        return res.json({
-            message: "login failed",
-            error: error.message,
-            status: 500
-        })
-    }
-}
+};
 
 
 export const getAlluser = async (req, res) => {

@@ -1,5 +1,5 @@
 import Animal from "../../models/animals/AnimalModel.js";
-import { animalIsVerified } from "../../validators/Animal/animalvalidator.js";
+import { animalIsVerified } from "../../validoators/Animal/animalvalidator.js";
 
 // ─── CREATE ───────────────────────────────────────────────────────────────────
 export const createAnimal = async (req, res) => {
