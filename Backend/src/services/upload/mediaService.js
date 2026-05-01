@@ -1,4 +1,4 @@
-import cloudinary from "../config/cloudinary.js";
+import cloudinary from "../../config/cloudinary.js";
 import streamifier from "streamifier";
 
 // Upload single file
@@ -6,7 +6,9 @@ export const uploadToCloudinary = (file, folder = "animarket") => {
   return new Promise((resolve, reject) => {
     const resourceType = file.mimetype.startsWith("video")
       ? "video"
-      : "image";
+      : file.mimetype.startsWith("image")
+      ? "image"
+      : "raw";
 
     const stream = cloudinary.uploader.upload_stream(
       {

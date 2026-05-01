@@ -1,6 +1,5 @@
 import User from "../../models/users/UserModel.js";
-// Make sure you import your Otp model too
-// import Otp from "../../models/otp/OtpModel.js"; 
+import Otp from "../../models/Otp/otpModel.js"; 
 import { validationResult } from "express-validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -8,17 +7,79 @@ import otpGenerator from "otp-generator";
 import nodemailer from "nodemailer";
 import { userRegisterationSchema, userLoginSchema } from "../../validoators/User/UserValidation.js";
 import sendOtpByEmail from "../../services/emails/emailServiceOtp.js";
+import { uploadToCloudinary } from "../upload/mediaService.js";
 
 export const registeringUser = async (req, res) => {
-    const { name, email, phone, password, profile, gender, profile_img, id_Number, id_proof_img, category, shopName, shopAddress, shopLogo } = req.body;
-    
-    if (!name || !email || !phone || !password || !profile || !gender || !profile_img || !id_Number || !id_proof_img || !category || !shopName || !shopAddress || !shopLogo) {
-        return res.json({ message: "all fields are required", status: 400 });
+    if (!req.body) {
+        return res.status(400).json({ message: "Request body is required", status: 400 });
     }
 
-    const result = userRegisterationSchema.validate(req.body);
+    const {
+        name,
+        email,
+        phone,
+        password,
+        profile,
+        gender,
+        profile_img: profileImgBody,
+        id_Number,
+        id_proof_img: idProofBody,
+        category,
+        shopName,
+        shopAddress,
+        shopLogo: shopLogoBody
+    } = req.body;
+
+    const profileFile = req.files?.profile_img?.[0];
+    const idProofFile = req.files?.id_proof_img?.[0];
+    const shopLogoFile = req.files?.shopLogo?.[0];
+
+    let profile_img = profileImgBody;
+    let id_proof_img = idProofBody;
+    let shopLogo = shopLogoBody;
+
+    try {
+        if (profileFile) {
+            const uploaded = await uploadToCloudinary(profileFile, "animarket/users/profile_images");
+            profile_img = uploaded.url;
+        }
+
+        if (idProofFile) {
+            const uploaded = await uploadToCloudinary(idProofFile, "animarket/users/id_proofs");
+            id_proof_img = uploaded.url;
+        }
+
+        if (shopLogoFile) {
+            const uploaded = await uploadToCloudinary(shopLogoFile, "animarket/users/shop_logos");
+            shopLogo = uploaded.url;
+        }
+    } catch (error) {
+        return res.status(500).json({ message: "Cloudinary upload failed", error: error.message, status: 500 });
+    }
+
+    if (!name || !email || !phone || !password || !profile || !gender || !profile_img || !id_Number || !id_proof_img || !category || !shopName || !shopAddress || !shopLogo) {
+        return res.status(400).json({ message: "all fields are required", status: 400 });
+    }
+
+    const payload = {
+        name,
+        email,
+        phone,
+        password,
+        profile,
+        gender,
+        profile_img,
+        id_Number,
+        id_proof_img,
+        category,
+        shopName,
+        shopAddress,
+        shopLogo
+    };
+
+    const result = userRegisterationSchema.validate(payload);
     if (result.error) {
-        return res.json({ message: result.error.details[0].message, status: 400 });
+        return res.status(400).json({ message: result.error.details[0].message, status: 400 });
     }
 
     const userExists = await User.findOne({ email });
@@ -26,7 +87,6 @@ export const registeringUser = async (req, res) => {
         return res.json({ message: "user already exists", status: 400 });
     }
 
-    // FIX: Renamed the variables so they don't clash with the 'otpGenerator' import
     const emailOtp = otpGenerator.generate(6, {
         lowerCaseAlphabets: false, 
         upperCaseAlphabets: false, 
@@ -99,6 +159,7 @@ export const LoginUser = async (req, res) => {
         return res.json({ message: "invalid password", status: 401 });
     }
 };
+
 
 export const getAlluser = async (req, res) => {
     const user = await User.find({});
