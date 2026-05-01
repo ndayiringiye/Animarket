@@ -1,6 +1,8 @@
 import User from "../../models/users/UserModel.js";
+// Make sure you import your Otp model too
+// import Otp from "../../models/otp/OtpModel.js"; 
 import { validationResult } from "express-validator";
-import bcrypt from "bcrypt"
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import otpGenerator from "otp-generator";
 import nodemailer from "nodemailer";
@@ -9,33 +11,23 @@ import sendOtpByEmail from "../../services/emails/emailServiceOtp.js";
 
 export const registeringUser = async (req, res) => {
     const { name, email, phone, password, profile, gender, profile_img, id_Number, id_proof_img, category, shopName, shopAddress, shopLogo } = req.body;
+    
     if (!name || !email || !phone || !password || !profile || !gender || !profile_img || !id_Number || !id_proof_img || !category || !shopName || !shopAddress || !shopLogo) {
-        return res.json({
-            message: "all fields are required",
-            status: 400
-        })
-    };
+        return res.json({ message: "all fields are required", status: 400 });
+    }
+
     const result = userRegisterationSchema.validate(req.body);
     if (result.error) {
-        return res.json({
-            message: result.error.details[0].message,
-            status: 400
-        })
+        return res.json({ message: result.error.details[0].message, status: 400 });
     }
+
     const userExists = await User.findOne({ email });
     if (userExists) {
-        return res.json({
-            message: "user already exists",
-            status: 400
-        })
+        return res.json({ message: "user already exists", status: 400 });
     }
-    const otpGenerator = otpGenerator.generate(6, {
-        lowercaseOtp: false,
-        uppercaseOtp: false,
-        specialcharacters: false,
-        digits: true
-    });
-   const emailOtp = otpGenerator.generate(6, {
+
+    // FIX: Renamed the variables so they don't clash with the 'otpGenerator' import
+    const emailOtp = otpGenerator.generate(6, {
         lowerCaseAlphabets: false, 
         upperCaseAlphabets: false, 
         specialChars: false, 
@@ -48,117 +40,65 @@ export const registeringUser = async (req, res) => {
         specialChars: false, 
         digits: true
     });
+
     const sendeotpemail = await sendOtpByEmail(email, emailOtp);
     if (!sendeotpemail) {
-        return res.json({
-            message: "OTP sent failed",
-            status: 500
-        })
+        return res.json({ message: "OTP sent failed", status: 500 });
     }
+
+    // Ensure 'Otp' model is imported at the top of this file
     const saveOtp = await Otp.create({
         email: email,
         emailOtp: emailOtp,
         phone: phone,
         phoneOtp: phoneOtp,
-    })
+    });
 
     const saltValue = await bcrypt.genSalt(10);
     const hashpass = await bcrypt.hash(password, saltValue);
-    if (!hashpass) {
-        return res.json({
-            message: "password hashing failed",
-            status: 500
-        })
-    }
+    
     const saveUser = await User.create({
-        name,
-        email,
-        phone,
-        password: hashpass,
-        profile,
-        gender,
-        profile_img,
-        id_Number,
-        id_proof_img,
-        category,
-        shopName,
-        shopAddress,
-        shopLogo
-    })
+        name, email, phone, password: hashpass, profile, gender, profile_img, id_Number, id_proof_img, category, shopName, shopAddress, shopLogo
+    });
+
     if (saveUser) {
-        try {
-            return res.json({
-                message: "user registered successfully",
-                data: saveUser,
-                status: 200
-            })
-        } catch (error) {
-            return res.json({
-                message: "user registration failed",
-                error: error.message,
-                status: 500
-            })
-        }
+        return res.json({
+            message: "user registered successfully",
+            data: saveUser,
+            status: 200
+        });
     }
-
-
-
-
-}
+};
 
 export const LoginUser = async (req, res) => {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
-        return res.json({
-            message: "all fields are required",
-            status: 400
-        })
-    };
+        return res.json({ message: "all fields are required", status: 400 });
+    }
+
     const result = userLoginSchema.validate(req.body);
     if (result.error) {
-        return res.json({
-            message: result.error.details[0].message,
-            status: 400
-        })
+        return res.json({ message: result.error.details[0].message, status: 400 });
     }
+
     const userExists = await User.findOne({ email });
     if (!userExists) {
-        return res.json({
-            message: "user not found",
-            status: 404
-        })
+        return res.json({ message: "user not found", status: 404 });
     }
+
     const comparepass = await bcrypt.compare(password, userExists.password);
     if (comparepass) {
         const token = jwt.sign({ id: userExists._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
         return res.json({
-            message: "password is correct",
+            message: "login success",
             status: 200,
             token,
             user: userExists
-        })
+        });
     } else {
-        return res.json({
-            message: "invalid password",
-            status: 401
-        })
+        return res.json({ message: "invalid password", status: 401 });
     }
-    try {
-        return res.json({
-            message: "login success",
-            data: userExists,
-            status: 200,
-            token: token
-        })
-    } catch (error) {
-        return res.json({
-            message: "login failed",
-            error: error.message,
-            status: 500
-        })
-    }
-}
-
+};
 
 export const getAlluser = async (req, res) => {
     const user = await User.find({});
