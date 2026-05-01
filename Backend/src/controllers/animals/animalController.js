@@ -3,7 +3,8 @@ import {
   getAllAnimals,
   getAnimalById,
   updateAnimal,
-  deleteAnimal
+  deleteAnimal,
+  deleteAnimalMedia
 } from "../../services/animals/AnimalsService.js";
 
 export const animalRegistering = async (req, res) => {
@@ -122,6 +123,24 @@ export const deleteAnimalController = async (req, res) => {
     return res.status(500).json({
       status: 500,
       message: "Deleting animal failed",
+      error: error.message
+    });
+  }
+};
+
+export const deleteAnimalMediaController = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await deleteAnimalMedia(req, res);
+
+    // The service function handles the response directly
+    return result;
+
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      message: "Deleting animal media failed",
       error: error.message
     });
   }

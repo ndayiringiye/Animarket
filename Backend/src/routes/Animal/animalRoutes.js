@@ -5,7 +5,8 @@ import {
   getAnimals,
   getSingleAnimal,
   updateAnimalController,
-  deleteAnimalController
+  deleteAnimalController,
+  deleteAnimalMediaController
 } from "../../controllers/animals/animalController.js";
 
 import { verifyToken } from "../../Middlewares/Auth/authMiddleware.js";
@@ -20,7 +21,13 @@ router.post(
   "/animal/register",
   verifyToken,
   protectRolePostAnimal,
-  upload.array("media", 5), // ✅ now works
+  upload.fields([
+    { name: 'images', maxCount: 10 },
+    { name: 'videos', maxCount: 5 },
+    { name: 'previousOwnerAgreementPhoto', maxCount: 1 },
+    { name: 'previousOwnerIdPhoto', maxCount: 1 },
+    { name: 'vaccinationProofs', maxCount: 10 }
+  ]),
   animalRegistering
 );
 
@@ -31,7 +38,13 @@ router.put(
   "/animals/:id",
   verifyToken,
   protectRolePostAnimal,
-  upload.array("media", 5),
+  upload.fields([
+    { name: 'images', maxCount: 10 },
+    { name: 'videos', maxCount: 5 },
+    { name: 'previousOwnerAgreementPhoto', maxCount: 1 },
+    { name: 'previousOwnerIdPhoto', maxCount: 1 },
+    { name: 'vaccinationProofs', maxCount: 10 }
+  ]),
   updateAnimalController
 );
 
@@ -40,6 +53,13 @@ router.delete(
   verifyToken,
   protectRolePostAnimal,
   deleteAnimalController
+);
+
+router.delete(
+  "/animals/:id/media",
+  verifyToken,
+  protectRolePostAnimal,
+  deleteAnimalMediaController
 );
 
 router.get(
