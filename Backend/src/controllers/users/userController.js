@@ -23,3 +23,19 @@ export const deleteUser = async (req, res) => {
 export const updateUserRole = async (req, res) => {
     return await userServices.updateRole(req, res);
 };
+
+export const resetPassword = async (req, res) => {
+    return await userServices.resetPassword(req, res);
+};
+
+export const forgotPassword = async (req, res) => {
+    return await userServices.forgotPassword(req, res);
+};
+
+export const verifyResetOTP = async (req, res) => {
+    return await userServices.verifyResetOTP(req, res);
+};
+
+export const confirmResetPassword = async (req, res) => {
+    return await userServices.confirmResetPassword(req, res);
+};
