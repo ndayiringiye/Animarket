@@ -42,9 +42,9 @@ export const userRegisterationSchema = joi.object({
         "any.required": "Profile image is required",
         "string.empty": "Profile image is required"
     }),
-    id_Number: joi.string().length(12).pattern(/^[0-9]+$/).required().messages({
-        "string.length": "ID Number must be 12 digits",
-        "string.pattern.base": "ID Number must be 12 digits",
+    id_Number: joi.string().length(16).pattern(/^[0-9]+$/).required().messages({
+        "string.length": "ID Number must be 16 digits",
+        "string.pattern.base": "ID Number must be 16 digits",
         "any.required": "ID Number is required",
         "string.empty": "ID Number is required"
     }),

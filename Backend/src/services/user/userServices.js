@@ -35,17 +35,17 @@ export const registeringUser = async (req, res) => {
         specialcharacters: false,
         digits: true
     });
-    const emailOtp = otpGenerator.generate(6, {
-        lowercaseOtp: false,
-        uppercaseOtp: false,
-        specialcharacters: false,
+   const emailOtp = otpGenerator.generate(6, {
+        lowerCaseAlphabets: false, 
+        upperCaseAlphabets: false, 
+        specialChars: false, 
         digits: true
     });
 
     const phoneOtp = otpGenerator.generate(6, {
-        lowercaseOtp: false,
-        uppercaseOtp: false,
-        specialcharacters: false,
+        lowerCaseAlphabets: false, 
+        upperCaseAlphabets: false, 
+        specialChars: false, 
         digits: true
     });
     const sendeotpemail = await sendOtpByEmail(email, emailOtp);

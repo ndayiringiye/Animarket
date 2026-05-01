@@ -4,10 +4,8 @@ const { Schema } = mongoose;
 
 const agreementSchema = new Schema(
   {
-    
     title: { type: String, required: true, trim: true, maxlength: 120 },
     description: { type: String, trim: true },
-
 
     type: {
       type: String,
@@ -23,7 +21,6 @@ const agreementSchema = new Schema(
       requester: { type: Schema.Types.ObjectId, ref: "User" },
     },
 
-  
     animal: {
       animalId: { type: Schema.Types.ObjectId, ref: "Animal", required: true },
       name: String,
@@ -46,7 +43,6 @@ const agreementSchema = new Schema(
       cost: Number,
     },
 
-   
     price: { type: Number, required: true, min: 0 },
     currency: { type: String, default: "RWF" },
 
@@ -61,7 +57,6 @@ const agreementSchema = new Schema(
       enum: ["pending", "paid", "failed", "refunded"],
       default: "pending",
     },
-
     transactionId: { type: String, required: true, unique: true },
 
     signatures: {
@@ -70,10 +65,8 @@ const agreementSchema = new Schema(
       vet: String,
     },
 
- 
     location: { type: String, required: true },
     deliveryDate: Date,
-
 
     status: {
       type: String,
@@ -81,19 +74,15 @@ const agreementSchema = new Schema(
       default: "pending",
     },
 
-  
     pdfUrl: String,
     emailSent: { type: Boolean, default: false },
 
-   
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );
 
-
-agreementSchema.index({ transactionId: 1 });
 agreementSchema.index({ "parties.buyer": 1, "parties.seller": 1 });
 
 const Agreement = mongoose.model("Agreement", agreementSchema);
