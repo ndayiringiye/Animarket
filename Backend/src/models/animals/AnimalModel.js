@@ -25,6 +25,8 @@ const AnimalSchema = new mongoose.Schema({
                     type: String,
                     enum: ["image", "video", "pdf", "text"],
                 },
+                vaccinationProofUrl: String,
+                vaccinationProofPublicId: String,
                 extention: {
                     type: String,
                     enum: ["png", "jpg", "jpeg", "mp4", "pdf", "text"]
@@ -65,13 +67,17 @@ const AnimalSchema = new mongoose.Schema({
     previousOwnerName: { type: String, required: false },
     previousOwnerPhone: { type: String, required: false },
     previousOwnerAgreementPhoto: { type: String, required: false },
+    previousOwnerAgreementPhotoPublicId: { type: String },
     previousOwnerIdType: { type: String, required: false },
     previousOwnerIdNumber: { type: String, required: false },
     previousOwnerIdPhoto: { type: String, required: false },
+    previousOwnerIdPhotoPublicId: { type: String },
     previousOwnerGender: { type: String, required: false },
     previousOwnerAge: { type: Number, required: false },
     images: [String],
+    imagesPublicIds: [String],
     videos: [String],
+    videosPublicIds: [String],
     weight: {
         type: Number,
         required: false,
