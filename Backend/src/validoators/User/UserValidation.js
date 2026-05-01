@@ -9,11 +9,9 @@ export const userRegisterationSchema = joi.object({
         "any.required": "Email is required",
         "string.empty": "Email is required"
     }),
-    phone: joi.string().required().length(10).pattern(/^[0-9]+$/).required().messages({
+    phone: joi.string().length(10).pattern(/^[0-9]+$/).optional().messages({
         "string.length": "Phone number must be 10 digits",
-        "string.pattern.base": "Phone number must be 10 digits",
-        "any.required": "Phone number is required",
-        "string.empty": "Phone number is required"
+        "string.pattern.base": "Phone number must be 10 digits"
     }),
     password: joi.string().required().messages({
         "string.length": "Password must be at least 8 characters",
