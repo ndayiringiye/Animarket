@@ -141,7 +141,6 @@ const HotelSchema = new mongoose.Schema(
 );
 
 // Index for faster queries
-HotelSchema.index({ email: 1 });
 HotelSchema.index({ hotelName: 1 });
 HotelSchema.index({ status: 1 });
 HotelSchema.index({ parentHotel: 1 });
