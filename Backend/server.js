@@ -18,6 +18,7 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 const PORT = process.env.PORT || 4000;
