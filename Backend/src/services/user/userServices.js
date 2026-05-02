@@ -97,7 +97,6 @@ export const registeringUser = async (req, res) => {
             return res.status(500).json({ message: "File upload failed", error: error.message, status: 500 });
         }
 
-        // Debug log to see what values we have
         console.log("Debug - Values after upload:", {
             name, email, password, profile, gender, profile_img, id_Number, id_proof_img, category, shopName, shopAddress, shopLogo
         });
@@ -213,9 +212,13 @@ export const registeringUser = async (req, res) => {
 };
 
 export const LoginUser = async (req, res) => {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-        return res.json({ message: "all fields are required", status: 400 });
+    if (!req.body) {
+        return res.status(400).json({ message: "Request body is required", status: 400 });
+    }
+
+    const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({ message: "email and password are required", status: 400 });
     }
 
     const result = userLoginSchema.validate(req.body);
