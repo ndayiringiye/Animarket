@@ -37,6 +37,12 @@ export const registeringUser = async (req, res) => {
         const idProofFile = req.files?.id_proof_img?.[0];
         const shopLogoFile = req.files?.shopLogo?.[0];
 
+        console.log("Files received:", {
+            profile_img: profileFile ? "yes" : "MISSING",
+            id_proof_img: idProofFile ? "yes" : "MISSING",
+            shopLogo: shopLogoFile ? "yes" : "MISSING"
+        });
+
         let profile_img = profileImgBody;
         let profile_img_public_id = null;
         let id_proof_img = idProofBody;
@@ -46,28 +52,75 @@ export const registeringUser = async (req, res) => {
 
         try {
             if (profileFile) {
-                const uploaded = await uploadToCloudinary(profileFile, "animarket/users/profile_images");
-                profile_img = uploaded.url;
-                profile_img_public_id = uploaded.public_id;
+                try {
+                    const uploaded = await uploadToCloudinary(profileFile, "animarket/users/profile_images");
+                    profile_img = uploaded.url;
+                    profile_img_public_id = uploaded.public_id;
+                    console.log("profile_img uploaded successfully");
+                } catch (err) {
+                    console.error("profile_img upload error:", err.message);
+                    throw err;
+                }
+            } else {
+                console.warn("profile_img file not received");
             }
 
             if (idProofFile) {
-                const uploaded = await uploadToCloudinary(idProofFile, "animarket/users/id_proofs");
-                id_proof_img = uploaded.url;
-                id_proof_img_public_id = uploaded.public_id;
+                try {
+                    const uploaded = await uploadToCloudinary(idProofFile, "animarket/users/id_proofs");
+                    id_proof_img = uploaded.url;
+                    id_proof_img_public_id = uploaded.public_id;
+                    console.log("id_proof_img uploaded successfully");
+                } catch (err) {
+                    console.error("id_proof_img upload error:", err.message);
+                    throw err;
+                }
+            } else {
+                console.warn("id_proof_img file not received");
             }
 
             if (shopLogoFile) {
-                const uploaded = await uploadToCloudinary(shopLogoFile, "animarket/users/shop_logos");
-                shopLogo = uploaded.url;
-                shopLogo_public_id = uploaded.public_id;
+                try {
+                    const uploaded = await uploadToCloudinary(shopLogoFile, "animarket/users/shop_logos");
+                    shopLogo = uploaded.url;
+                    shopLogo_public_id = uploaded.public_id;
+                    console.log("shopLogo uploaded successfully");
+                } catch (err) {
+                    console.error("shopLogo upload error:", err.message);
+                    throw err;
+                }
+            } else {
+                console.warn("shopLogo file not received");
             }
         } catch (error) {
-            return res.status(500).json({ message: "Cloudinary upload failed", error: error.message, status: 500 });
+            console.error("File upload error:", error);
+            return res.status(500).json({ message: "File upload failed", error: error.message, status: 500 });
         }
 
+        // Debug log to see what values we have
+        console.log("Debug - Values after upload:", {
+            name, email, password, profile, gender, profile_img, id_Number, id_proof_img, category, shopName, shopAddress, shopLogo
+        });
+
         if (!name || !email || !password || !profile || !gender || !profile_img || !id_Number || !id_proof_img || !category || !shopName || !shopAddress || !shopLogo) {
-            return res.status(400).json({ message: "all fields are required", status: 400 });
+            return res.status(400).json({ 
+                message: "all fields are required", 
+                status: 400,
+                missing: {
+                    name: !name,
+                    email: !email,
+                    password: !password,
+                    profile: !profile,
+                    gender: !gender,
+                    profile_img: !profile_img,
+                    id_Number: !id_Number,
+                    id_proof_img: !id_proof_img,
+                    category: !category,
+                    shopName: !shopName,
+                    shopAddress: !shopAddress,
+                    shopLogo: !shopLogo
+                }
+            });
         }
 
         const payload = {
