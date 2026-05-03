@@ -3,6 +3,7 @@ import * as userController from '../controllers/users/userController.js';
 import { verifyToken } from '../Middlewares/Auth/authMiddleware.js';
 import { isAdmin } from '../Middlewares/Admin/amindMiddleware.js';
 import upload from '../Middlewares/user/uplaodMiddleware.js';
+import { getAllUsers, getUserById,  deleteUser, updateUserRole, verifyResetOTP } from '../controllers/users/userController.js';
 const router = express.Router();
 
 router.post(
