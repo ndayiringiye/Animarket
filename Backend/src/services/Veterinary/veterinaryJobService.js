@@ -6,6 +6,7 @@ import User from "../../models/users/UserModel.js";
 import QRCode from "qrcode";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import { uploadToCloudinary, uploadMultipleFiles } from "../upload/mediaService.js";
 
 dotenv.config();
 
