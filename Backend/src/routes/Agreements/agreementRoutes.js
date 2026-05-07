@@ -11,9 +11,6 @@ import { releaseEscrowPayment } from "../../services/score/escrowService.js";
 const router = express.Router();
 
 
-// ─────────────────────────────
-// 🧾 CREATE AGREEMENT
-// ─────────────────────────────
 router.post(
   "/agreements",
   verifyToken,
@@ -36,9 +33,7 @@ router.post(
 );
 
 
-// ─────────────────────────────
-// ✍️ SIGN AGREEMENT
-// ─────────────────────────────
+
 router.put("/agreements/:id/sign", verifyToken, async (req, res) => {
   try {
     const { signature } = req.body;

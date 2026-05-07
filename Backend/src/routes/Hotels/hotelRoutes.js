@@ -41,4 +41,20 @@ router.post('/agreements/:agreementId/accept', hotelAgreementController.acceptAg
 router.post('/agreements/:agreementId/reject', hotelAgreementController.rejectAgreement);
 router.post('/agreements/:agreementId/terminate', hotelAgreementController.terminateAgreement);
 
+// Animal Booking Routes
+router.post('/:hotelId/book-animal', hotelController.bookAnimalForHotel);
+router.get('/:hotelId/bookings', hotelController.getHotelBookings);
+router.put('/bookings/:bookingId/status', hotelController.updateBookingStatus);
+
+// Rating Routes
+router.post('/:hotelId/rate', hotelController.rateHotel);
+
+// Hotel-Seller Agreement Routes
+router.post('/:hotelId/seller-agreements/create', hotelController.createHotelSellerAgreement);
+router.get('/:hotelId/seller-agreements', hotelController.getHotelSellerAgreements);
+router.post('/seller-agreements/:agreementId/send', hotelController.sendAgreementToSeller);
+
+// Meeting Routes
+router.post('/:hotelId/meetings/create', hotelController.createHotelMeeting);
+
 export default router;

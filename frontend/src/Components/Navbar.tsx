@@ -26,7 +26,6 @@ const Navbar = () => {
   return (
     <nav className="font-nunito">
 
-      {/* ── Announcement Bar ── */}
       <div className="bg-red-700 text-white text-center text-xs font-semibold tracking-wide py-1.5 px-4">
         <span className="opacity-85 mx-3">
           FREE SHIPPING on orders over <span className="text-yellow-300 font-bold">$49</span>
@@ -39,7 +38,6 @@ const Navbar = () => {
         </span>
       </div>
 
-      {/* ── Top Utility Bar ── */}
       <div className="bg-[#0d1220] border-b border-[#1e2a3a] px-6 py-1.5 flex justify-end items-center gap-4">
         {['Help Center', 'Track Order', 'Sell on Animarket'].map((link, i) => (
           <span key={i} className="flex items-center gap-4">
@@ -54,10 +52,8 @@ const Navbar = () => {
         <a href="#" className="text-[#9aa5b4] text-xs hover:text-red-500 transition-colors">Register</a>
       </div>
 
-      {/* ── Main Bar ── */}
       <div className="bg-[#111827] px-6 py-3 flex items-center gap-4">
 
-        {/* Brand Logo */}
         <NavLink to="/" className="flex items-center gap-2.5 shrink-0">
           <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center font-cinzel font-black text-xl text-white">
             A
@@ -68,7 +64,6 @@ const Navbar = () => {
           </div>
         </NavLink>
 
-        {/* Browse Button */}
         <button className="flex items-center gap-1.5 bg-[#1e2a3a] text-[#9aa5b4] border border-[#2a3a4e] rounded-lg px-3.5 py-2.5 text-sm font-semibold whitespace-nowrap shrink-0 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-200">
           <Menu size={15} />
           Browse
@@ -99,22 +94,18 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* Icon Actions */}
         <div className="flex items-center gap-1 shrink-0">
-          {/* Saved */}
           <NavLink to="/saved" className="relative flex flex-col items-center gap-0.5 p-2 rounded-lg text-[#9aa5b4] hover:text-red-500 hover:bg-[#1e2a3a] transition-all">
             <Heart size={20} />
             <span className="text-[10px] font-semibold">Saved</span>
             <span className="absolute top-1 right-1 w-4 h-4 bg-red-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-[#111827]">3</span>
           </NavLink>
 
-          {/* Account */}
           <NavLink to="/account" className="flex flex-col items-center gap-0.5 p-2 rounded-lg text-[#9aa5b4] hover:text-red-500 hover:bg-[#1e2a3a] transition-all">
             <User size={20} />
             <span className="text-[10px] font-semibold">Account</span>
           </NavLink>
 
-          {/* Cart */}
           <NavLink to="/cart" className="relative flex flex-col items-center gap-0.5 p-2 rounded-lg text-[#9aa5b4] hover:text-red-500 hover:bg-[#1e2a3a] transition-all">
             <ShoppingCart size={20} />
             <span className="text-[10px] font-semibold">Cart</span>
@@ -123,7 +114,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* ── Category Nav Bar ── */}
       <div className="bg-[#0f172a] border-t border-[#1e2a3a] border-b-2 border-b-red-600 px-6 flex items-stretch overflow-x-auto scrollbar-none">
 
         {/* Home */}
@@ -140,8 +130,6 @@ const Navbar = () => {
           <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
           Home
         </NavLink>
-
-        {/* Saved */}
         <NavLink
           to="/saved"
           className={({ isActive }) =>
@@ -156,7 +144,6 @@ const Navbar = () => {
           Saved
         </NavLink>
 
-        {/* Category Links */}
         {navLinks.map(({ to, label }) => (
           <NavLink
             key={to}
@@ -173,7 +160,6 @@ const Navbar = () => {
           </NavLink>
         ))}
 
-        {/* Deals — Gold accent */}
         <NavLink
           to="/deals"
           className={({ isActive }) =>
@@ -187,7 +173,6 @@ const Navbar = () => {
           Deals
         </NavLink>
 
-        {/* Sell */}
         <NavLink
           to="/sell"
           className={({ isActive }) =>

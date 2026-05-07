@@ -9,7 +9,6 @@ import sendOtpByEmail from "../../services/emails/emailServiceOtp.js";
 import sendPasswordResetEmail from "../../services/emails/passwordResetEmailService.js";
 import { uploadToCloudinary } from "../upload/mediaService.js";
 
-// ====================== REGISTER USER ======================
 export const registeringUser = async (req, res) => {
     try {
         const {
@@ -25,7 +24,6 @@ export const registeringUser = async (req, res) => {
         let id_proof_img = null, id_proof_img_public_id = null;
         let shopLogo = null, shopLogo_public_id = null;
 
-        // Upload Files
         if (profileFile) {
             const uploaded = await uploadToCloudinary(profileFile, "animarket/users/profile_images");
             profile_img = uploaded.url;
@@ -47,35 +45,28 @@ export const registeringUser = async (req, res) => {
             category, shopName, shopAddress, profile_img, id_proof_img, shopLogo
         };
 
-        // Validation
         const result = userRegisterationSchema.validate(payload);
         if (result.error) {
             return res.status(400).json({ message: result.error.details[0].message, status: 400 });
         }
 
-        // Check existing user
         if (await User.findOne({ email })) {
             return res.status(400).json({ message: "User already exists", status: 400 });
         }
 
-        // Generate OTPs
         const emailOtp = otpGenerator.generate(6, { digits: true });
         const phoneOtp = otpGenerator.generate(6, { digits: true });
 
-        // Send OTP Email
         const emailSent = await sendOtpByEmail(email, emailOtp);
         if (!emailSent) {
             return res.status(500).json({ message: "Failed to send OTP", status: 500 });
         }
 
-        // Save OTP
         await Otp.create({ email, emailOtp, phone, phoneOtp });
 
-        // Hash Password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Create User (Force role as customer)
         const newUser = await User.create({
             ...payload,
             password: hashedPassword,
@@ -84,11 +75,8 @@ export const registeringUser = async (req, res) => {
             id_proof_img,
             id_proof_img_public_id,
             shopLogo,
-            shopLogo_public_id,
-            role: "customer",        // ← Forced
-            status: "pending"
+            shopLogo_public_id
         });
-
         return res.status(201).json({
             message: "User registered successfully. Awaiting admin approval.",
             data: newUser,
@@ -101,7 +89,6 @@ export const registeringUser = async (req, res) => {
     }
 };
 
-// ====================== LOGIN ======================
 export const LoginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -121,7 +108,7 @@ export const LoginUser = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ message: "Invalid password", status: 401 });
 
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "48hours" });
 
         return res.status(200).json({
             message: "Login successful",
@@ -134,7 +121,6 @@ export const LoginUser = async (req, res) => {
     }
 };
 
-// ====================== GET ALL USERS ======================
 export const getAlluser = async (req, res) => {
     try {
         const users = await User.find({}).select("-password");
@@ -148,7 +134,6 @@ export const getAlluser = async (req, res) => {
     }
 };
 
-// ====================== GET ONE USER ======================
 export const getoneUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id).select("-password");
@@ -164,7 +149,6 @@ export const getoneUser = async (req, res) => {
     }
 };
 
-// ====================== DELETE USER ======================
 export const deleteUser = async (req, res) => {
     try {
         const user = await User.findByIdAndDelete(req.params.id);
@@ -176,7 +160,6 @@ export const deleteUser = async (req, res) => {
     }
 };
 
-// ====================== UPDATE ROLE ======================
 export const updateRole = async (req, res) => {
     try {
         const { role } = req.body;
@@ -195,7 +178,6 @@ export const updateRole = async (req, res) => {
     }
 };
 
-// ====================== VERIFY USER ======================
 export const verifyUser = async (req, res) => {
     try {
         const { isVerified } = req.body;
@@ -216,7 +198,6 @@ export const verifyUser = async (req, res) => {
     }
 };
 
-// ====================== LOGOUT ======================
 export const userloggout = async (req, res) => {
     try {
         const user = await User.findByIdAndUpdate(req.params.id, { token: null }, { new: true });
@@ -228,7 +209,6 @@ export const userloggout = async (req, res) => {
     }
 };
 
-// ====================== RESET PASSWORD ======================
 export const resetPassword = async (req, res) => {
     try {
         const { email, oldPassword, newPassword, confirmPassword } = req.body;
@@ -260,7 +240,6 @@ export const resetPassword = async (req, res) => {
     }
 };
 
-// ====================== FORGOT PASSWORD ======================
 export const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -294,7 +273,6 @@ export const forgotPassword = async (req, res) => {
     }
 };
 
-// ====================== VERIFY RESET OTP ======================
 export const verifyResetOTP = async (req, res) => {
     try {
         const { email, resetOTP } = req.body;
@@ -317,7 +295,6 @@ export const verifyResetOTP = async (req, res) => {
     }
 };
 
-// ====================== CONFIRM RESET PASSWORD ======================
 export const confirmResetPassword = async (req, res) => {
     try {
         const { resetToken, newPassword, confirmPassword } = req.body;
