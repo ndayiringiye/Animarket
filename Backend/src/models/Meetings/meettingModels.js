@@ -10,20 +10,27 @@ const MeetingSchema = new mongoose.Schema({
     description: String,
     organizer: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
         required: true
+    },
+    organizerType: {
+        type: String,
+        enum: ["user", "hotel"],
+        default: "user"
     },
     participants: [
         {
             user: {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: "User",
                 required: true
             },
-
+            type: {
+                type: String,
+                enum: ["user", "hotel"],
+                default: "user"
+            },
             role: {
                 type: String,
-                enum: ["seller", "admin", "customer", "farmer", "veterinary"],
+                enum: ["seller", "admin", "customer", "farmer", "veterinary", "hotel"],
                 required: true
             },
 
