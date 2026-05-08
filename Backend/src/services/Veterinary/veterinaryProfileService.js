@@ -3,6 +3,10 @@ import VeterinaryInnovation from "../../models/Veterinary/veterinaryInnovationMo
 import User from "../../models/users/UserModel.js";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import {
+  uploadToCloudinary,
+  uploadMultipleFiles,
+} from "../upload/mediaService.js";
 
 dotenv.config();
 

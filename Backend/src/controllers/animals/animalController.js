@@ -9,7 +9,7 @@ import {
 
 export const animalRegistering = async (req, res) => {
   try {
-    const animal = await createAnimal(req.body);
+    const animal = await createAnimal(req);
 
     return res.status(201).json({
       status: 201,
@@ -77,7 +77,7 @@ export const updateAnimalController = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const updatedAnimal = await updateAnimal(id, req.body);
+    const updatedAnimal = await updateAnimal(id, req);
 
     if (!updatedAnimal) {
       return res.status(404).json({
