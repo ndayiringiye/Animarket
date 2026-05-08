@@ -8,19 +8,25 @@ const VeterinarianProfileSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+
     licenseNumber: {
       type: String,
       required: true,
       unique: true,
     },
+
     licenseIssueDate: Date,
     licenseExpiryDate: Date,
+
     licenseDocument: {
       url: String,
       publicId: String,
     },
-    specializations: [String], // e.g., ["Bovine Health", "Surgery", "Nutrition"]
+
+    specializations: [String],
+
     yearsOfExperience: Number,
+
     education: [
       {
         institution: String,
@@ -29,6 +35,7 @@ const VeterinarianProfileSchema = new mongoose.Schema(
         graduationYear: Number,
       },
     ],
+
     certifications: [
       {
         name: String,
@@ -39,12 +46,16 @@ const VeterinarianProfileSchema = new mongoose.Schema(
         publicId: String,
       },
     ],
+
     languages: [String],
+
     about: String,
+
     profileImage: {
       url: String,
       publicId: String,
     },
+
     location: {
       address: String,
       city: String,
@@ -52,24 +63,43 @@ const VeterinarianProfileSchema = new mongoose.Schema(
       latitude: Number,
       longitude: Number,
     },
+
     availability: {
       isAvailable: Boolean,
       availableHoursPerWeek: Number,
       timezone: String,
     },
+
     consultation: {
       offersRemoteConsultation: Boolean,
       offersOnSiteVisit: Boolean,
       hourlyRate: Number,
       currency: { type: String, default: "RWF" },
     },
+
     reputation: {
-      averageRating: { type: Number, min: 0, max: 5, default: 0 },
-      totalRatings: { type: Number, default: 0 },
-      totalCompletedJobs: { type: Number, default: 0 },
+      averageRating: {
+        type: Number,
+        min: 0,
+        max: 5,
+        default: 0,
+      },
+
+      totalRatings: {
+        type: Number,
+        default: 0,
+      },
+
+      totalCompletedJobs: {
+        type: Number,
+        default: 0,
+      },
+
       responseTimeHours: Number,
-      clientSatisfactionRate: Number, // 0-100 percentage
+
+      clientSatisfactionRate: Number,
     },
+
     bankDetails: {
       bankName: String,
       accountHolderName: String,
@@ -77,59 +107,64 @@ const VeterinarianProfileSchema = new mongoose.Schema(
       swiftCode: String,
       ibanNumber: String,
     },
+
     isVerified: {
       type: Boolean,
       default: false,
     },
+
     verificationDocument: {
       url: String,
       publicId: String,
     },
+
     backgroundCheckStatus: {
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
+
     backgroundCheckDocument: {
       url: String,
       publicId: String,
     },
+
     status: {
       type: String,
       enum: ["active", "inactive", "suspended"],
       default: "active",
     },
+
     jobPostingsApplied: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "VeterinaryJobPosting",
       },
     ],
+
     applicationsCount: {
       type: Number,
       default: 0,
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-// Index for faster queries
-VeterinarianProfileSchema.index({ userId: 1 });
-VeterinarianProfileSchema.index({ licenseNumber: 1 });
+// Keep ONLY non-duplicate indexes
 VeterinarianProfileSchema.index({ specializations: 1 });
 VeterinarianProfileSchema.index({ "reputation.averageRating": -1 });
-VeterinarianProfileSchema.index({ city: 1, country: 1 });
+
+// FIXED nested location index
+VeterinarianProfileSchema.index({
+  "location.city": 1,
+  "location.country": 1,
+});
 
 const VeterinarianProfile = mongoose.model(
   "VeterinarianProfile",
   VeterinarianProfileSchema
 );
+
 export default VeterinarianProfile;
