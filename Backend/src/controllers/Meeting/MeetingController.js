@@ -229,9 +229,7 @@ const joinMeetingController = async (req, res) => {
 };
 
 
-// ===============================
-// ⏹ END MEETING
-// ===============================
+
 const endMeetingController = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -264,9 +262,6 @@ const endMeetingController = async (req, res) => {
 };
 
 
-// ===============================
-// ⭐ FEEDBACK
-// ===============================
 const addFeedbackController = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -297,6 +292,7 @@ const addFeedbackController = async (req, res) => {
         return res.status(500).json({ message: error.message });
     }
 };
+
 
 export {
     addFeedbackController,

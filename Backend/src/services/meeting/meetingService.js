@@ -197,3 +197,35 @@ export const addFeedbackService = async (meetingId, userId, data) => {
 
     return meeting;
 };
+
+const getZoomAccessToken = async () => {
+    const auth = Buffer.from(`${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`).toString('base64');
+    const response = await axios.post(
+        `https://zoom.us{process.env.ZOOM_ACCOUNT_ID}`,
+        {},
+        { headers: { Authorization: `Basic ${auth}` } }
+    );
+    return response.data.access_token;
+};
+
+const createZoomMeeting = async (meetingDetails) => {
+    const token = await getZoomAccessToken();
+    const response = await axios.post(
+        "https://zoom.us",
+        {
+            topic: meetingDetails.title,
+            type: 2, // Scheduled meeting
+            start_time: meetingDetails.meetingDate,
+            duration: meetingDetails.durationMinutes,
+            agenda: meetingDetails.description,
+            settings: {
+                host_video: true,
+                participant_video: true,
+                join_before_host: false,
+                waiting_room: true
+            }
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data; // This contains the real join_url and meeting password
+};
