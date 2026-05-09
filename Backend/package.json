@@ -32,6 +32,7 @@
     "pdfkit": "^0.18.0",
     "peerjs": "^1.5.5",
     "qrcode": "^1.5.4",
+    "react-signature-canvas": "^1.1.0-alpha.2",
     "streamifier": "^0.1.1",
     "stripe": "^22.1.0",
     "uuid": "^14.0.0"
