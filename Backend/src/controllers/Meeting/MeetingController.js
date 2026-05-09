@@ -5,11 +5,12 @@ import {
     acceptMeetingService,
     joinMeetingService,
     endMeetingService,
-    addFeedbackService
+    addFeedbackService,
+    startMeetingService,
+    cancelMeetingService
 } from "../../services/meeting/meetingService.js";
 
-
-const createMeetingController = async (req, res) => {
+export const createMeetingController = async (req, res) => {
     try {
         const meeting = await createMeetingService(req);
 
@@ -20,56 +21,69 @@ const createMeetingController = async (req, res) => {
                 : "Meeting scheduled successfully",
             data: meeting
         });
-
     } catch (error) {
-        console.error("Create Meeting Error:", error);
-        return res.status(500).json({
-            success: false,
-            message: error.message || "Server error"
-        });
+        console.error(error);
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 
+export const startMeetingController = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { meetingId } = req.params;
 
-const getUserMeetingsController = async (req, res) => {
+        const meeting = await startMeetingService(meetingId, userId);
+
+        return res.status(200).json({
+            success: true,
+            message: "Meeting started successfully",
+            data: meeting
+        });
+    } catch (error) {
+        return res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const cancelMeetingController = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { meetingId } = req.params;
+
+        const meeting = await cancelMeetingService(meetingId, userId);
+
+        return res.status(200).json({
+            success: true,
+            message: "Meeting cancelled successfully",
+            data: meeting
+        });
+    } catch (error) {
+        return res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const getUserMeetingsController = async (req, res) => {
     try {
         const userId = req.user.id;
         const meetings = await getUserMeetingsService(userId);
 
-        return res.status(200).json({
-            success: true,
-            data: meetings
-        });
-
+        return res.status(200).json({ success: true, data: meetings });
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 
-
-const getSingleMeetingController = async (req, res) => {
+export const getSingleMeetingController = async (req, res) => {
     try {
         const { meetingId } = req.params;
         const meeting = await getSingleMeetingService(meetingId);
 
-        return res.status(200).json({
-            success: true,
-            data: meeting
-        });
-
+        return res.status(200).json({ success: true, data: meeting });
     } catch (error) {
-        return res.status(404).json({
-            success: false,
-            message: error.message
-        });
+        return res.status(404).json({ success: false, message: error.message });
     }
 };
 
-
-const acceptMeetingController = async (req, res) => {
+export const acceptMeetingController = async (req, res) => {
     try {
         const userId = req.user.id;
         const { meetingId } = req.params;
@@ -78,20 +92,15 @@ const acceptMeetingController = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Meeting accepted successfully",
+            message: "Meeting accepted",
             data: meeting
         });
-
     } catch (error) {
-        return res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
-
-const joinMeetingController = async (req, res) => {
+export const joinMeetingController = async (req, res) => {
     try {
         const userId = req.user.id;
         const { meetingId } = req.params;
@@ -101,19 +110,14 @@ const joinMeetingController = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Joined meeting successfully",
-            ...data   // Returns meetingLink, startUrl, password, token, provider
+            ...data
         });
-
     } catch (error) {
-        return res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
-
-const endMeetingController = async (req, res) => {
+export const endMeetingController = async (req, res) => {
     try {
         const userId = req.user.id;
         const { meetingId } = req.params;
@@ -125,17 +129,12 @@ const endMeetingController = async (req, res) => {
             message: "Meeting ended successfully",
             data: meeting
         });
-
     } catch (error) {
-        return res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
-
-const addFeedbackController = async (req, res) => {
+export const addFeedbackController = async (req, res) => {
     try {
         const userId = req.user.id;
         const { meetingId } = req.params;
@@ -148,21 +147,7 @@ const addFeedbackController = async (req, res) => {
             message: "Feedback added successfully",
             data: meeting
         });
-
     } catch (error) {
-        return res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        return res.status(400).json({ success: false, message: error.message });
     }
-};
-
-export {
-    createMeetingController,
-    getUserMeetingsController,
-    getSingleMeetingController,
-    acceptMeetingController,
-    joinMeetingController,
-    endMeetingController,
-    addFeedbackController
 };

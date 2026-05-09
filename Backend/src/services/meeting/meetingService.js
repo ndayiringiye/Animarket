@@ -4,6 +4,7 @@ import Meeting from "../../models/Meetings/meettingModels.js";
 
 import { v4 as uuidv4 } from "uuid";
 import crypto from "crypto";
+
 let cachedToken = null;
 let tokenExpiry = null;
 
@@ -42,7 +43,7 @@ export const createRealZoomMeeting = async (details) => {
 
     const payload = {
         topic: details.title,
-        type: 2, // Scheduled meeting
+        type: 2, // Scheduled
         start_time: details.meetingDate,
         duration: details.durationMinutes || 30,
         timezone: details.timezone || "Africa/Kigali",
@@ -82,15 +83,8 @@ export const createRealZoomMeeting = async (details) => {
 
 export const createMeetingService = async (req) => {
     const {
-        title,
-        description,
-        participants,
-        meetingType,
-        animalId,
-        meetingDate,
-        durationMinutes,
-        provider = "webrtc",
-        timezone
+        title, description, participants, meetingType, animalId,
+        meetingDate, durationMinutes, provider = "webrtc", timezone
     } = req.body;
 
     const userId = req.user.id;
@@ -120,7 +114,6 @@ export const createMeetingService = async (req) => {
         if (!animal) throw new Error("Animal not found");
     }
 
-    // Default videoCall object
     let videoCall = {
         provider,
         meetingId: uuidv4(),
@@ -130,30 +123,20 @@ export const createMeetingService = async (req) => {
 
     let zoomMeetingData = null;
 
-    // ============= STRONG ZOOM INTEGRATION =============
     if (provider === "zoom") {
         const zoomResult = await createRealZoomMeeting({
-            title,
-            description,
-            meetingDate,
-            durationMinutes,
-            timezone
+            title, description, meetingDate, durationMinutes, timezone
         });
-
-        videoCall = {
-            ...videoCall,
-            ...zoomResult
-        };
+        videoCall = { ...videoCall, ...zoomResult };
         zoomMeetingData = zoomResult.zoomMeetingData;
     } else {
-        // WebRTC / Custom link
         videoCall.meetingLink = `${process.env.FRONTEND_URL}/meeting/${videoCall.meetingId}`;
     }
 
     const meeting = await Meeting.create({
         title,
         description,
-        organizer: organizer._id,
+        organizer: userId,
         organizerType: "user",
         participants: validParticipants,
         meetingType,
@@ -165,6 +148,35 @@ export const createMeetingService = async (req) => {
         zoomMeetingData,
         status: "pending"
     });
+
+    return meeting;
+};
+
+export const startMeetingService = async (meetingId, userId) => {
+    const meeting = await Meeting.findById(meetingId);
+    if (!meeting) throw new Error("Meeting not found");
+
+    if (meeting.organizer.toString() !== userId) {
+        throw new Error("Only organizer can start the meeting");
+    }
+
+    meeting.status = "ongoing";
+    meeting.lastJoinedAt = new Date();
+    await meeting.save();
+
+    return meeting;
+};
+
+export const cancelMeetingService = async (meetingId, userId) => {
+    const meeting = await Meeting.findById(meetingId);
+    if (!meeting) throw new Error("Meeting not found");
+
+    if (meeting.organizer.toString() !== userId) {
+        throw new Error("Only organizer can cancel the meeting");
+    }
+
+    meeting.status = "cancelled";
+    await meeting.save();
 
     return meeting;
 };
@@ -219,8 +231,8 @@ export const joinMeetingService = async (meetingId, userId) => {
 
     return {
         meetingLink: meeting.videoCall.meetingLink,
-        startUrl: meeting.videoCall.startUrl,        // For organizer (Zoom)
-        password: meeting.videoCall.password,        // For Zoom
+        startUrl: meeting.videoCall.startUrl,
+        password: meeting.videoCall.password,
         token: meeting.videoCall.participantToken,
         provider: meeting.videoCall.provider
     };
