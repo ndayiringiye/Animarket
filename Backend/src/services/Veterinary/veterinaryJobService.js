@@ -6,7 +6,10 @@ import User from "../../models/users/UserModel.js";
 import QRCode from "qrcode";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-import { uploadToCloudinary, uploadMultipleFiles } from "../upload/mediaService.js";
+import {
+  uploadToCloudinary,
+  uploadMultipleFiles,
+} from "../upload/mediaService.js";
 
 dotenv.config();
 
@@ -150,7 +153,7 @@ export const getJobPosting = async (req, res) => {
     const jobPosting = await VeterinaryJobPosting.findByIdAndUpdate(
       jobId,
       { $inc: { views: 1 } },
-      { new: true }
+      { new: true },
     )
       .populate("postedBy", "name email phone")
       .populate("hotelId", "hotelName city")
@@ -209,7 +212,7 @@ export const updateJobPosting = async (req, res) => {
     const updatedJobPosting = await VeterinaryJobPosting.findByIdAndUpdate(
       jobId,
       updates,
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     return res.status(200).json({
@@ -232,14 +235,38 @@ export const updateJobPosting = async (req, res) => {
 // Submit application
 export const submitApplication = async (req, res) => {
   try {
-    const {
-      jobPostingId,
-      applicantId,
-      coverLetter,
-      resume,
-      certifications,
-      qualifications,
-    } = req.body;
+    const { jobPostingId, applicantId, coverLetter, qualifications } = req.body;
+
+    // Handle file uploads
+    const resumeFile = req.files?.resume?.[0];
+    const certificationFiles = req.files?.certifications || [];
+    let resume = null;
+    let certifications = [];
+
+    // Upload resume if provided
+    if (resumeFile) {
+      const uploadedResume = await uploadToCloudinary(
+        resumeFile,
+        `animarket/veterinarians/${applicantId}/resume`,
+      );
+      resume = {
+        url: uploadedResume.url,
+        publicId: uploadedResume.public_id,
+      };
+    }
+
+    // Upload certifications if provided
+    if (certificationFiles.length > 0) {
+      const uploadedCerts = await uploadMultipleFiles(
+        certificationFiles,
+        `animarket/veterinarians/${applicantId}/certifications`,
+      );
+      certifications = uploadedCerts.map((cert) => ({
+        name: cert.original_filename || "Certificate",
+        certificateUrl: cert.url,
+        publicId: cert.public_id,
+      }));
+    }
 
     // Verify job posting exists
     const jobPosting = await VeterinaryJobPosting.findById(jobPostingId);
@@ -360,12 +387,8 @@ export const getJobApplications = async (req, res) => {
 export const evaluateApplication = async (req, res) => {
   try {
     const { applicationId } = req.params;
-    const {
-      evaluationScore,
-      evaluationNotes,
-      selectedForRole,
-      evaluatorId,
-    } = req.body;
+    const { evaluationScore, evaluationNotes, selectedForRole, evaluatorId } =
+      req.body;
 
     const application = await VeterinarianApplication.findByIdAndUpdate(
       applicationId,
@@ -377,7 +400,7 @@ export const evaluateApplication = async (req, res) => {
         evaluationDate: new Date(),
         status: selectedForRole ? "shortlisted" : "under_review",
       },
-      { new: true }
+      { new: true },
     ).populate("applicantId");
 
     if (!application) {
@@ -436,7 +459,7 @@ export const acceptSelectedVeterinarian = async (req, res) => {
         acceptanceDate: new Date(),
         status: "accepted",
       },
-      { new: true }
+      { new: true },
     )
       .populate("applicantId")
       .populate("jobPostingId");

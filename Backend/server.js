@@ -9,6 +9,9 @@ import animalRoute from "./src/routes/Animal/animalRoutes.js";
 import agreement from "./src/routes/Agreements/agreementRoutes.js";
 import meetingRoute from "./src/routes/Meeting/meetingRoute.js";
 import hotelRoutes from "./src/routes/Hotels/hotelRoutes.js";
+import veterinaryRoutes from "./src/routes/Veterinary/veterinaryRoutes.js";
+import agreemenRoutes from "./src/routes/Agreements/agreementRoutes.js";
+import HotelsRoutes from "./src/routes/Hotels/hotelRoutes.js";
 const app = express();
 dotenv.config();
 
@@ -31,7 +34,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/animal", animalRoute);
 app.use("/api/meeting", meetingRoute);
 app.use("/api/hotels", hotelRoutes);
-
+app.use("/api/veterinary", veterinaryRoutes);
+app.use("/api/agreements", agreemenRoutes);   
 const startServer = async () => {
   try {
     await connectDB();

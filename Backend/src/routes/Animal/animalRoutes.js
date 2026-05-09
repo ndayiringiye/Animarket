@@ -22,9 +22,9 @@ router.post(
   verifyToken,
   protectRolePostAnimal,
   upload.fields([
-    { name: 'images', maxCount: 10 },
-    { name: 'videos', maxCount: 5 },
-    { name: 'previousOwnerAgreementPhoto', maxCount: 1 },
+    { name: 'image', maxCount: 10 },
+    { name: 'video', maxCount: 5 },
+    { name: 'previousOwnerAgreement', maxCount: 1 },
     { name: 'previousOwnerIdPhoto', maxCount: 1 },
     { name: 'vaccinationProofs', maxCount: 10 }
   ]),
@@ -39,9 +39,9 @@ router.put(
   verifyToken,
   protectRolePostAnimal,
   upload.fields([
-    { name: 'images', maxCount: 10 },
-    { name: 'videos', maxCount: 5 },
-    { name: 'previousOwnerAgreementPhoto', maxCount: 1 },
+    { name: 'image', maxCount: 10 },
+    { name: 'video', maxCount: 5 },
+    { name: 'previousOwnerAgreement', maxCount: 1 },
     { name: 'previousOwnerIdPhoto', maxCount: 1 },
     { name: 'vaccinationProofs', maxCount: 10 }
   ]),
