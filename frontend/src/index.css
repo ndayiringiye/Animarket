@@ -1,3 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+
+:root {
+  /* DARK MODE FOUNDATION */
+  --bg: #0C0E12; 
+  --surface: #16191F;
+  --surface-container: #1E232B;
+
+  /* LOGO-ALIGNED PRIMARY: Professional Sage & Emerald */
+  /* Replaces the Purple/Blue from the image with "Wellness Green" */
+  --primary: #10B981;    /* Main action color */
+  --secondary: #059669;  /* Deep forest for depth */
+  --accent: #34D399;     /* Mint for highlights/hover */
+  
+  /* LOGO-ALIGNED HIGHLIGHT: Golden Amber */
+  /* Used for the "Impact" and "Marketing" energy */
+  --highlight: #F59E0B; 
+
+  --text: #F8FAFC;
+  --text-secondary: #94A3B8;
+
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --sale: #EF4444; 
+
+  --border: rgba(255, 255, 255, 0.06);
+
+  /* BRAND GRADIENTS: Updated for a "Natural" look */
+  --gradient-primary: linear-gradient(
+    135deg,
+    #10B981, /* Sage */
+    #059669  /* Emerald */
+  );
+
+  /* Use this for "Sale" badges or "Impact" sections */
+  --gradient-orange: linear-gradient(
+    135deg,
+    #F59E0B, 
+    #D97706
+  );
+}
