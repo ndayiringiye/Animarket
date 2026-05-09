@@ -16,7 +16,7 @@ import {
     validateCreateMeeting,
     validateMeetingId,
     validateFeedback
-} from "../../validators/meetingValidator.js";
+} from "../../validoators/meetings/meetingValidator.js";
 
 const router = express.Router();
 
