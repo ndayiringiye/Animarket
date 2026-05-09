@@ -8,7 +8,6 @@ import QRCode from "qrcode";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
-import crypto from "crypto";
 import otpGenerator from "otp-generator";
 import sendPasswordResetEmail from "../../services/emails/passwordResetEmailService.js";
 import { v4 as uuidv4 } from "uuid";
