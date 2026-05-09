@@ -1,24 +1,36 @@
+// routes/Hotels/hotelRoutes.js
 import express from 'express';
 import * as hotelController from '../../controllers/Hotels/hotelController.js';
 import * as hotelAgreementController from '../../controllers/Hotels/hotelAgreementController.js';
 import { verifyToken } from '../../Middlewares/Auth/authMiddleware.js';
-import { isAdmin } from '../../Middlewares/Admin/amindMiddleware.js';
-import upload from '../../Middlewares/user/uplaodMiddleware.js';
+import { isAdmin } from '../../Middlewares/Admin/amindMiddleware.js'; // Fixed typo
+import upload from '../../Middlewares/user/uplaodMiddleware.js'; // Fixed typo
 
 const router = express.Router();
 
-// Hotel Registration & Authentication Routes
+
+// Hotel Registration & Authentication
 router.post('/register', hotelController.registerHotel);
 router.post('/login', hotelController.hotelLogin);
 
-// Hotel Profile Routes (require authentication)
-router.get('/:hotelId/profile', hotelController.getHotelProfile);
-router.put('/:hotelId/profile', hotelController.updateHotelProfile);
+// Password Reset Routes
+router.post('/forgot-password', hotelController.hotelForgotPassword);
+router.post('/verify-otp', hotelController.hotelVerifyResetOTP);
+router.post('/reset-password', hotelController.hotelConfirmResetPassword);
+
+// Search Hotels (Public)
+router.get('/search', hotelController.searchHotels);
+
+// ====================== PROTECTED ROUTES (Require Authentication) ======================
+
+// Hotel Profile
+router.get('/:hotelId/profile', verifyToken, hotelController.getHotelProfile);
+router.put('/:hotelId/profile', verifyToken, hotelController.updateHotelProfile);
 
 // Child Hotels Management
-router.get('/:hotelId/child-hotels', hotelController.getChildHotels);
+router.get('/:hotelId/child-hotels', verifyToken, hotelController.getChildHotels);
 
-// Admin Routes - Authorize hotel registration
+// Authorize Hotel for Child Registration (Admin Only)
 router.post(
   '/:hotelId/authorize-registration',
   verifyToken,
@@ -26,35 +38,132 @@ router.post(
   hotelController.authorizeHotelRegistration
 );
 
-// Hotel Agreement Routes
-router.post('/agreements/create', hotelAgreementController.createHotelAgreement);
-router.get('/agreements/:agreementId', hotelAgreementController.getHotelAgreement);
-router.get('/:hotelId/agreements', hotelAgreementController.getHotelAgreements);
-router.put('/agreements/:agreementId', hotelAgreementController.updateHotelAgreement);
 
-// Agreement Workflow Routes
+router.get(
+  '/all',
+  verifyToken,
+  isAdmin,
+  hotelController.getAllHotels
+);
+
+router.put(
+  '/:hotelId/approve',
+  verifyToken,
+  isAdmin,
+  hotelController.approveHotel
+);
+
+// ====================== STATISTICS ======================
+
+router.get(
+  '/:hotelId/statistics',
+  verifyToken,
+  hotelController.getHotelStatistics
+);
+
+
+router.post(
+  '/:hotelId/book-animal',
+  verifyToken,
+  hotelController.bookAnimalForHotel
+);
+
+router.get(
+  '/:hotelId/bookings',
+  verifyToken,
+  hotelController.getHotelBookings
+);
+
+router.put(
+  '/bookings/:bookingId/status',
+  verifyToken,
+  hotelController.updateBookingStatus
+);
+
+// ====================== RATING ROUTES ======================
+
+router.post(
+  '/:hotelId/rate',
+  verifyToken,
+  hotelController.rateHotel
+);
+
+// ====================== HOTEL AGREEMENT ROUTES ======================
+
+router.post(
+  '/agreements/create',
+  verifyToken,
+  hotelAgreementController.createHotelAgreement
+);
+
+router.get(
+  '/agreements/:agreementId',
+  verifyToken,
+  hotelAgreementController.getHotelAgreement
+);
+
+router.get(
+  '/:hotelId/agreements',
+  verifyToken,
+  hotelAgreementController.getHotelAgreements
+);
+
+router.put(
+  '/agreements/:agreementId',
+  verifyToken,
+  hotelAgreementController.updateHotelAgreement
+);
+
+// Agreement Workflow
 router.post(
   '/agreements/:agreementId/send/:recipientHotelId',
+  verifyToken,
   hotelAgreementController.sendAgreementForApproval
 );
-router.post('/agreements/:agreementId/accept', hotelAgreementController.acceptAgreement);
-router.post('/agreements/:agreementId/reject', hotelAgreementController.rejectAgreement);
-router.post('/agreements/:agreementId/terminate', hotelAgreementController.terminateAgreement);
 
-// Animal Booking Routes
-router.post('/:hotelId/book-animal', hotelController.bookAnimalForHotel);
-router.get('/:hotelId/bookings', hotelController.getHotelBookings);
-router.put('/bookings/:bookingId/status', hotelController.updateBookingStatus);
+router.post(
+  '/agreements/:agreementId/accept',
+  verifyToken,
+  hotelAgreementController.acceptAgreement
+);
 
-// Rating Routes
-router.post('/:hotelId/rate', hotelController.rateHotel);
+router.post(
+  '/agreements/:agreementId/reject',
+  verifyToken,
+  hotelAgreementController.rejectAgreement
+);
 
-// Hotel-Seller Agreement Routes
-router.post('/:hotelId/seller-agreements/create', hotelController.createHotelSellerAgreement);
-router.get('/:hotelId/seller-agreements', hotelController.getHotelSellerAgreements);
-router.post('/seller-agreements/:agreementId/send', hotelController.sendAgreementToSeller);
+router.post(
+  '/agreements/:agreementId/terminate',
+  verifyToken,
+  hotelAgreementController.terminateAgreement
+);
 
-// Meeting Routes
-router.post('/:hotelId/meetings/create', hotelController.createHotelMeeting);
+
+router.post(
+  '/:hotelId/seller-agreements/create',
+  verifyToken,
+  hotelController.createHotelSellerAgreement
+);
+
+router.get(
+  '/:hotelId/seller-agreements',
+  verifyToken,
+  hotelController.getHotelSellerAgreements
+);
+
+router.post(
+  '/seller-agreements/:agreementId/send',
+  verifyToken,
+  hotelController.sendAgreementToSeller
+);
+
+// ====================== MEETING ROUTES ======================
+
+router.post(
+  '/:hotelId/meetings/create',
+  verifyToken,
+  hotelController.createHotelMeeting
+);
 
 export default router;
