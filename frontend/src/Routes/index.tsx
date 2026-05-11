@@ -1,17 +1,18 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Home from '../Pages/Home';
+// import Home from '../Pages/Home';
 import About from '../Pages/About';
 import Contact from '../Pages/Contact';
 import Navbar from '../Components/Navbar';
-
+import Home from "../Components/Home/HeroSection"
 const AppRoutes = () => (
   <BrowserRouter>
     <Navbar />
     <Routes>
+      <Route path='/home' element={<Home />} />
       <Route path='/' element={<Home />} />
       <Route path='/about' element={<About />} />
       <Route path='/contact' element={<Contact />} />
-      <Route path='*' element={<Navigate to='/' replace />} />
+      {/* <Route path='*' element={<Navigate to='/' replace />} /> */}
     </Routes>
   </BrowserRouter>
 );
