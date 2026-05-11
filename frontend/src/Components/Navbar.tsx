@@ -1,190 +1,294 @@
 import { NavLink } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  Heart, User, ShoppingCart, Menu, ChevronDown, Search
+  Heart,
+  User,
+  ShoppingCart,
+  Menu,
+  ChevronDown,
+  Search,
+  Tag,
+  RotateCcw,
+  Truck,
 } from 'lucide-react';
+import { useTheme } from '../Contexts/ThemeContext';
+import { MdDarkMode } from 'react-icons/md';
+import { FaSun } from 'react-icons/fa';
+import { GrAnnounce } from 'react-icons/gr';
+import { IoLocationOutline } from 'react-icons/io5';
+import { SiContributorcovenant } from 'react-icons/si';
+import { HiUserGroup } from 'react-icons/hi2';
+import { SiWechat } from 'react-icons/si';
+import { SiKingstontechnology } from 'react-icons/si';
 
+const slides = [
+  {
+    icon: <Tag size={15} />,
+    text: (
+      <>
+        🎉 <strong>First purchase?</strong> Enjoy an exclusive{' '}
+        <span className="text-[var(--highlight)] font-extrabold">20% OFF</span> — automatically applied at checkout!
+      </>
+    ),
+  },
+  {
+    icon: <RotateCcw size={15} />,
+    text: (
+      <>
+        💰 <strong>Loyalty reward:</strong> Get{' '}
+        <span className="text-[var(--highlight)] font-extrabold">10% cashback</span> credited to your wallet within{' '}
+        <span className="text-[var(--highlight)] font-extrabold">3 months</span> of your first order!
+      </>
+    ),
+  },
+  {
+    icon: <Truck size={15} />,
+    text: (
+      <>
+        🚚 <strong>FREE SHIPPING</strong> on orders over{' '}
+        <span className="text-[var(--highlight)] font-extrabold">$49</span> • New drops every Friday • Code{' '}
+        <span className="text-[var(--highlight)] font-extrabold">OTAKU15</span> = 15% OFF
+      </>
+    ),
+  },
+];
+
+const SlidingBanner = () => {
+  const [current, setCurrent] = useState(0);
+  const [animating, setAnimating] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAnimating(true);
+      setTimeout(() => {
+        setCurrent((prev) => (prev + 1) % slides.length);
+        setAnimating(false);
+      }, 400);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="relative overflow-hidden bg-gradient-to-r from-[#0f1923] via-[#1a2535] to-[#0f1923] text-white text-center text-xs py-2.5 tracking-wide select-none">
+      {/* Decorative shimmer line */}
+      <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[var(--highlight)] to-transparent opacity-60" />
+      <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-[var(--primary)] to-transparent opacity-40" />
+
+      <div
+        key={current}
+        style={{
+          animation: animating
+            ? 'slideOut 0.4s ease forwards'
+            : 'slideIn 0.45s cubic-bezier(0.22,1,0.36,1) forwards',
+        }}
+        className="flex items-center justify-center gap-2 px-4"
+      >
+        <span className="text-[var(--highlight)]">{slides[current].icon}</span>
+        <span className="text-[var(--text-secondary)]">{slides[current].text}</span>
+      </div>
+
+      {/* Dot indicators */}
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-1.5">
+        {slides.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrent(i)}
+            className={`rounded-full transition-all duration-300 ${
+              i === current
+                ? 'w-4 h-1.5 bg-[var(--highlight)]'
+                : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/60'
+            }`}
+          />
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideOut {
+          from { opacity: 1; transform: translateY(0); }
+          to   { opacity: 0; transform: translateY(-10px); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+/* ─── Nav Link Config ─────────────────────────────────────────── */
 const Navbar = () => {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All');
+  const { theme, toggleTheme } = useTheme();
 
-  const categories = [
-    'All', 'Figures', 'Manga', 'Apparel', 'Art Prints', 'Cosplay',
-  ];
+  const categories = ['All', 'Cows', 'Goats', 'Horses', 'Pigs', 'Chicken', 'Sheep'];
 
   const navLinks = [
-    { to: '/figures',       label: 'Figures & Statues' },
-    { to: '/manga',         label: 'Manga & Books' },
-    { to: '/apparel',       label: 'Apparel' },
-    { to: '/collectibles',  label: 'Collectibles & Art' },
-    { to: '/posters',       label: 'Posters & Prints' },
-    { to: '/cosplay',       label: 'Cosplay' },
-    { to: '/accessories',   label: 'Accessories' },
-    { to: '/home-decor',    label: 'Home & Decor' },
+    { to: '/promotions',    label: 'Promotions',  icon: <GrAnnounce size={15} /> },
+    { to: '/contact-us',    label: 'Contact Us',  icon: <SiWechat size={15} /> },
+    { to: '/location',      label: 'Location',    icon: <IoLocationOutline size={15} /> },
+    { to: '/our-partnership', label: 'Partnership', icon: <SiContributorcovenant size={15} /> },
+    { to: '/about-us',      label: 'About Us',    icon: <HiUserGroup size={15} /> },
+    { to: '/our-services',  label: 'Services',    icon: <SiKingstontechnology size={15} /> },
   ];
 
   return (
-    <nav className="font-nunito">
+    <nav className="font-nunito sticky top-0 z-50 bg-[var(--bg)] border-b border-[var(--border)]">
 
-      <div className="bg-red-700 text-white text-center text-xs font-semibold tracking-wide py-1.5 px-4">
-        <span className="opacity-85 mx-3">
-          FREE SHIPPING on orders over <span className="text-yellow-300 font-bold">$49</span>
-        </span>
-        <span className="opacity-40">|</span>
-        <span className="opacity-85 mx-3">NEW SEASON DROPS every Friday</span>
-        <span className="opacity-40">|</span>
-        <span className="opacity-85 mx-3">
-          Use code <span className="text-yellow-300 font-bold">OTAKU15</span> for 15% off
-        </span>
-      </div>
+      {/* ── 1. Animated Sliding Banner ── */}
+      <SlidingBanner />
 
-      <div className="bg-[#0d1220] border-b border-[#1e2a3a] px-6 py-1.5 flex justify-end items-center gap-4">
-        {['Help Center', 'Track Order', 'Sell on Animarket'].map((link, i) => (
-          <span key={i} className="flex items-center gap-4">
-            <a href="#" className="text-[#9aa5b4] text-xs hover:text-red-500 transition-colors">
-              {link}
-            </a>
-            <span className="text-[#2a3547] text-xs">|</span>
-          </span>
+      {/* ── 2. Secondary Utility Bar ── */}
+      <div className="bg-[var(--surface)] px-6 py-2 flex justify-end items-center gap-6 text-xs border-b border-[var(--border)]">
+        {['Help Center', 'Track Order', 'Sell on Animarket'].map((text) => (
+          <a
+            key={text}
+            href="#"
+            className="text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors"
+          >
+            {text}
+          </a>
         ))}
-        <a href="#" className="text-[#9aa5b4] text-xs hover:text-red-500 transition-colors">Sign In</a>
-        <span className="text-[#2a3547] text-xs">|</span>
-        <a href="#" className="text-[#9aa5b4] text-xs hover:text-red-500 transition-colors">Register</a>
+        <div className="flex items-center gap-4">
+          <a href="#" className="text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors font-medium">
+            Sign In
+          </a>
+          <span className="text-[var(--border)]">|</span>
+          <a
+            href="#"
+            className="bg-[var(--primary)] hover:bg-[var(--secondary)] text-white text-xs font-semibold px-3 py-2 rounded-md transition-colors"
+          >
+            Register
+          </a>
+        </div>
       </div>
+      <div className="bg-[var(--surface-container)] px-6 py-3.5 flex items-center gap-5">
 
-      <div className="bg-[#111827] px-6 py-3 flex items-center gap-4">
-
-        <NavLink to="/" className="flex items-center gap-2.5 shrink-0">
-          <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center font-cinzel font-black text-xl text-white">
-            A
-          </div>
-          <div className="font-cinzel font-bold text-xl leading-none">
-            <div className="text-white tracking-wide">ANI</div>
-            <div className="text-red-500 tracking-wide">MARKET</div>
-          </div>
+        <NavLink to="/" className="flex-shrink-0">
+          <img src="/images/brand.png" alt="Animarket" className="h-14 w-auto" />
         </NavLink>
 
-        <button className="flex items-center gap-1.5 bg-[#1e2a3a] text-[#9aa5b4] border border-[#2a3a4e] rounded-lg px-3.5 py-2.5 text-sm font-semibold whitespace-nowrap shrink-0 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-200">
-          <Menu size={15} />
+        {/* Browse Button */}
+        <button className="flex items-center gap-2 bg-[var(--primary)] hover:bg-[var(--secondary)] text-white px-5 py-3 rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-[var(--primary)]/40 hover:shadow-lg shrink-0">
+          <Menu size={18} />
           Browse
-          <ChevronDown size={13} className="mt-0.5" />
+          <ChevronDown size={14} />
         </button>
 
         {/* Search Bar */}
-        <div className="flex flex-1 border-2 border-red-600 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-red-500/30 min-w-0">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search anime figures, manga, cosplay..."
-            className="flex-1 bg-[#1a2332] text-slate-200 placeholder-slate-600 px-4 py-2.5 text-sm focus:outline-none min-w-0"
-          />
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="bg-red-600 text-white border-l border-white/20 px-3 py-2.5 text-sm font-semibold cursor-pointer focus:outline-none shrink-0"
-          >
-            {categories.map((c) => (
-              <option key={c} value={c} className="bg-[#1a2332] text-slate-200">{c}</option>
-            ))}
-          </select>
-          <button className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 text-sm font-bold transition-colors shrink-0 flex items-center gap-2">
-            <Search size={15} />
-            Search
-          </button>
+        <div className="flex-1 max-w-2xl">
+          <div className="flex border-2 border-[var(--primary)] rounded-2xl overflow-hidden  bg-[var(--surface)] shadow-sm">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search animals, locations, breeders..."
+              className="flex-1 bg-transparent px-5 py-3 text-sm placeholder-[var(--text-secondary)] focus:outline-none text-[var(--text)]"
+            />
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="bg-[var(--surface-container)] text-[var(--text)] border-l border-[var(--border)] px-3 py-3 text-sm font-medium focus:outline-none cursor-pointer"
+            >
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+            <button className="bg-[var(--primary)] hover:bg-[var(--secondary)] px-6 text-white font-semibold flex items-center gap-2 transition-colors">
+              <Search size={18} />
+              <span className="hidden sm:inline">Search</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1 shrink-0">
-          <NavLink to="/saved" className="relative flex flex-col items-center gap-0.5 p-2 rounded-lg text-[#9aa5b4] hover:text-red-500 hover:bg-[#1e2a3a] transition-all">
-            <Heart size={20} />
-            <span className="text-[10px] font-semibold">Saved</span>
-            <span className="absolute top-1 right-1 w-4 h-4 bg-red-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-[#111827]">3</span>
+        {/* Right Icons */}
+        <div className="flex items-center gap-1 ml-auto">
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="p-2.5 rounded-xl hover:bg-[var(--surface)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text)]"
+            title="Toggle Theme"
+          >
+            {theme === 'dark' ? <MdDarkMode size={22} /> : <FaSun size={22} />}
+          </button>
+
+          {/* Language */}
+          <select className="bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] rounded-xl px-2.5 py-2.5 text-sm font-medium focus:outline-none cursor-pointer">
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+            <option value="fr">FR</option>
+            <option value="rw">RW</option>
+          </select>
+
+          {/* Wishlist */}
+          <NavLink
+            to="/wishlist"
+            className="p-2.5 text-[var(--text-secondary)] hover:text-red-400 hover:bg-[var(--surface)] rounded-xl transition-all"
+          >
+            <Heart size={22} />
           </NavLink>
 
-          <NavLink to="/account" className="flex flex-col items-center gap-0.5 p-2 rounded-lg text-[#9aa5b4] hover:text-red-500 hover:bg-[#1e2a3a] transition-all">
-            <User size={20} />
-            <span className="text-[10px] font-semibold">Account</span>
+          {/* Account */}
+          <NavLink
+            to="/account"
+            className="p-2.5 text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--surface)] rounded-xl transition-all"
+          >
+            <User size={22} />
           </NavLink>
 
-          <NavLink to="/cart" className="relative flex flex-col items-center gap-0.5 p-2 rounded-lg text-[#9aa5b4] hover:text-red-500 hover:bg-[#1e2a3a] transition-all">
-            <ShoppingCart size={20} />
-            <span className="text-[10px] font-semibold">Cart</span>
-            <span className="absolute top-1 right-1 w-4 h-4 bg-red-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-[#111827]">5</span>
+          {/* Cart */}
+          <NavLink
+            to="/cart"
+            className="relative p-2.5 text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--surface)] rounded-xl transition-all flex flex-col items-center"
+          >
+            <ShoppingCart size={22} />
+            <span className="absolute -top-0.5 -right-0.5 bg-[var(--sale)] text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border-2 border-[var(--surface-container)]">
+              5
+            </span>
+            <span className="text-[9px] mt-0.5 font-semibold tracking-tight">Cart</span>
           </NavLink>
         </div>
       </div>
 
-      <div className="bg-[#0f172a] border-t border-[#1e2a3a] border-b-2 border-b-red-600 px-6 flex items-stretch overflow-x-auto scrollbar-none">
+      {/* ── 4. Bottom Nav Links with Icons ── */}
+      <div className="bg-[var(--surface)] border-t border-[var(--border)] px-6 flex items-center overflow-x-auto scrollbar-none">
 
         {/* Home */}
         <NavLink
-          to="/" end
+          to="/"
+          end
           className={({ isActive }) =>
-            `flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 whitespace-nowrap border-b-[3px] -mb-0.5 transition-all ${
+            `flex items-center gap-2 px-5 py-3.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
               isActive
-                ? 'text-red-500 border-red-500 bg-red-500/5'
-                : 'text-[#9aa5b4] border-transparent hover:text-white hover:border-red-500 hover:bg-red-500/5'
+                ? 'text-[var(--primary)] border-[var(--primary)] bg-[var(--primary)]/10'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text)] border-transparent hover:border-[var(--primary)]/30 hover:bg-[var(--primary)]/5'
             }`
           }
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+          <span className="w-2 h-2 rounded-full bg-[var(--primary)] shrink-0" />
           Home
         </NavLink>
-        <NavLink
-          to="/saved"
-          className={({ isActive }) =>
-            `flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 whitespace-nowrap border-b-[3px] -mb-0.5 transition-all ${
-              isActive
-                ? 'text-red-500 border-red-500'
-                : 'text-[#9aa5b4] border-transparent hover:text-white hover:border-red-500 hover:bg-red-500/5'
-            }`
-          }
-        >
-          <Heart size={12} className="fill-red-500 text-red-500" />
-          Saved
-        </NavLink>
 
-        {navLinks.map(({ to, label }) => (
+        {/* Dynamic Links */}
+        {navLinks.map(({ to, label, icon }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) =>
-              `text-xs font-bold px-3.5 py-2.5 whitespace-nowrap border-b-[3px] -mb-0.5 transition-all ${
+              `flex items-center gap-2 px-5 py-3.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
                 isActive
-                  ? 'text-red-500 border-red-500 bg-red-500/5'
-                  : 'text-[#9aa5b4] border-transparent hover:text-white hover:border-red-500 hover:bg-red-500/5'
+                  ? 'text-[var(--primary)] border-[var(--primary)] bg-[var(--primary)]/10'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text)] border-transparent hover:border-[var(--primary)]/30 hover:bg-[var(--primary)]/5'
               }`
             }
           >
+            <span className="shrink-0 opacity-80">{icon}</span>
             {label}
           </NavLink>
         ))}
-
-        <NavLink
-          to="/deals"
-          className={({ isActive }) =>
-            `text-xs font-bold px-3.5 py-2.5 whitespace-nowrap border-b-[3px] -mb-0.5 transition-all ${
-              isActive
-                ? 'text-yellow-400 border-yellow-400'
-                : 'text-yellow-500 border-transparent hover:text-yellow-300 hover:border-yellow-400'
-            }`
-          }
-        >
-          Deals
-        </NavLink>
-
-        <NavLink
-          to="/sell"
-          className={({ isActive }) =>
-            `text-xs font-bold px-3.5 py-2.5 whitespace-nowrap border-b-[3px] -mb-0.5 transition-all ${
-              isActive
-                ? 'text-red-500 border-red-500'
-                : 'text-[#9aa5b4] border-transparent hover:text-white hover:border-red-500 hover:bg-red-500/5'
-            }`
-          }
-        >
-          Sell
-        </NavLink>
       </div>
     </nav>
   );
