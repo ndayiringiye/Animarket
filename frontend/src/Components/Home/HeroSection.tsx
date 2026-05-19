@@ -1,4 +1,3 @@
-import React from 'react';
 
 const HeroSection = () => {
   return (
@@ -9,7 +8,6 @@ const HeroSection = () => {
           'linear-gradient(to bottom right,var(--hero-from),var(--hero-via),var(--hero-to))',
       }}
     >
-      {/* Glow */}
       <div
         className="absolute pointer-events-none w-[500px] h-[500px] rounded-full blur-[30px]"
         style={{
@@ -19,8 +17,6 @@ const HeroSection = () => {
             'radial-gradient(circle, rgba(52,211,153,0.14) 0%, rgba(16,185,129,0.07) 45%, transparent 70%)',
         }}
       />
-
-      {/* Grid */}
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.03]"
         style={{

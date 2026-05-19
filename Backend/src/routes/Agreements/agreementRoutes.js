@@ -59,9 +59,7 @@ router.put("/agreements/:id/sign", verifyToken, async (req, res) => {
 });
 
 
-// ─────────────────────────────
-// ✅ COMPLETE AGREEMENT (RELEASE ESCROW)
-// ─────────────────────────────
+
 router.put(
   "/agreements/:id/complete",
   verifyToken,
