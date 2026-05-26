@@ -95,7 +95,6 @@ const MiddleSection = () => {
   const features = getFeatures();
   const current = features[active];
 
-  // Theme-aware colors — dark: white text, light: dark text
   const textPrimary = isDark ? "#ffffff" : "#0f172a";
   const textSecondary = isDark ? "rgba(255,255,255,0.6)" : "#475569";
   const ctrlBg = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)";
@@ -103,8 +102,6 @@ const MiddleSection = () => {
   const ctrlColor = isDark ? "#ffffff" : "#0f172a";
   const dotActive = isDark ? "#ffffff" : "#0f172a";
   const dotInactive = isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.25)";
-
-  // Section background shown when no overlay — respects theme
   const sectionBg = isDark ? "#0c0e12" : "#f1f5f9";
 
   const startTimer = () => {
@@ -159,7 +156,7 @@ const MiddleSection = () => {
         className="relative w-full overflow-hidden"
         style={{ height: "420px", background: sectionBg }}
       >
-        {/* Full-bleed video — NO gradient overlay */}
+        {/* Full-bleed video */}
         <video
           ref={videoRef}
           key={active}
@@ -172,13 +169,28 @@ const MiddleSection = () => {
           style={{ transition: "opacity 0.5s ease", opacity: transitioning ? 0 : 1 }}
         />
 
-        {/* Subtle dark scrim only behind text box — not full bleed */}
+        {/* Left fade — hides adjacent card edge */}
+        <div
+          className="absolute left-0 top-0 bottom-0 w-1/3"
+          style={{
+            background: isDark
+              ? "linear-gradient(to right, rgba(10,12,20,1) 0%, rgba(10,12,20,0) 100%)"
+              : "linear-gradient(to right, rgba(241,245,249,1) 0%, rgba(241,245,249,0) 100%)",
+          }}
+        />
+
+        {/* Right scrim — behind text panel */}
         <div
           className="absolute right-0 top-0 bottom-0 w-2/5"
           style={{
+            background: isDark
+              ? "rgba(10,12,20,0.55)"
+              : "rgba(241,245,249,0.72)",
             backdropFilter: "blur(2px)",
           }}
         />
+
+        {/* Text content — RIGHT side */}
         <div
           className="absolute inset-0 flex flex-col justify-center items-end px-12"
           style={{
@@ -220,6 +232,7 @@ const MiddleSection = () => {
           </div>
         </div>
 
+        {/* Dot indicators — bottom CENTER */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
           {features.map((_, i) => (
             <button
@@ -237,7 +250,6 @@ const MiddleSection = () => {
 
         {/* Controls — bottom LEFT */}
         <div className="absolute bottom-5 left-8 flex items-center gap-2 z-10">
-          {/* Prev */}
           <button
             onClick={() => go(-1)}
             className="w-9 h-9 rounded-full flex items-center justify-center transition hover:opacity-80"
@@ -246,7 +258,6 @@ const MiddleSection = () => {
             <MdChevronLeft className="text-xl" />
           </button>
 
-          {/* Play / Pause */}
           <button
             onClick={() => setPlaying((p) => !p)}
             className="w-9 h-9 rounded-full flex items-center justify-center transition hover:opacity-80"
@@ -255,7 +266,6 @@ const MiddleSection = () => {
             {playing ? <MdPause className="text-lg" /> : <MdPlayArrow className="text-lg" />}
           </button>
 
-          {/* Next */}
           <button
             onClick={() => go(1)}
             className="w-9 h-9 rounded-full flex items-center justify-center transition hover:opacity-80"
@@ -264,7 +274,6 @@ const MiddleSection = () => {
             <MdChevronRight className="text-xl" />
           </button>
 
-          {/* Sound toggle */}
           <button
             onClick={() => setMuted((m) => !m)}
             className="w-9 h-9 rounded-full flex items-center justify-center transition hover:opacity-80"
@@ -274,7 +283,6 @@ const MiddleSection = () => {
             {muted ? <MdVolumeOff className="text-lg" /> : <MdVolumeUp className="text-lg" />}
           </button>
 
-          {/* Zoom / Fullscreen */}
           <button
             onClick={handleZoom}
             className="w-9 h-9 rounded-full flex items-center justify-center transition hover:opacity-80"
