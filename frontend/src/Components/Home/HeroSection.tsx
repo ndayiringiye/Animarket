@@ -1,90 +1,87 @@
+import inka from "../../../public/images/inka.jpg";
+import pigs from "../../../public/images/pigs.jpg";
+import Gaot from "../../../public/images/gaot.jpg";
+import Hens from "../../../public/images/hens.jpg";
+import MiddleSection from "../../Components/Home/MiddleSection";
+import { MdVerified } from "react-icons/md";
 
 const HeroSection = () => {
   return (
+    <div>
     <section
       className="relative overflow-hidden min-h-[88vh]"
       style={{
         background:
-          'linear-gradient(to bottom right,var(--hero-from),var(--hero-via),var(--hero-to))',
+          "linear-gradient(to bottom right,var(--hero-from),var(--hero-via),var(--hero-to))",
       }}
     >
+      {/* Background Glow */}
       <div
         className="absolute pointer-events-none w-[500px] h-[500px] rounded-full blur-[30px]"
         style={{
-          top: '10%',
-          left: '28%',
+          top: "10%",
+          left: "28%",
           background:
-            'radial-gradient(circle, rgba(52,211,153,0.14) 0%, rgba(16,185,129,0.07) 45%, transparent 70%)',
+            "radial-gradient(circle, rgba(52,211,153,0.14) 0%, rgba(16,185,129,0.07) 45%, transparent 70%)",
         }}
       />
+
+      {/* Grid Overlay */}
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.03]"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
+            "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
         }}
       />
 
       <div className="relative z-10 container mx-auto px-8 flex items-center min-h-[88vh]">
+
         <div className="flex flex-col lg:flex-row items-center w-full gap-8">
 
-          {/* Left */}
           <div className="flex-1 max-w-2xl pt-12">
 
-            {/* Heading */}
-            <h1 className="font-bold leading-[1.05] tracking-[-0.03em] text-[var(--text)] text-[clamp(2.8rem,5vw,4.4rem)] mb-6">
+            <h1 className="font-bold leading-[1.05] tracking-[-0.03em] text-[clamp(2.2rem,4vw,3.6rem)] mb-6 text-[var(--text)]">
 
-              The Trusted Digital{' '}
+              The Trusted Digital{" "}
 
               <span
                 className="bg-clip-text text-transparent"
                 style={{
-                  backgroundImage:
-                    'var(--gradient-primary)',
+                  backgroundImage: "var(--gradient-primary)",
                 }}
               >
                 Livestock
-              </span>{' '}
+              </span>{" "}
 
-               for{' '}
+              for{" "}
 
               <span className="typewriter-wrapper">
 
-                <span
-                  className="typewriter-word marketable"
-                >
+                <span className="typewriter-word marketable">
                   Marketable
                 </span>
 
-                <span
-                  className="typewriter-word health"
-                >
+                <span className="typewriter-word health">
                   Animal Health Safe
                 </span>
 
-                <span
-                  className="typewriter-word delivery"
-                >
+                <span className="typewriter-word delivery">
                   Delivery Safe
                 </span>
 
-                <span
-                  className="typewriter-word jobs"
-                >
+                <span className="typewriter-word jobs">
                   Veterinary Jobs
                 </span>
 
-                <span
-                  className="typewriter-word trading"
-                >
+                <span className="typewriter-word trading">
                   Easy Trading
                 </span>
 
               </span>
             </h1>
 
-            {/* Description */}
             <p className="text-[1.05rem] leading-relaxed text-[var(--text-secondary)] max-w-[620px] mb-10">
               Buy, sell, and manage livestock securely
               with verified animal profiles, smart
@@ -94,146 +91,153 @@ const HeroSection = () => {
               transaction tracking for farmers,
               breeders, and livestock businesses.
             </p>
+<div className="flex ">
+            <div className="avatar-group flex-wrap gap-1 mb-2">
+ <div className="avatar"><img src={inka} alt="User 1"/></div>
+  <div className="avatar"><img src={pigs} alt="User 2"/></div>
+  <div className="avatar"><img src={Gaot} alt="User 3"/></div>
+  <div className="avatar-count">12k +</div>
+  <span className ="group-text flex items-center gap-1">
+    <span><MdVerified className="text-green-500"/></span>
+    Verified Animals</span>
+</div>
 
-            {/* Stats */}
-            <div className="flex flex-wrap gap-8 mb-10">
+ <div className="avatar-group flex-wrap gap-1 mb-2">
+ <div className="avatar"><img src={inka} alt="User 1"/></div>
+  <div className="avatar"><img src={pigs} alt="User 2"/></div>
+  <div className="avatar"><img src={Gaot} alt="User 3"/></div>
+  <div className="avatar-count">3.4k</div>
+  <span className ="group-text flex items-center gap-1">
+    <span><MdVerified className="text-green-500"/></span>
+    Active Breeders</span>
+    </div>
+<div className="avatar-group  flex-wrap gap-1 mb-2">
+  <div className="avatar"><img src={inka} alt="User 1"/></div>
+  <div className="avatar"><img src={pigs} alt="User 2"/></div>
+  <div className="avatar"><img src={Gaot} alt="User 3"/></div>
+  <div className="avatar-count">89%</div>
+  <span className ="group-text flex items-center gap-1">
+    <span><MdVerified  className="text-green-500"/></span>
+    Satisfication Rate</span>
+    </div>
+</div>
+            <div className="flex flex-wrap gap-4 mb-6">
 
-              {[
-                {
-                  value: '12K+',
-                  label: 'Verified Animals',
-                },
-                {
-                  value: '3.4K',
-                  label: 'Active Breeders',
-                },
-                {
-                  value: '98%',
-                  label: 'Satisfaction Rate',
-                },
-              ].map(({ value, label }) => (
-                <div key={label}>
-
-                  <div className="text-4xl font-bold text-[var(--text)]">
-                    {value}
-                  </div>
-
-                  <div className="text-xs text-[var(--text-secondary)] mt-1 tracking-widest uppercase">
-                    {label}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Buttons */}
-            <div className="flex flex-wrap gap-4">
-
-              {/* Primary */}
               <button
                 className="text-white font-bold px-8 py-4 rounded-2xl hover:-translate-y-1 transition-all duration-300"
                 style={{
-                  background:
-                    'var(--gradient-primary)',
-                  boxShadow:
-                    '0 0 24px rgba(16,185,129,0.3)',
+                  background: "var(--gradient-primary)",
+                  boxShadow: "0 0 24px rgba(16,185,129,0.3)",
                 }}
               >
                 Explore Animals
               </button>
 
-              {/* Secondary */}
               <button
                 className="font-semibold px-8 py-4 rounded-2xl backdrop-blur-md hover:scale-[1.02] transition-all duration-300"
                 style={{
-                  background: 'var(--glass)',
-                  border:
-                    '1px solid var(--border)',
-                  color: 'var(--text)',
+                  background: "var(--glass)",
+                  border: "1px solid var(--border)",
+                  color: "var(--text)",
                 }}
               >
                 Start Selling
               </button>
+
             </div>
           </div>
 
-          {/* Right */}
           <div className="flex-1 flex items-center justify-center relative min-h-[480px]">
 
-            {/* Glass card */}
             <div
               className="absolute inset-6 rounded-3xl backdrop-blur-sm"
               style={{
-                background: 'var(--glass)',
-                border:
-                  '1px solid var(--border)',
+                background: "var(--glass)",
+                border: "1px solid var(--border)",
               }}
             />
 
-            {/* Glow */}
-            <div className="relative w-[420px] h-[420px] rounded-full flex items-center justify-center">
+            <div className="relative w-[450px] h-[450px] rounded-[32px] overflow-hidden shadow-2xl">
 
-              <div
-                className="absolute inset-0 rounded-full blur-3xl"
-                style={{
-                  background:
-                    'radial-gradient(circle,var(--accent),transparent)',
-                  opacity: 0.15,
-                }}
+              <div className="absolute inset-0 bg-black/20 z-10" />
+
+              <img
+                src={Hens}
+                alt="Hens"
+                className="absolute inset-0 w-full h-full object-cover animate-imageZoom"
               />
 
-              {/* Main Orb */}
-              <div
-                className="w-[280px] h-[280px] rounded-full animate-pulse"
-                style={{
-                  background:
-                    'var(--gradient-primary)',
-                  boxShadow:
-                    '0 0 80px rgba(16,185,129,0.25)',
-                }}
+              {/* IMAGE 2 */}
+              <img
+                src={Gaot}
+                alt="Goat"
+                className="absolute inset-0 w-full h-full object-cover animate-imageZoom animation-delay-4"
               />
 
-              {/* Floating Cards */}
+              <img
+                src={inka}
+                alt="Inka"
+                className="absolute inset-0 w-full h-full object-cover animate-imageZoom animation-delay-8"
+              />
+              <img
+                src={pigs}
+                alt="Pigs"
+                className="absolute inset-0 w-full h-full object-cover animate-imageZoom animation-delay-12"
+              />
+
               <div
-                className="absolute top-8 left-0 px-4 py-3 rounded-2xl backdrop-blur-md"
+                className="absolute top-6 left-6 px-5 py-4 rounded-2xl backdrop-blur-md z-20"
                 style={{
-                  background: 'var(--glass)',
-                  border:
-                    '1px solid var(--border)',
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.1)",
                 }}
               >
-                <div className="text-sm font-bold text-[var(--text)]">
+
+                <div className=" flex items-center gap-2 text-sm font-bold text-white">
+                  <MdVerified className="text-green-500 text-lg" />
+
                   Safe Delivery
                 </div>
 
-                <div className="text-xs text-[var(--text-secondary)] mt-1">
+                <div className="text-xs text-gray-200 mt-1">
                   Real-time livestock tracking
                 </div>
+
               </div>
 
+              {/* BOTTOM CARD */}
               <div
-                className="absolute bottom-8 right-0 px-4 py-3 rounded-2xl backdrop-blur-md"
+                className="absolute bottom-6 right-6 px-5 py-4 rounded-2xl backdrop-blur-md z-20"
                 style={{
-                  background: 'var(--glass)',
-                  border:
-                    '1px solid var(--border)',
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.1)",
                 }}
               >
-                <div className="text-sm font-bold text-[var(--text)]">
+
+                <div className="flex items-center gap-2 text-sm font-bold text-white">
+
+                  <MdVerified className="text-green-500 text-lg" />
+
                   Veterinary Jobs
+
                 </div>
 
-                <div className="text-xs text-[var(--text-secondary)] mt-1">
+                <div className="flex items-center gap-2 text-xs text-gray-200 mt-1">
+
+
                   Connect with professionals
+
                 </div>
+
               </div>
+
             </div>
           </div>
         </div>
       </div>
-
-      {/* Typewriter Animation */}
-      
     </section>
+    <MiddleSection />
+    </div>
   );
 };
 
