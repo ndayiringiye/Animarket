@@ -22,7 +22,7 @@ import payment from "../../../public/images/payment.mp4";
 import agreement from "../../../public/images/agreement.mp4";
 import vacine from "../../../public/images/vacine.mp4";
 import jobs from "../../../public/images/job.mp4";
-
+import Cards from "./Cards";
 const getFeatures = () => [
   {
     id: "delivery",
@@ -294,6 +294,7 @@ const MiddleSection = () => {
         </div>
 
       </section>
+      <Cards/>
     </div>
   );
 };
