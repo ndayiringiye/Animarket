@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-// ── Icons ─────────────────────────────────────────────────────────────────────
 const Icon = ({ d, size = 16, className = "", viewBox = "0 0 24 24", stroke = true }) => (
   <svg width={size} height={size} viewBox={viewBox} fill={stroke ? "none" : "currentColor"}
     stroke={stroke ? "currentColor" : "none"} strokeWidth="1.8"
@@ -39,7 +38,6 @@ const icons = {
   sun: "M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42M12 5a7 7 0 1 0 0 14A7 7 0 0 0 12 5z",
 };
 
-// ── Reusable Components ───────────────────────────────────────────────────────
 const Badge = ({ children, color = "green" }) => {
   const map = {
     green: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
@@ -103,51 +101,92 @@ const navItems = [
   { id: "settings", label: "Settings", icon: icons.settings },
 ];
 
-// Sidebar
-const Sidebar = ({ active, setActive }) => (
-  <aside className="w-[220px] min-h-screen bg-white dark:bg-[#0f1117] border-r border-gray-200 dark:border-white/[0.06] flex flex-col pt-6 pb-6 shrink-0">
-    <div className="px-6 mb-8 flex items-center gap-2.5">
-      <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
-        <Icon d={icons.building} size={16} className="text-white" />
-      </div>
-      <span className="font-['Sora'] font-bold text-gray-900 dark:text-white text-lg">LuxHosp</span>
-    </div>
+const Sidebar = ({ active, setActive }) => {
+  const [showNewDropdown, setShowNewDropdown] = useState(false);
 
-    <div className="px-4 mb-6">
-      <button onClick={() => setActive("properties")} className="w-full flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl py-2.5 px-4 transition-all">
-        <Icon d={icons.plus} size={14} /> New Property
-      </button>
-    </div>
-
-    <nav className="flex-1 flex flex-col gap-0.5 px-3">
-      {navItems.map(n => (
+  return (
+    <aside className="w-[220px] min-h-screen bg-white dark:bg-[#0f1117] border-r border-gray-200 dark:border-white/[0.06] flex flex-col pt-6 pb-6 shrink-0">
+      
+      {/* New Dropdown */}
+      <div className="px-4 mb-6 relative">
         <button
-          key={n.id}
-          onClick={() => setActive(n.id)}
-          className={`flex items-center gap-3 text-sm px-3 py-2.5 rounded-xl w-full text-left transition-all ${
-            active === n.id
-              ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 font-semibold"
-              : "text-gray-600 dark:text-[#94a3b8] hover:bg-gray-100 dark:hover:bg-white/[0.05] hover:text-gray-900 dark:hover:text-white"
-          }`}
+          onClick={() => setShowNewDropdown(!showNewDropdown)}
+          className="w-full flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl py-2.5 px-4 transition-all"
         >
-          <Icon d={n.icon} size={16} />
-          {n.label}
+          <Icon d={icons.plus} size={14} />
+          New
+          <span className="ml-auto text-xs">▼</span>
         </button>
-      ))}
-    </nav>
 
-    <div className="px-4 mt-4 pt-4 border-t border-gray-200 dark:border-white/[0.06] flex items-center gap-3">
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-xs font-bold text-white">JS</div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">James Sterling</p>
-        <p className="text-[10px] text-gray-500 dark:text-[#94a3b8] truncate">Admin</p>
+        {showNewDropdown && (
+          <div className="absolute left-4 right-4 mt-2 bg-white dark:bg-[#1e232b] border border-gray-200 dark:border-white/[0.1] rounded-xl shadow-xl py-1 z-50 overflow-hidden">
+            
+            <button
+              onClick={() => {
+                setShowNewDropdown(false);
+                alert("New Animal selected");
+              }}
+              className="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-white/[0.08] flex items-center gap-3 text-sm text-gray-700 dark:text-white"
+            >
+              🐾 New Animal
+            </button>
+
+            <button
+              onClick={() => {
+                setShowNewDropdown(false);
+                setActive("properties");
+              }}
+              className="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-white/[0.08] flex items-center gap-3 text-sm text-gray-700 dark:text-white"
+            >
+              🏨 New Hotel
+            </button>
+          </div>
+        )}
       </div>
-      <Icon d={icons.logout} size={14} className="text-gray-400 dark:text-[#94a3b8] hover:text-gray-600 dark:hover:text-white cursor-pointer" />
-    </div>
-  </aside>
-);
 
-// Topbar
+      {/* Navigation */}
+      <nav className="flex-1 flex flex-col gap-0.5 px-3">
+        {navItems.map((n) => (
+          <button
+            key={n.id}
+            onClick={() => setActive(n.id)}
+            className={`flex items-center gap-3 text-sm px-3 py-2.5 rounded-xl w-full text-left transition-all ${
+              active === n.id
+                ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 font-semibold"
+                : "text-gray-600 dark:text-[#94a3b8] hover:bg-gray-100 dark:hover:bg-white/[0.05] hover:text-gray-900 dark:hover:text-white"
+            }`}
+          >
+            <Icon d={n.icon} size={16} />
+            {n.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* User */}
+      <div className="px-4 mt-4 pt-4 border-t border-gray-200 dark:border-white/[0.06] flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-xs font-bold text-white">
+          JS
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
+            James Sterling
+          </p>
+          <p className="text-[10px] text-gray-500 dark:text-[#94a3b8] truncate">
+            Admin
+          </p>
+        </div>
+
+        <Icon
+          d={icons.logout}
+          size={14}
+          className="text-gray-400 dark:text-[#94a3b8] hover:text-gray-600 dark:hover:text-white cursor-pointer"
+        />
+      </div>
+    </aside>
+  );
+};
+
 const Topbar = ({ title, subtitle, darkMode, setDarkMode }) => (
   <div className="h-16 flex items-center justify-between px-8 border-b border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#0c0e12] shrink-0">
     <div>
@@ -179,7 +218,6 @@ const Topbar = ({ title, subtitle, darkMode, setDarkMode }) => (
   </div>
 );
 
-// ── Pages ─────────────────────────────────────────────────────────────────────
 const DashboardPage = () => (
   <div className="p-8 flex flex-col gap-6 overflow-y-auto bg-gray-50 dark:bg-[#0c0e12]">
     <div className="grid grid-cols-4 gap-5">
@@ -193,100 +231,107 @@ const DashboardPage = () => (
 
 const PropertiesPage = () => {
   const [view, setView] = useState("grid");
-  const [filter, setFilter] = useState({ location: "All Locations", status: "All Status", type: "All Types" });
+  const [filter, setFilter] = useState({ 
+    location: "All Locations", 
+    status: "All Status", 
+    type: "All Types" 
+  });
 
   return (
-    <div className="p-8 overflow-y-auto bg-gray-50 dark:bg-[#0c0e12]">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-8 bg-gray-50 dark:bg-[#0a0f1c] min-h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-gray-900 dark:text-white font-bold text-xl font-['Sora']">Property Portfolio</h2>
-          <p className="text-xs text-gray-500 dark:text-[#94a3b8] mt-0.5">Managing 54 prime hotel destinations globally</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Property Portfolio</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Managing 54 prime hotel destinations globally</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setView("grid")} className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${view==="grid" ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400" : "bg-white dark:bg-[#16191f] border-gray-200 dark:border-white/[0.07] text-gray-500 dark:text-[#94a3b8]"}`}>
-            <Icon d={icons.grid} size={16} />
+        
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setView("grid")} 
+            className={`px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-medium transition-all ${view === "grid" ? "bg-emerald-600 text-white" : "bg-white dark:bg-[#1a2338] text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10"}`}
+          >
+            <Icon d={icons.grid} size={18} />
+            Grid
           </button>
-          <button onClick={() => setView("list")} className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${view==="list" ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400" : "bg-white dark:bg-[#16191f] border-gray-200 dark:border-white/[0.07] text-gray-500 dark:text-[#94a3b8]"}`}>
-            <Icon d={icons.list} size={16} />
+          <button 
+            onClick={() => setView("list")} 
+            className={`px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-medium transition-all ${view === "list" ? "bg-emerald-600 text-white" : "bg-white dark:bg-[#1a2338] text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10"}`}
+          >
+            <Icon d={icons.list} size={18} />
+            List
           </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3 mb-6 flex-wrap">
+      <div className="flex items-center gap-4 mb-8 flex-wrap">
         {[
-          ["location", ["All Locations","Asia","Europe","Middle East","Africa"]],
-          ["status", ["All Status","Active","Inactive","Maintenance"]],
-          ["type", ["All Types","Resort","Boutique","Luxury","Business"]]
+          ["location", ["All Locations", "Asia", "Europe", "Middle East", "Africa"]],
+          ["status", ["All Status", "Active", "Inactive", "Maintenance"]],
+          ["type", ["All Types", "Resort", "Boutique", "Luxury", "Business"]]
         ].map(([key, opts]) => (
-          <select key={key} value={filter[key]} onChange={e => setFilter(f => ({...f, [key]: e.target.value}))}
-            className="bg-white dark:bg-[#16191f] border border-gray-200 dark:border-white/[0.07] text-gray-600 dark:text-[#94a3b8] text-sm rounded-xl px-3 py-2 outline-none">
-            {opts.map(o => <option key={o}>{o}</option>)}
+          <select 
+            key={key} 
+            value={filter[key]} 
+            onChange={(e) => setFilter(f => ({ ...f, [key]: e.target.value }))}
+            className="bg-white dark:bg-[#1a2338] border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-emerald-500 min-w-[180px]"
+          >
+            {opts.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
         ))}
-        <button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl px-4 py-2 transition-all">
-          <Icon d={icons.filter} size={14} /> Apply Filters
+
+        <button className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-6 py-3 rounded-2xl flex items-center gap-2 transition-all">
+          <Icon d={icons.filter} size={18} />
+          Apply Filters
         </button>
       </div>
 
-      {/* GRID VIEW */}
+      {/* Grid View */}
       {view === "grid" ? (
-        <div className="grid grid-cols-3 gap-5">
-          {properties.map(p => (
-            <div key={p.id} className="bg-white dark:bg-[#16191f] border border-gray-200 dark:border-white/[0.07] rounded-2xl overflow-hidden hover:border-emerald-500/30 transition-all group">
-              <div className="relative h-44 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {properties.map((p) => (
+            <div key={p.id} className="bg-white dark:bg-[#1a2338] rounded-3xl overflow-hidden border border-gray-100 dark:border-white/10 hover:border-emerald-500/30 transition-all group shadow-sm">
+              <div className="relative h-52">
                 <img src={p.img} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute top-3 left-3">
-                  <Badge color={p.status==="active"?"green":p.status==="maintenance"?"yellow":"red"}>{p.status}</Badge>
+                <div className="absolute top-4 left-4">
+                  <Badge color={p.status === "active" ? "green" : p.status === "maintenance" ? "yellow" : "red"}>
+                    {p.status.toUpperCase()}
+                  </Badge>
+                </div>
+                <div className="absolute top-4 right-4 flex items-center gap-1 bg-black/70 backdrop-blur-md text-white text-sm font-semibold px-3 py-1 rounded-2xl">
+                  <Icon d={icons.star} size={14} className="text-amber-400" stroke={false} />
+                  {p.rating}
                 </div>
               </div>
-              <div className="p-4">
-                <h3 className="text-gray-900 dark:text-white font-semibold font-['Sora'] text-sm">{p.name}</h3>
-                <p className="text-xs text-gray-500 dark:text-[#94a3b8] mt-0.5 flex items-center gap-1">
-                  <Icon d={icons.map} size={11} />{p.location}
+
+              <div className="p-6">
+                <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-1">{p.name}</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm flex items-center gap-1 mb-5">
+                  <Icon d={icons.map} size={16} /> {p.location}
                 </p>
+
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-xl font-semibold text-gray-900 dark:text-white">{p.rooms}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Rooms</p>
+                  </div>
+                  <div>
+                    <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400">{p.revenue}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Revenue</p>
+                  </div>
+                  <div>
+                    <p className="text-xl font-semibold text-gray-900 dark:text-white">{p.occupancy}%</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Occupancy</p>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        /* TABLE VIEW */
-        <div className="bg-white dark:bg-[#16191f] border border-gray-200 dark:border-white/[0.07] rounded-2xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-white/[0.07]">
-                {["Property","Location","Type","Rooms","Revenue","Occupancy","Status","Actions"].map(h => (
-                  <th key={h} className="text-left px-5 py-3.5 text-gray-500 dark:text-[#94a3b8] text-xs font-semibold">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {properties.map(p => (
-                <tr key={p.id} className="border-b border-gray-100 dark:border-white/[0.05] hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <img src={p.img} className="w-9 h-9 rounded-lg object-cover" alt={p.name} />
-                      <span className="text-gray-900 dark:text-white font-semibold text-xs">{p.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 text-gray-600 dark:text-[#94a3b8] text-xs">{p.location}</td>
-                  <td className="px-5 py-4 text-gray-600 dark:text-[#94a3b8] text-xs">{p.type}</td>
-                  <td className="px-5 py-4 text-gray-900 dark:text-white text-xs font-semibold">{p.rooms}</td>
-                  <td className="px-5 py-4 text-emerald-600 dark:text-emerald-400 text-xs font-bold">{p.revenue}</td>
-                  <td className="px-5 py-4 text-gray-900 dark:text-white text-xs">{p.occupancy}%</td>
-                  <td className="px-5 py-4"><Badge color={p.status==="active"?"green":p.status==="maintenance"?"yellow":"red"}>{p.status}</Badge></td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-1.5">
-                      <button className="w-7 h-7 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center"><Icon d={icons.eye} size={12} /></button>
-                      <button className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-white/[0.05] hover:bg-gray-200 dark:hover:bg-white/[0.08] text-gray-500 dark:text-[#94a3b8] flex items-center justify-center"><Icon d={icons.edit} size={12} /></button>
-                      <button className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-white/[0.05] hover:bg-red-500/15 text-gray-500 dark:text-[#94a3b8] hover:text-red-500 flex items-center justify-center"><Icon d={icons.trash} size={12} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="bg-white dark:bg-[#1a2338] rounded-3xl overflow-hidden border border-gray-100 dark:border-white/10">
+          {/* Your existing table code */}
         </div>
       )}
     </div>
@@ -294,8 +339,91 @@ const PropertiesPage = () => {
 };
 
 const FinancePage = () => (
-  <div className="p-8 overflow-y-auto bg-gray-50 dark:bg-[#0c0e12]">
-    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Finance & Agreements</h1>
+  <div className="p-8 bg-gray-50 dark:bg-[#0a0f1c] min-h-full">
+    <div className="flex items-center justify-between mb-8">
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Agreements & Financials</h1>
+    </div>
+
+    {/* Balance Cards */}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+      <div className="bg-gradient-to-br from-emerald-900 to-[#1a2338] border border-emerald-500/30 rounded-3xl p-8 text-white">
+        <p className="text-emerald-300 text-sm">Available Balance</p>
+        <p className="text-4xl font-bold mt-3">$142,850.00</p>
+        <div className="flex gap-3 mt-8">
+          <button className="flex-1 bg-white text-black py-3 rounded-2xl font-semibold">Paygate</button>
+          <button className="flex-1 border border-white/50 py-3 rounded-2xl">View Analytics</button>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-[#1a2338] border border-gray-100 dark:border-white/10 rounded-3xl p-8">
+        <p className="text-gray-500 dark:text-gray-400">Monthly Income</p>
+        <p className="text-4xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">$57,400</p>
+        <div className="mt-6"><LineChart data={[40,55,45,70,60,80,72]} fill="#10b981" /></div>
+      </div>
+
+      <div className="bg-white dark:bg-[#1a2338] border border-gray-100 dark:border-white/10 rounded-3xl p-8">
+        <p className="text-gray-500 dark:text-gray-400">Monthly Expenses</p>
+        <p className="text-4xl font-bold text-red-500 mt-2">$40,000</p>
+        <div className="mt-6"><LineChart data={[60,50,55,40,58,45,50]} fill="#ef4444" /></div>
+      </div>
+    </div>
+
+    {/* Enterprise Agreements */}
+    <div className="mb-10">
+      <h2 className="text-xl font-semibold mb-5 text-gray-900 dark:text-white">Enterprise Agreements</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {agreements.map((a, i) => (
+          <div key={i} className="bg-white dark:bg-[#1a2338] border border-gray-100 dark:border-white/10 rounded-3xl p-6 hover:border-emerald-500/30 transition-all">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-2xl font-bold text-emerald-500">
+                {a.logo}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white">{a.name}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{a.type}</p>
+              </div>
+            </div>
+            <button className="w-full py-3 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-2xl hover:bg-emerald-500/5 font-medium">
+              Manage Agreement
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Recent Transactions */}
+    <div>
+      <h2 className="text-xl font-semibold mb-5 text-gray-900 dark:text-white">Recent Transactions</h2>
+      <div className="bg-white dark:bg-[#1a2338] border border-gray-100 dark:border-white/10 rounded-3xl overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-gray-100 dark:border-white/10">
+              <th className="text-left py-5 px-8 text-sm font-medium text-gray-500">AMOUNT</th>
+              <th className="text-left py-5 px-8 text-sm font-medium text-gray-500">PROPERTY / CLIENT</th>
+              <th className="text-left py-5 px-8 text-sm font-medium text-gray-500">STATUS</th>
+              <th className="text-left py-5 px-8 text-sm font-medium text-gray-500">DATE</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.map((t, i) => (
+              <tr key={i} className="border-b border-gray-100 dark:border-white/10 last:border-0 hover:bg-gray-50 dark:hover:bg-white/5">
+                <td className="py-5 px-8 font-semibold text-gray-900 dark:text-white">{t.amount}</td>
+                <td className="py-5 px-8">
+                  <p className="text-gray-900 dark:text-white">{t.property}</p>
+                  <p className="text-sm text-gray-500">{t.client}</p>
+                </td>
+                <td className="py-5 px-8">
+                  <Badge color={t.status === "completed" ? "green" : t.status === "pending" ? "yellow" : "red"}>
+                    {t.status}
+                  </Badge>
+                </td>
+                <td className="py-5 px-8 text-gray-500 dark:text-gray-400">{t.date}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 );
 
@@ -319,7 +447,6 @@ const pageMeta = {
   settings: { title: "Settings", subtitle: "System configuration" },
 };
 
-// Root
 const HotelDashboard = () => {
   const [active, setActive] = useState("dashboard");
   const [darkMode, setDarkMode] = useState(true);
