@@ -219,3 +219,100 @@ h6 {
             opacity: 0;
           }
         }
+@keyframes imageZoom {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+
+  10% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  25% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  40% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+.animate-imageZoom {
+  animation: imageZoom 16s infinite;
+}
+
+.animation-delay-4 {
+  animation-delay: 4s;
+}
+
+.animation-delay-8 {
+  animation-delay: 8s;
+}
+
+.animation-delay-12 {
+  animation-delay: 12s;
+}
+
+.avatar-group {
+  display: flex;
+  align-items: center;
+  font-family: sans-serif;
+}
+
+.avatar, .avatar-count {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  margin-right: -12px; /* Pulls elements together to overlap */
+  position: relative;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-count {
+  background-color: #f0f4f8;
+  color: #4a5568;
+  font-size: 14px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.group-text {
+  margin-left: 24px; /* Space after the overlapping bubble stack */
+  color: #5c6b73;
+  font-size: 16px;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}

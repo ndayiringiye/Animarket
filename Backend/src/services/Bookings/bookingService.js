@@ -1,7 +1,7 @@
 import Booking from "../../models/bookings/BookingModel.js";
 import User from "../../models/users/UserModel.js";
 import Animal from "../../models/animals/AnimalModel.js";
-import Meeting from "../../models/meetings/MeetingModel.js";
+import Meeting from "../../models/Meetings/meettingModels.js";
 
 import QRCode from "qrcode";
 import nodemailer from "nodemailer";

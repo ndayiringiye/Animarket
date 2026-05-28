@@ -8,29 +8,22 @@ import upload from '../../Middlewares/user/uplaodMiddleware.js'; // Fixed typo
 
 const router = express.Router();
 
-
-// Hotel Registration & Authentication
 router.post('/register', hotelController.registerHotel);
 router.post('/login', hotelController.hotelLogin);
 
-// Password Reset Routes
+
 router.post('/forgot-password', hotelController.hotelForgotPassword);
 router.post('/verify-otp', hotelController.hotelVerifyResetOTP);
 router.post('/reset-password', hotelController.hotelConfirmResetPassword);
 
-// Search Hotels (Public)
 router.get('/search', hotelController.searchHotels);
 
-// ====================== PROTECTED ROUTES (Require Authentication) ======================
 
-// Hotel Profile
 router.get('/:hotelId/profile', verifyToken, hotelController.getHotelProfile);
 router.put('/:hotelId/profile', verifyToken, hotelController.updateHotelProfile);
 
-// Child Hotels Management
 router.get('/:hotelId/child-hotels', verifyToken, hotelController.getChildHotels);
 
-// Authorize Hotel for Child Registration (Admin Only)
 router.post(
   '/:hotelId/authorize-registration',
   verifyToken,

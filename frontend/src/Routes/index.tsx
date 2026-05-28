@@ -1,20 +1,27 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-// import Home from '../Pages/Home';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+import Home from "../Components/Home/HeroSection";
 import About from '../Pages/About';
 import Contact from '../Pages/Contact';
-import Navbar from '../Components/Navbar';
-import Home from "../Components/Home/HeroSection"
-const AppRoutes = () => (
-  <BrowserRouter>
-    <Navbar />
-    <Routes>
-      <Route path='/home' element={<Home />} />
-      <Route path='/' element={<Home />} />
-      <Route path='/about' element={<About />} />
-      <Route path='/contact' element={<Contact />} />
-      {/* <Route path='*' element={<Navigate to='/' replace />} /> */}
-    </Routes>
-  </BrowserRouter>
-);
+import LoginPages from '../Pages/Auths/LoginPages';
+import Layout from '../Components/Layout';
+import DashboardPage from '../Pages/Dashboards/HotelDashboard';
+const AppRoutes = () => {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* All pages wrapped inside Layout */}
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="home" element={<Home />} />
+          <Route path="about" element={<About />} />
+          <Route path="contact" element={<Contact />} />
+          <Route path="login" element={<LoginPages />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+};
 
 export default AppRoutes;

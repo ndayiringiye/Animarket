@@ -1,10 +1,13 @@
 import AppRoutes from './Routes';
 import { ThemeProvider } from './Contexts/ThemeContext';
+import { CartProvider } from './Contexts/CartContext';
 
 const App = () => {
   return (
     <ThemeProvider>
-      <AppRoutes />
+      <CartProvider>
+        <AppRoutes />
+      </CartProvider>
     </ThemeProvider>
   );
 };
