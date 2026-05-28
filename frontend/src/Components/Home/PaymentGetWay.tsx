@@ -1,7 +1,6 @@
 'use client';
 
 import { useTheme } from "../../Contexts/ThemeContext";
-
 const PaymentGetWay = () => {
   const { theme } = useTheme();
 
@@ -44,12 +43,13 @@ const PaymentGetWay = () => {
   ];
 
   return (
+    <div>
     <div className={`w-full py-12 transition-colors duration-300
       ${theme === 'dark' ? 'bg-gray-950' : 'bg-white'}`}
     >
       {/* Title */}
       <div className="text-center mb-10">
-        <h2 className={`text-3xl md:text-4xl font-bold transition-colors
+        <h2 className={`text-2xl md:text-4xl font-bold transition-colors
           ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
         >
           Regulated &amp; Secure Payment Methods
@@ -104,6 +104,7 @@ const PaymentGetWay = () => {
           ? 'bg-gradient-to-l from-gray-950 to-transparent' 
           : 'bg-gradient-to-l from-white to-transparent'}`} 
       />
+    </div>
     </div>
   );
 };

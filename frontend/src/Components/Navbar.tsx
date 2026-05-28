@@ -21,6 +21,7 @@ import { SiContributorcovenant } from 'react-icons/si';
 import { HiUserGroup } from 'react-icons/hi2';
 import { SiWechat } from 'react-icons/si';
 import { SiKingstontechnology } from 'react-icons/si';
+import { useNavigate } from 'react-router-dom';
 
 const slides = [
   {
@@ -72,7 +73,6 @@ const slides = [
 const SlidingBanner = () => {
   const [current, setCurrent] = useState(0);
   const [animating, setAnimating] = useState(false);
-
   useEffect(() => {
     const timer = setInterval(() => {
       setAnimating(true);
@@ -160,6 +160,7 @@ const Navbar = () => {
 
   const { theme, toggleTheme } = useTheme();
   const { cartCount, cartTotal, likeCount } = useCart();
+  const navigate = useNavigate();   // Fixed declaration
 
   const categories = [
     'All',
@@ -229,18 +230,18 @@ const Navbar = () => {
         })}
 
         <div className="flex items-center gap-4">
-          <a
-            href="#"
+          <button
+            onClick={() => navigate('/login')}
             className="text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors font-medium"
           >
             Sign In
-          </a>
+          </button>
 
           <span className="text-[var(--border)]">|</span>
 
           <a
-            href="#"
-            className="bg-[var(--primary)] hover:bg-[var(--secondary)] text-white text-xs font-semibold px-3 py-2 rounded-md transition-colors"
+            onClick={() => navigate('/register')}  
+            className="bg-[var(--primary)] hover:bg-[var(--secondary)] text-white text-xs font-semibold px-3 py-2 rounded-md transition-colors cursor-pointer"
           >
             Register
           </a>
