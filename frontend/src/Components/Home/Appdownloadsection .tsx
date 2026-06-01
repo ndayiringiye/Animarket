@@ -2,65 +2,13 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../../Contexts/ThemeContext';
+import { QRCodeSVG } from 'qrcode.react'; // Standard library for scannable codes
 
-// Import images correctly
+// Import images correctly (Next.js imported images are objects, use .src)
 import appScreenshot from "../../../public/images/app.png";
 import phoneScreenshot from "../../../public/images/phone.png";
 import advertisScreenshot from "../../../public/images/advertis.png";
 
-/* ════════════════════════════════════════════
-   QR CODE
-   ════════════════════════════════════════════ */
-const QRCode = ({ dark = '#0f172a', light = '#ffffff' }: { dark?: string; light?: string }) => {
-  const grid = [
-    [1,1,1,1,1,1,1,0,1,0,1,0,0,0,1,1,1,1,1,1,1],
-    [1,0,0,0,0,0,1,0,0,1,0,1,1,0,1,0,0,0,0,0,1],
-    [1,0,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,0,1],
-    [1,0,1,1,1,0,1,0,0,1,1,1,0,0,1,0,1,1,1,0,1],
-    [1,0,1,1,1,0,1,0,1,1,0,0,1,0,1,0,1,1,1,0,1],
-    [1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,1],
-    [1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1],
-    [0,0,0,0,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0],
-    [1,1,0,1,1,0,1,1,0,1,1,0,1,1,1,0,1,0,1,1,0],
-    [0,1,1,0,0,1,0,1,1,0,0,1,0,1,0,1,1,0,0,1,1],
-    [1,0,1,1,0,0,1,0,1,1,0,0,1,0,1,1,0,1,1,0,0],
-    [0,1,0,0,1,1,0,0,0,1,1,0,0,1,0,0,1,1,0,1,0],
-    [1,1,1,0,1,0,1,1,1,0,1,1,0,0,1,0,0,1,1,0,1],
-    [0,0,0,0,0,0,0,0,1,0,1,0,1,0,0,1,0,1,0,0,1],
-    [1,1,1,1,1,1,1,0,0,1,0,0,1,1,1,0,1,0,0,1,0],
-    [1,0,0,0,0,0,1,0,1,1,1,0,0,0,1,1,0,1,1,0,1],
-    [1,0,1,1,1,0,1,0,0,0,1,1,0,1,0,0,1,0,0,1,1],
-    [1,0,1,1,1,0,1,0,1,0,0,1,1,0,1,1,1,1,0,0,0],
-    [1,0,1,1,1,0,1,0,0,1,1,0,0,1,0,0,0,1,1,1,0],
-    [1,0,0,0,0,0,1,0,1,1,0,1,0,0,1,0,1,0,0,1,1],
-    [1,1,1,1,1,1,1,0,0,0,1,0,1,1,0,1,0,1,1,0,0],
-  ];
-  const S = 10;
-  const PAD = 8;
-  const SIZE = 21 * S + PAD * 2;
-  return (
-    <svg viewBox={`0 0 ${SIZE} ${SIZE}`} xmlns="http://www.w3.org/2000/svg" width={SIZE} height={SIZE}>
-      <rect width={SIZE} height={SIZE} fill={light} rx="6" />
-      {grid.map((row, r) =>
-        row.map((val, c) =>
-          val === 1 ? (
-            <rect
-              key={`${r}-${c}`}
-              x={PAD + c * S}
-              y={PAD + r * S}
-              width={S}
-              height={S}
-              fill={dark}
-              rx="1"
-            />
-          ) : null
-        )
-      )}
-    </svg>
-  );
-};
-
-/* Google Play Badge */
 const GooglePlayBadge = () => (
   <a
     href="#"
@@ -80,7 +28,6 @@ const GooglePlayBadge = () => (
   </a>
 );
 
-/* App Store Badge */
 const AppStoreBadge = () => (
   <a
     href="#"
@@ -97,26 +44,23 @@ const AppStoreBadge = () => (
   </a>
 );
 
-/* Phone Image Component */
 const PhoneImage = ({ src, rotate = 0, zIndex = 0 }: { src: string; rotate?: number; zIndex?: number }) => (
   <div
-    className="relative flex-shrink-0"
+    className="relative flex-shrink-0 transition-transform duration-500 hover:scale-105"
     style={{ transform: `rotate(${rotate}deg)`, zIndex, width: '170px' }}
   >
     <div
-      className="relative rounded-[3rem] overflow-hidden border-[8px] border-gray-900 shadow-2xl"
-      style={{ background: '#000' }}
+      className="relative rounded-[2.5rem] overflow-hidden border-[6px] border-gray-900 shadow-2xl bg-black"
     >
       <img
         src={src}
         alt="App Screenshot"
-        className="w-full h-auto object-contain"
+        className="w-full h-auto object-cover aspect-[9/19]"
       />
     </div>
   </div>
 );
 
-/* StatChip */
 const StatChip = ({ icon, value, label }: { icon: string; value: string; label: string }) => (
   <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border" style={{ background: 'var(--glass)', borderColor: 'var(--border)', backdropFilter: 'blur(8px)' }}>
     <span className="text-xl">{icon}</span>
@@ -127,12 +71,19 @@ const StatChip = ({ icon, value, label }: { icon: string; value: string; label: 
   </div>
 );
 
-/* Main Component */
-const AppDownloadSection: React.FC = () => {
+export default function AppDownloadSection() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLElement>(null);
+
+  // Auto-detect the site origin URL for the PWA code scanning link after mount
+  const [siteUrl, setSiteUrl] = useState('https://yourfarmmarket.rw'); 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSiteUrl(window.location.origin);
+    }
+  }, []);
 
   useEffect(() => {
     const obs = new IntersectionObserver(
@@ -143,10 +94,8 @@ const AppDownloadSection: React.FC = () => {
     return () => obs.disconnect();
   }, []);
 
-  const qrDark = isDark ? '#0f172a' : '#0f172a';
-  const qrLight = '#ffffff';
-
   return (
+    <div>
     <section ref={ref} id="download" className="relative w-full overflow-hidden py-20 px-4 sm:px-8">
       <div
         className={`relative w-full mx-auto rounded-3xl border transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
@@ -156,7 +105,7 @@ const AppDownloadSection: React.FC = () => {
           boxShadow: 'var(--shadow)',
         }}
       >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 p-8 sm:p-12 lg:p-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 p-8 sm:p-12 lg:p-16 items-center">
 
           {/* LEFT SIDE */}
           <div className="space-y-7">
@@ -185,29 +134,35 @@ const AppDownloadSection: React.FC = () => {
               <AppStoreBadge />
             </div>
 
+            {/* FIXED QR CODE CONTAINER */}
             <div className="flex items-center gap-5 p-4 rounded-2xl border" style={{ background: 'var(--glass)', borderColor: 'var(--border)' }}>
-              <div className="flex-shrink-0 rounded-xl overflow-hidden p-1.5" style={{ background: '#ffffff', width: '88px', height: '88px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-                <QRCode dark={qrDark} light={qrLight} />
+              <div className="flex-shrink-0 bg-white rounded-xl p-2 shadow-sm border border-gray-100">
+                <QRCodeSVG 
+                  value={siteUrl} 
+                  size={96}
+                  level={"M"}
+                  bgColor={"#ffffff"}
+                  fgColor={"#0f172a"}
+                />
               </div>
               <div>
-                <p className="text-sm font-bold mb-1" style={{ color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>Scan to download</p>
-                <p className="text-xs leading-snug" style={{ color: 'var(--text-secondary)' }}>
-                  Point your phone camera at the QR code to open the store listing instantly.
-                </p>
+                <div className="text-sm font-bold" style={{ color: 'var(--text)' }}>Scan to Install Web App</div>
+                <div className="text-xs mt-1 leading-normal" style={{ color: 'var(--text-secondary)' }}>
+                  Open your phone camera to scan. Installs instantly without visiting an app store.
+                </div>
               </div>
             </div>
           </div>
 
-          {/* RIGHT: Phone Screenshots */}
-          <div className="relative flex justify-center items-end gap-6" style={{ height: '480px' }}>
+         <div className="relative flex justify-center items-end gap-6" style={{ height: '480px' }}>
             <PhoneImage src={appScreenshot} rotate={-10} zIndex={1} />
             <PhoneImage src={phoneScreenshot} rotate={3} zIndex={2} />
             <PhoneImage src={advertisScreenshot} rotate={-5} zIndex={1} />
           </div>
+
         </div>
       </div>
     </section>
+    </div>
   );
-};
-
-export default AppDownloadSection;
+}

@@ -26,6 +26,8 @@ import { useCart } from '../../Contexts/CartContext';
 import PaymentGetWay from '../../Components/Home/PaymentGetWay';
 import { RiSlideshow3Fill } from "react-icons/ri";
 import { useNavigate } from 'react-router-dom';
+import HowItWorks from '../../Components/Home/HowItWorks';
+
 const products = [
   {
     id: 1,
@@ -634,6 +636,7 @@ const Cards = () => {
         </div>
       )}
     </div>
+    <HowItWorks />
     <PaymentGetWay />
     </div>
   );
