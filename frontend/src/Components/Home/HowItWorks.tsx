@@ -13,6 +13,7 @@ import { FiLink } from "react-icons/fi";
 import securePayment from "../../../public/images/securePayemnt.png";
 import deliverycow from "../../../public/images/delivercow.png";
 import { LuPackageCheck } from "react-icons/lu";
+import AnimalDemo from '../../Components/Home/AnimalDemo';
 
 interface Step {
   icon: React.ElementType | string;
@@ -76,6 +77,7 @@ const HowItWorks = () => {
   const isDark = theme === 'dark';
 
   return (
+    <div>
     <section
       className={`py-4 md:py-8 transition-colors duration-300 ${
         isDark ? 'bg-gray-900' : 'bg-white'
@@ -94,7 +96,7 @@ const HowItWorks = () => {
           <div className="flex items-center justify-center mb-8 md:mb-10">
             <div
               className={`flex-1 h-px ${
-                isDark ? 'bg-gray-700' : 'bg-gray-200'
+                isDark ? 'bg-green-700 h-4' : 'bg-green-200 h-4'
               }`}
             />
 
@@ -108,7 +110,7 @@ const HowItWorks = () => {
 
             <div
               className={`flex-1 h-px ${
-                isDark ? 'bg-gray-700' : 'bg-gray-200'
+                isDark ? 'bg-green-700' : 'bg-green-200'
               }`}
             />
           </div>
@@ -123,7 +125,7 @@ const HowItWorks = () => {
                   {/* Step */}
                   <div className="md:col-span-1 text-center">
                     <div
-                      className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center ${step.bg}`}
+                      className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center `}
                     >
                       {step.isImage ? (
                         <img
@@ -171,6 +173,8 @@ const HowItWorks = () => {
         </div>
       </div>
     </section>
+    <AnimalDemo />
+    </div>
   );
 };
 
