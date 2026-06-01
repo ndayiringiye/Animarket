@@ -24,6 +24,8 @@ import {
 import { useTheme } from '../../Contexts/ThemeContext';
 import { useCart } from '../../Contexts/CartContext';
 import PaymentGetWay from '../../Components/Home/PaymentGetWay';
+import { RiSlideshow3Fill } from "react-icons/ri";
+import { useNavigate } from 'react-router-dom';
 const products = [
   {
     id: 1,
@@ -121,9 +123,10 @@ const Cards = () => {
 
   const [selected, setSelected] = useState<Product | null>(null);
   const [addedId, setAddedId] = useState<number | null>(null);
+  const navigate = useNavigate();
 
   const handleAddToCart = (
-    e: React.MouseEvent,
+    e: React.MouseEvent<HTMLButtonElement>,
     product: Product
   ) => {
     e.stopPropagation();
@@ -189,8 +192,14 @@ const Cards = () => {
           </p>
         </div>
 
-        <button className="h-14 px-8 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-xl hover:scale-105 transition-all duration-300">
-          Explore Marketplace
+        <button 
+          className="h-14 px-8 rounded-2xl  flex justify-center items-center gap-2 bg-emerald-500 text-white font-bold shadow-md hover:scale-105 transition-all duration-300"
+          onClick={() => navigate('/how-it-works')}
+        >
+          <span className="">
+            <RiSlideshow3Fill  className="text-md" />
+          </span> 
+          How It Works
         </button>
       </div>
 

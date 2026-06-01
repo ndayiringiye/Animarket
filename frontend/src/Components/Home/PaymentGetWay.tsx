@@ -1,6 +1,7 @@
 'use client';
 
 import { useTheme } from "../../Contexts/ThemeContext";
+import Appdownloadsection from "./Appdownloadsection ";
 const PaymentGetWay = () => {
   const { theme } = useTheme();
 
@@ -105,6 +106,7 @@ const PaymentGetWay = () => {
           : 'bg-gradient-to-l from-white to-transparent'}`} 
       />
     </div>
+    <Appdownloadsection />
     </div>
   );
 };
