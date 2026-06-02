@@ -208,7 +208,7 @@ const MiddleSection = () => {
             </span>
 
             <h2
-              className="text-3xl font-extrabold leading-tight mb-3"
+              className="text-2xl font-extrabold leading-tight mb-3"
               style={{ color: textPrimary }}
             >
               {current.title}

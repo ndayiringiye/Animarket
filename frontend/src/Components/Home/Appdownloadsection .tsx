@@ -96,7 +96,7 @@ export default function AppDownloadSection() {
 
   return (
     <div>
-    <section ref={ref} id="download" className="relative w-full overflow-hidden py-20 px-4 sm:px-8">
+    <section ref={ref} id="download" className="relative w-full overflow-hidden py-8 px-4 sm:px-8">
       <div
         className={`relative w-full mx-auto rounded-3xl border transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
         style={{

@@ -174,11 +174,11 @@ const Cards = () => {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12">
         <div>
-          <p className="text-sm uppercase tracking-[0.3em] text-emerald-500 font-bold mb-3">
+          <p className="text-md uppercase tracking-[0.3em] text-emerald-500 font-bold mb-3">
             Trusted Marketplace
           </p>
 
-          <h1 className="text-4xl lg:text-5xl font-black leading-tight">
+          <h1 className="text-2xl lg:text-3xl font-black leading-tight">
             Easy Selling,
             <span className="block bg-gradient-to-r from-emerald-500 to-green-600 bg-clip-text text-transparent">
               Buying & Livestock Jobs
@@ -186,7 +186,7 @@ const Cards = () => {
           </h1>
 
           <p
-            className={`mt-4 max-w-2xl text-base leading-7 ${muted}`}
+            className={`mt-4 max-w-xl text-base leading-7 ${muted}`}
           >
             Discover verified livestock, secure transactions,
             professional veterinary services, and trusted sellers
