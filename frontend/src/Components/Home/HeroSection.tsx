@@ -4,6 +4,7 @@ import Gaot from "../../../public/images/gaot.jpg";
 import Hens from "../../../public/images/hens.jpg";
 import MiddleSection from "../../Components/Home/MiddleSection";
 import { MdVerified } from "react-icons/md";
+import { RiSlideshow3Fill } from "react-icons/ri";
 
 const HeroSection = () => {
   return (
