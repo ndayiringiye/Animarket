@@ -92,7 +92,6 @@ const HowItWorks = () => {
               : 'bg-gray-50 border-green-200'
           }`}
         >
-          {/* Title */}
           <div className="flex items-center justify-center mb-8 md:mb-10">
             <div
               className={`flex-1 h-px ${

@@ -8,6 +8,7 @@ import { QRCodeSVG } from 'qrcode.react'; // Standard library for scannable code
 import appScreenshot from "../../../public/images/app.png";
 import phoneScreenshot from "../../../public/images/phone.png";
 import advertisScreenshot from "../../../public/images/advertis.png";
+import  Question from "../../Components/Home/Questions";
 
 const GooglePlayBadge = () => (
   <a
@@ -163,6 +164,7 @@ export default function AppDownloadSection() {
         </div>
       </div>
     </section>
+    <Question/>
     </div>
   );
 }

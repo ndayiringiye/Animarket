@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../Contexts/ThemeContext';
 
-// ✅ FIX: each avatar should be different images (replace with your real files)
 import avatar1 from "../../../public/images/avatar1.png"
 import avatar2 from "../../../public/images/avatar2.png"
 import avatar3 from "../../../public/images/avatar3.png"
@@ -147,7 +146,11 @@ const AnimalDemo = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* Why Choose Animamarket */}
-          <div className="rounded-2xl bg-white p-8 shadow-sm border border-gray-100">
+          <div className={`rounded-2xl p-8 shadow-sm border ${
+            isDark
+              ? 'bg-gray-800 border-gray-700'
+              : 'bg-white border-gray-100'
+          }`}>
             <h3 className="text-xl font-bold text-gray-900 mb-8">
               Why Choose Animamarket?
             </h3>
@@ -182,12 +185,14 @@ const AnimalDemo = () => {
           </div>
 
           {/* Testimonials */}
-          <div className="rounded-2xl bg-white p-8 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold text-gray-900">
-                What Our Users Say
-              </h3>
-            </div>
+          <div className={`rounded-2xl p-8 shadow-sm border ${
+            isDark
+              ? 'bg-gray-800 border-gray-700'
+              : 'bg-white border-gray-100'
+          }`}>
+            <h3 className="text-xl font-bold text-gray-900 mb-8">
+              What Our Users Say
+            </h3>
 
             <div className="overflow-hidden">
               <div
@@ -256,8 +261,12 @@ const AnimalDemo = () => {
             </div>
           </div>
 
-          {/* Rwanda Stats */}
-          <div className="rounded-2xl bg-white p-8 shadow-sm border border-gray-100">
+          {/* Rwanda Stats (THEME FIXED) */}
+          <div className={`rounded-2xl p-8 shadow-sm border ${
+            isDark
+              ? 'bg-gray-800 border-gray-700'
+              : 'bg-white border-gray-100'
+          }`}>
             <h3 className="text-xl font-bold text-gray-900 mb-8">
               Trusted by Thousands Across Rwanda
             </h3>
@@ -269,8 +278,15 @@ const AnimalDemo = () => {
                 <img
                   src={rwandaMap}
                   alt="Rwanda Map"
-                  className="absolute inset-0 w-full h-full object-cover opacity-30"
+                  className={`absolute inset-0 w-full h-full object-cover ${
+                    isDark ? 'opacity-20' : 'opacity-30'
+                  }`}
                 />
+
+                {/* dark overlay for theme balance */}
+                {isDark && (
+                  <div className="absolute inset-0 bg-black/30" />
+                )}
 
                 {avatars.map((avatar) => (
                   <div

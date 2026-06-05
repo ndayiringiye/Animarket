@@ -45,7 +45,7 @@ const PaymentGetWay = () => {
 
   return (
     <div>
-    <div className={`w-full py-4 transition-colors duration-300
+    <div className={` transition-colors duration-300 max-w-7xl mx-auto px-6
       ${theme === 'dark' ? 'bg-gray-950' : 'bg-white'}`}
     >
       {/* Title */}
