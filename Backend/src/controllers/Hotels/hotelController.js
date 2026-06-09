@@ -1,6 +1,7 @@
 import Hotel from "../../models/Hotels/hotelModel.js";
 import HotelAgreement from "../../models/Hotels/hotelAgreementModel.js";
 import * as hotelService from "../../services/Hotels/hotelService.js";
+import { uploadToCloudinary } from "../../services/upload/mediaService.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -22,10 +23,13 @@ export const registerHotel = async (req, res) => {
       country,
       city,
       address,
+      zipCode,
       contactPersonName,
       contactPersonPhone,
+      contactPersonEmail,
+      website,
       accountType,
-      parentHotelId, // If registering under another hotel
+      parentHotelId,
     } = req.body;
 
     // Validation
@@ -68,6 +72,29 @@ export const registerHotel = async (req, res) => {
       });
     }
 
+    // Handle file uploads
+    let logo = null, logo_public_id = null;
+    let coverImage = null, coverImage_public_id = null;
+    let profileImage = null, profileImage_public_id = null;
+
+    if (req.files?.logo?.[0]) {
+      const uploaded = await uploadToCloudinary(req.files.logo[0], "animarket/hotels/logos");
+      logo = uploaded.url;
+      logo_public_id = uploaded.public_id;
+    }
+
+    if (req.files?.coverImage?.[0]) {
+      const uploaded = await uploadToCloudinary(req.files.coverImage[0], "animarket/hotels/cover_images");
+      coverImage = uploaded.url;
+      coverImage_public_id = uploaded.public_id;
+    }
+
+    if (req.files?.profileImage?.[0]) {
+      const uploaded = await uploadToCloudinary(req.files.profileImage[0], "animarket/hotels/profile_images");
+      profileImage = uploaded.url;
+      profileImage_public_id = uploaded.public_id;
+    }
+
     let parentHotel = null;
     let hotelObject = {
       hotelName,
@@ -78,10 +105,19 @@ export const registerHotel = async (req, res) => {
       country,
       city,
       address,
+      zipCode: zipCode || null,
       contactPersonName,
       contactPersonPhone,
+      contactPersonEmail,
+      website: website || null,
       accountType: accountType || "individual_hotel",
-      status: "pending", // Will be approved by admin
+      status: "pending",
+      logo,
+      logo_public_id,
+      coverImage,
+      coverImage_public_id,
+      profileImage,
+      profileImage_public_id,
     };
 
     // If registering under another hotel
@@ -101,7 +137,6 @@ export const registerHotel = async (req, res) => {
         });
       }
 
-      // Check max child hotels limit
       if (parentHotel.childHotels.length >= parentHotel.maxChildHotelsAllowed) {
         return res.status(400).json({
           message: `Parent hotel has reached maximum child hotels limit (${parentHotel.maxChildHotelsAllowed})`,

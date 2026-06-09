@@ -8,7 +8,15 @@ import upload from '../../Middlewares/user/uplaodMiddleware.js'; // Fixed typo
 
 const router = express.Router();
 
-router.post('/register', hotelController.registerHotel);
+router.post(
+  '/register',
+  upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'coverImage', maxCount: 1 },
+    { name: 'profileImage', maxCount: 1 }
+  ]),
+  hotelController.registerHotel
+);
 router.post('/login', hotelController.hotelLogin);
 
 

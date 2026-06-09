@@ -21,7 +21,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// ====================== PASSWORD MANAGEMENT ======================
 
 export const hotelForgotPassword = async (req, res) => {
   try {
