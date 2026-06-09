@@ -25,6 +25,8 @@ const VeterinarianProfileSchema = new mongoose.Schema(
 
     specializations: [String],
 
+    clinicName: String,
+
     yearsOfExperience: Number,
 
     education: [
@@ -50,6 +52,16 @@ const VeterinarianProfileSchema = new mongoose.Schema(
     languages: [String],
 
     about: String,
+
+    logo: {
+      url: String,
+      publicId: String,
+    },
+
+    coverImage: {
+      url: String,
+      publicId: String,
+    },
 
     profileImage: {
       url: String,

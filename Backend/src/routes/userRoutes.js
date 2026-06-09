@@ -20,6 +20,7 @@ router.post('/forgot-password', userController.forgotPassword);
 router.post('/verify-reset-otp', userController.verifyResetOTP);
 router.post('/confirm-reset-password', userController.confirmResetPassword);
 router.post('/reset-password', userController.resetPassword);
+router.get('/me', verifyToken, userController.getMe);
 router.get('/', verifyToken, isAdmin, userController.getAllUsers);
 router.delete('/:id', verifyToken, isAdmin, userController.deleteUser);
 router.put('/:id/role', verifyToken, isAdmin, userController.updateUserRole);

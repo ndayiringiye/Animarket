@@ -10,7 +10,9 @@ const sendPasswordResetEmail = async (email, resetOTP, resetToken) => {
             throw new Error("Missing EMAIL_USER or EMAIL_PASS environment variables");
         }
 
-        const resetLink = `${FRONTEND_URL}/reset-password?token=${resetToken}`;
+        // Ensure FRONTEND_URL exists and has no trailing slash. Fall back to Vite default port if not set.
+        const frontendHost = (FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "");
+        const resetLink = `${frontendHost}/reset-password?token=${resetToken}`;
 
         const transporter = nodemailer.createTransport({
             service: "gmail",
