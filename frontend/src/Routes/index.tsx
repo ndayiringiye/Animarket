@@ -8,6 +8,7 @@ import ForgotPassword from '../Pages/Auths/ForgotPassword';
 import ResetPassword from '../Pages/Auths/ResetPassword';
 import Layout from '../Components/Layout';
 import DashboardPage from '../Pages/Dashboards/HotelDashboard';
+import CustomerDashboard from '../Pages/Dashboards/Buying/CustomerDashboard';
 const AppRoutes = () => {
   return (
     <BrowserRouter>
@@ -22,6 +23,7 @@ const AppRoutes = () => {
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="dashboard/buying" element={<CustomerDashboard />} />
         </Route>
       </Routes>
     </BrowserRouter>

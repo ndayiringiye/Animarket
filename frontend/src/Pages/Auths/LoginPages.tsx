@@ -17,7 +17,7 @@ import {
 } from "react-icons/fa6";
 import { useAuth } from "../../Contexts/AuthContext";
 import { useHotelAuth } from "../../Contexts/HotelAuthContext";
-
+import brand from "../../../public/images/brand.png"
 const inputClass =
   "w-full px-6 py-[18px] pl-12 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#16191f] text-gray-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[15px] focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-500 transition-all duration-200";
 
@@ -504,10 +504,10 @@ export default function LoginPages() {
 
   return (
     <div className="min-h-screen flex font-poppins overflow-hidden bg-[#f4f6f8] dark:bg-[#0c0e12]">
-      {/* LEFT PANEL */}
+      
       <div className="w-full lg:w-[46%] min-h-screen bg-[#f4f6f8] dark:bg-[#0c0e12] flex flex-col items-center justify-center px-6 py-12 relative z-20">
         <Link to="/" className="mb-10">
-          <img src="/images/logo.png" alt="Animarket" className="h-11 w-auto object-contain" />
+          <img src={brand} alt="Animarket" className="h-11 w-auto object-contain" />
         </Link>
 
         <AnimatePresence mode="wait">
