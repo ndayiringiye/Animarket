@@ -238,27 +238,33 @@ function SignupForm({ onSubmit, loading, error, selectedRole }: {
       {/* ID Number — required by schema */}
       <InputWithIcon icon={FaIdCard} name="id_Number" type="text" placeholder="National ID Number" required />
 
-      <div className="grid grid-cols-2 gap-4">
-        {/* Gender — required by schema */}
-        <SelectWithIcon icon={FaUser} name="gender" required defaultValue="">
-          <option value="" disabled>Gender</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </SelectWithIcon>
+      {selectedRole?.toLowerCase() !== "veterinary" && (
+        <div className="grid grid-cols-2 gap-4">
+          {/* Gender — required by schema */}
+          <SelectWithIcon icon={FaUser} name="gender" required defaultValue="">
+            <option value="" disabled>Gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </SelectWithIcon>
 
-        {/* Category — required enum: Goat, cow, pigs, sheep */}
-        <SelectWithIcon icon={FaShop} name="category" required defaultValue="">
-          <option value="" disabled>Category</option>
-          <option value="Goat">Goat</option>
-          <option value="cow">Cow</option>
-          <option value="pigs">Pigs</option>
-          <option value="sheep">Sheep</option>
-        </SelectWithIcon>
-      </div>
+          {/* Category — required enum: Goat, cow, pigs, sheep */}
+          <SelectWithIcon icon={FaShop} name="category" required defaultValue="">
+            <option value="" disabled>Category</option>
+            <option value="Goat">Goat</option>
+            <option value="cow">Cow</option>
+            <option value="pigs">Pigs</option>
+            <option value="sheep">Sheep</option>
+          </SelectWithIcon>
+        </div>
+      )}
 
-      <InputWithIcon icon={FaShop} name="shopName"    type="text" placeholder="Shop / Farm Name" required />
-      <InputWithIcon icon={FaShop} name="shopAddress" type="text" placeholder="Shop Address"     required />
+      {selectedRole?.toLowerCase() !== "veterinary" && (
+        <>
+          <InputWithIcon icon={FaShop} name="shopName"    type="text" placeholder="Shop / Farm Name" required />
+          <InputWithIcon icon={FaShop} name="shopAddress" type="text" placeholder="Shop Address"     required />
+        </>
+      )}
 
       {/* Veterinary specific fields */}
       {selectedRole?.toLowerCase() === "veterinary" && (
@@ -274,7 +280,7 @@ function SignupForm({ onSubmit, loading, error, selectedRole }: {
       {[
         { label: "Profile Image *",  name: "profile_img",  accept: "image/*" },
         { label: "ID Proof *",       name: "id_proof_img", accept: "image/*,application/pdf" },
-        { label: "Shop Logo *",      name: "shopLogo",     accept: "image/*" },
+        ...(selectedRole?.toLowerCase() !== "veterinary" ? [{ label: "Shop Logo *",      name: "shopLogo",     accept: "image/*" }] : []),
       ].map(({ label, name, accept }) => (
         <div key={name} className="space-y-1">
           <label className="block text-sm text-slate-500 px-2">{label}</label>
