@@ -19,6 +19,11 @@ export const updateJobPosting = async (req, res) => {
   return await veterinaryJobService.updateJobPosting(req, res);
 };
 
+// Veterinarian: view all curing jobs for a specific animal
+export const getJobsByAnimal = async (req, res) => {
+  return await veterinaryJobService.getJobsByAnimal(req, res);
+};
+
 // ===== APPLICATION CONTROLLERS =====
 
 export const submitApplication = async (req, res) => {

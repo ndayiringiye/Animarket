@@ -8,10 +8,12 @@ import {
     endMeetingController,
     addFeedbackController,
     startMeetingController,
-    cancelMeetingController
+    cancelMeetingController,
+    updateMeetingController,
+    grantNegotiationAccessController
 } from "../../controllers/Meeting/MeetingController.js";
 
-import { authenticateUser } from "../../Middlewares/Auth/authMiddleware.js";
+import { verifyToken } from "../../Middlewares/Auth/authMiddleware.js";
 import {
     validateCreateMeeting,
     validateMeetingId,
@@ -20,7 +22,7 @@ import {
 
 const router = express.Router();
 
-router.use(authenticateUser);
+router.use(verifyToken);
 
 
 router.post("/", validateCreateMeeting, createMeetingController);
@@ -36,7 +38,10 @@ router.post("/:meetingId/join", validateMeetingId, joinMeetingController);
 router.put("/:meetingId/start", validateMeetingId, startMeetingController);
 router.put("/:meetingId/end", validateMeetingId, endMeetingController);
 router.put("/:meetingId/cancel", validateMeetingId, cancelMeetingController);
+router.put("/:meetingId/cancel", validateMeetingId, cancelMeetingController);
 
+router.put("/:meetingId", validateMeetingId, updateMeetingController);
+router.put("/:meetingId/grant-access", validateMeetingId, grantNegotiationAccessController);
 router.post("/:meetingId/feedback", validateMeetingId, validateFeedback, addFeedbackController);
 
 export default router;

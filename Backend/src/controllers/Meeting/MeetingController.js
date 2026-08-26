@@ -133,7 +133,28 @@ export const endMeetingController = async (req, res) => {
         return res.status(400).json({ success: false, message: error.message });
     }
 };
+export const updateMeetingController = async (req, res) => {
+    try {
+        const meeting = await updateMeetingService(req.params.meetingId, req.user.id, req.body);
+        res.status(200).json({ success: true, meeting });
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+};
 
+export const grantNegotiationAccessController = async (req, res) => {
+    try {
+        const { farmerId, buyerId } = req.body;
+        const meeting = await grantNegotiationAccessService(
+            req.params.meetingId,
+            req.user.id,
+            { farmerId, buyerId }
+        );
+        res.status(200).json({ success: true, meeting });
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+};
 export const addFeedbackController = async (req, res) => {
     try {
         const userId = req.user.id;

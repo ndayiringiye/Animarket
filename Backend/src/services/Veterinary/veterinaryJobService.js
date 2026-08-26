@@ -23,15 +23,17 @@ const transporter = nodemailer.createTransport({
 
 // ===== JOB POSTING OPERATIONS =====
 
-// Create job posting (only by seller, farmer, admin)
+// Create curing job posting — admin only
 export const createJobPosting = async (req, res) => {
   try {
-    const { userId, userRole } = req.body;
+    // Read authenticated user from verifyToken middleware
+    const adminId   = req.user?.id || req.user?._id;
+    const adminRole = req.user?.role;
 
-    // Verify user role - only seller, farmer, or admin can post
-    if (!["seller", "farmer", "admin"].includes(userRole)) {
+    // Only admin may post curing jobs
+    if (adminRole !== "admin") {
       return res.status(403).json({
-        message: "Only sellers, farmers, and admins can post job openings",
+        message: "Only admins can post animal curing jobs",
         status: 403,
       });
     }
@@ -40,6 +42,9 @@ export const createJobPosting = async (req, res) => {
       title,
       description,
       jobType,
+      animal,          // ObjectId of the animal that needs curing
+      animalType,      // type shortcut (cow, goat, …)
+      criteria,        // { requiredCertifications, requiredTools, minExperienceWithAnimalType, urgencyLevel }
       location,
       salary,
       requiredQualifications,
@@ -53,24 +58,21 @@ export const createJobPosting = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (
-      !title ||
-      !description ||
-      !applicationDeadline ||
-      !salary ||
-      !requiredQualifications
-    ) {
+    if (!title || !description || !applicationDeadline) {
       return res.status(400).json({
-        message: "Missing required fields",
+        message: "title, description, and applicationDeadline are required",
         status: 400,
       });
     }
 
     // Create job posting
-    const jobPosting = await VeterinaryJobPosting.create({
+    const rawJob = await VeterinaryJobPosting.create({
       title,
       description,
       jobType,
+      animal:    animal    || null,
+      animalType: animalType || null,
+      criteria:  criteria  || {},
       location,
       salary,
       requiredQualifications,
@@ -78,16 +80,25 @@ export const createJobPosting = async (req, res) => {
       experienceYearsRequired,
       responsibilities,
       benefits,
-      postedBy: userId,
-      postedByRole: userRole,
+      postedBy:     adminId,
+      postedByRole: "admin",
       hotelId,
       applicationDeadline,
       numberOfPositions,
       status: "open",
     });
 
+    // Re-fetch with animal details (owner, address, images) for the response
+    const jobPosting = await VeterinaryJobPosting.findById(rawJob._id)
+      .populate("postedBy", "name email phone")
+      .populate({
+        path: "animal",
+        select: "name type breed images location owner",
+        populate: { path: "owner", select: "name email phone shopName shopAddress" },
+      });
+
     return res.status(201).json({
-      message: "Job posting created successfully",
+      message: "Animal curing job posted successfully",
       status: 201,
       data: jobPosting,
     });
@@ -120,6 +131,11 @@ export const getAllJobPostings = async (req, res) => {
     const jobPostings = await VeterinaryJobPosting.find(query)
       .populate("postedBy", "name email phone")
       .populate("hotelId", "hotelName")
+      .populate({
+        path: "animal",
+        select: "name type breed images location owner",
+        populate: { path: "owner", select: "name email phone shopName shopAddress" },
+      })
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 });
@@ -157,7 +173,12 @@ export const getJobPosting = async (req, res) => {
     )
       .populate("postedBy", "name email phone")
       .populate("hotelId", "hotelName city")
-      .populate("selectedApplicants", "name email");
+      .populate("selectedApplicants", "name email")
+      .populate({
+        path: "animal",
+        select: "name type breed images location owner",
+        populate: { path: "owner", select: "name email phone shopName shopAddress" },
+      });
 
     if (!jobPosting) {
       return res.status(404).json({
@@ -498,6 +519,46 @@ export const acceptSelectedVeterinarian = async (req, res) => {
     });
   } catch (error) {
     console.error("Accept veterinarian error:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+      status: 500,
+    });
+  }
+};
+
+// ===== GET JOBS BY ANIMAL (for veterinarians) =====
+
+// Returns all curing job postings linked to a specific animal.
+// Veterinarians call this to discover work they can apply for.
+export const getJobsByAnimal = async (req, res) => {
+  try {
+    const { animalId } = req.params;
+    const { status, page = 1, limit = 10 } = req.query;
+
+    const query = { animal: animalId };
+    if (status) query.status = status;
+
+    const jobs = await VeterinaryJobPosting.find(query)
+      .populate("animal",   "name type breed health location")
+      .populate("postedBy", "name email phone")
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await VeterinaryJobPosting.countDocuments(query);
+
+    return res.status(200).json({
+      message: "Curing jobs for animal retrieved successfully",
+      status: 200,
+      count: jobs.length,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / Number(limit)),
+      data: jobs,
+    });
+  } catch (error) {
+    console.error("Get jobs by animal error:", error);
     return res.status(500).json({
       message: "Internal server error",
       error: error.message,

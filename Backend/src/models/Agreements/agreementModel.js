@@ -14,9 +14,11 @@ const agreementSchema = new Schema(
       index: true,
     },
 
+    booking: { type: Schema.Types.ObjectId, ref: "Booking", unique: true, sparse: true },
+
     parties: {
-      buyer: { type: Schema.Types.ObjectId, ref: "User" },
-      seller: { type: Schema.Types.ObjectId, ref: "User" },
+      customer: { type: Schema.Types.ObjectId, ref: "User" },
+      farmer: { type: Schema.Types.ObjectId, ref: "User" },
       veterinarian: { type: Schema.Types.ObjectId, ref: "User" },
       requester: { type: Schema.Types.ObjectId, ref: "User" },
     },
@@ -60,10 +62,12 @@ const agreementSchema = new Schema(
     transactionId: { type: String, required: true, unique: true },
 
     signatures: {
-      buyer: String,
-      seller: String,
+      customer: String,
+      farmer: String,
       vet: String,
     },
+
+    signedAt: Date,
 
     location: { type: String, required: true },
     deliveryDate: Date,
@@ -83,7 +87,7 @@ const agreementSchema = new Schema(
   { timestamps: true }
 );
 
-agreementSchema.index({ "parties.buyer": 1, "parties.seller": 1 });
+agreementSchema.index({ "parties.customer": 1, "parties.farmer": 1 });
 
 const Agreement = mongoose.model("Agreement", agreementSchema);
 

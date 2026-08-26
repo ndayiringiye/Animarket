@@ -9,6 +9,8 @@ import ResetPassword from '../Pages/Auths/ResetPassword';
 import Layout from '../Components/Layout';
 import DashboardPage from '../Pages/Dashboards/HotelDashboard';
 import CustomerDashboard from '../Pages/Dashboards/Buying/CustomerDashboard';
+import HotelDashboard from "../Pages/Dashboards/HotelDashboard"
+
 const AppRoutes = () => {
   return (
     <BrowserRouter>
@@ -22,9 +24,11 @@ const AppRoutes = () => {
           <Route path="login" element={<LoginPages />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="dashboard/buying" element={<CustomerDashboard />} />
         </Route>
+        {/* Customer Dashboard standalone */}
+        <Route path="/dashboard/buying" element={<CustomerDashboard />} />
+        <Route path="/dashboard/hotel" element={<HotelDashboard />} />
+
       </Routes>
     </BrowserRouter>
   );

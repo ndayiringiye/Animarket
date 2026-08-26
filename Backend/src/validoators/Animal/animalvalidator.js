@@ -4,7 +4,23 @@ export const animalIsVerified = Joi.object({
   name: Joi.string().min(2).max(50).required(),
 
   type: Joi.string()
-    .valid("cow", "goat", "pig", "sheep", "chicken")
+    .valid(
+      "cow",
+      "goat",
+      "sheep",
+      "pig",
+      "horse",
+      "chicken",
+      "rabbit",
+      "donkey",
+      "turkey",
+      "duck",
+      "dog",
+      "cat",
+      "camel",
+      "buffalo",
+      "other"
+    )
     .required(),
 
   gender: Joi.string()

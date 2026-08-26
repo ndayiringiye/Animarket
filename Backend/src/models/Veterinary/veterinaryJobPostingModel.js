@@ -16,6 +16,39 @@ const VeterinaryJobPostingSchema = new mongoose.Schema(
       enum: ["permanent", "contract", "temporary", "freelance"],
       default: "contract",
     },
+
+    // ── Animal this curing job is for ──────────────────────────────────
+    animal: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Animal",
+      default: null,
+    },
+    animalType: {
+      type: String,
+      enum: [
+        "cow", "goat", "sheep", "pig", "horse", "chicken",
+        "rabbit", "donkey", "turkey", "duck", "dog", "cat",
+        "camel", "buffalo", "other",
+      ],
+      default: null,
+    },
+
+    // ── Criteria / credentials required for this curing job ────────────
+    criteria: {
+      requiredCertifications: [String],   // e.g. ["Bovine Surgery License", "RVCP"]
+      requiredTools: [String],            // e.g. ["Ultrasound machine", "IV kit"]
+      minExperienceWithAnimalType: {      // years of experience with that animal
+        type: Number,
+        default: 0,
+      },
+      urgencyLevel: {
+        type: String,
+        enum: ["low", "medium", "high", "critical"],
+        default: "medium",
+      },
+    },
+    // ──────────────────────────────────────────────────────────────────
+
     location: {
       address: String,
       city: String,

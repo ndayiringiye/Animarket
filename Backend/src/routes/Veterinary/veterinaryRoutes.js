@@ -3,6 +3,7 @@ import * as veterinaryController from "../../controllers/Veterinary/veterinaryCo
 import * as veterinaryJobController from "../../controllers/Veterinary/veterinaryJobController.js";
 import { verifyToken } from "../../Middlewares/Auth/authMiddleware.js";
 import { isVeterinarian, isVeterinarianOrOwner } from "../../Middlewares/Veterinary/veterinaryMiddleware.js";
+import { isAdmin } from "../../Middlewares/Admin/amindMiddleware.js";
 import upload from "../../Middlewares/user/uplaodMiddleware.js";
 
 const router = express.Router();
@@ -28,10 +29,16 @@ router.post("/qrcode/scan", veterinaryController.scanServiceQRCode);
 // History Routes
 router.get("/history/:veterinarianId", verifyToken, veterinaryController.getServiceHistory);
 
-router.post("/jobs/create", verifyToken, veterinaryJobController.createJobPosting);
+// ── Admin: post a curing job ───────────────────────────────────────────────
+router.post("/jobs/create", verifyToken, isAdmin, veterinaryJobController.createJobPosting);
+
+// ── Public / any user: browse all job postings ───────────────────────────
 router.get("/jobs", veterinaryJobController.getAllJobPostings);
 router.get("/jobs/:jobId", veterinaryJobController.getJobPosting);
-router.put("/jobs/:jobId", verifyToken, veterinaryJobController.updateJobPosting);
+router.put("/jobs/:jobId", verifyToken, isAdmin, veterinaryJobController.updateJobPosting);
+
+// ── Veterinarian: view curing jobs for a specific animal ─────────────────
+router.get("/jobs/animal/:animalId", verifyToken, isVeterinarian, veterinaryJobController.getJobsByAnimal);
 
 
 router.post("/jobs/:jobId/apply", verifyToken, upload.fields([

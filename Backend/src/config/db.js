@@ -13,7 +13,7 @@ dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
 const connectDb = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI); 
+    const conn = await mongoose.connect(process.env.MONGO_URI || "mongodb+srv://ndayiringiyedavid120_db_user:tjuz0pcsqOf8XisC@cluster0.cyoeixv.mongodb.net/Animarketing?retryWrites=true&w=majority"); 
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {

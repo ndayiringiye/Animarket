@@ -7,13 +7,15 @@ const BookingSchema = new mongoose.Schema({
         unique: true
     },
 
-    buyer: {
+    
+
+    customer: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true
     },
 
-    seller: {
+    farmer: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true
@@ -136,7 +138,25 @@ trackingHistory: [
         type: Boolean,
         default: false
     },
+commissionAmount: {
+        type: Number,
+        default: 0
+    },
 
+    farmerPayoutAmount: {
+        type: Number,
+        default: 0
+    },
+
+    deliveryRequestedAt: Date,
+
+    refundRequestedAt: Date,
+
+    refundStatus: {
+        type: String,
+        enum: ["not_requested", "requested", "approved", "rejected"],
+        default: "not_requested"
+    },
     isPaid: {
         type: Boolean,
         default: false
@@ -157,11 +177,10 @@ trackingHistory: [
 
 });
 
-BookingSchema.pre("save", function (next) {
+BookingSchema.pre("save", function () {
     if (!this.bookingNumber) {
         this.bookingNumber = "BOOK-" + Date.now();
     }
-    next();
 });
 
 

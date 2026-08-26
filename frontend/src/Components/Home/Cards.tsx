@@ -488,28 +488,28 @@ const Cards = () => {
                   </div>
                 </div>
 
-                {/* Seller */}
+                {/* Admin Contact */}
                 <div className={`rounded-xl p-4 ${surface}`}>
                   <h3 className="font-bold mb-3 text-sm uppercase tracking-wide text-emerald-500">
-                    Seller Info
+                    Admin Contact
                   </h3>
 
                   <p className="font-bold mb-2">
-                    {selected.seller}
+                    AniMarket Admin
                   </p>
 
                   <div
                     className={`flex items-center gap-2 text-sm mb-1 ${muted}`}
                   >
                     <MdPhone />
-                    {selected.phone}
+                    +250 788 000 000
                   </div>
 
                   <div
                     className={`flex items-center gap-2 text-sm ${muted}`}
                   >
                     <MdEmail />
-                    {selected.email}
+                    admin@animarketing.rw
                   </div>
                 </div>
 

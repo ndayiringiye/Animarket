@@ -17,7 +17,10 @@ const UserSchema = new mongoose.Schema({
     category: { 
         type: String, 
         required: true, 
-        enum: ["Goat", "cow", "pigs", "sheep"] 
+        enum: [
+            "cow", "goat", "sheep", "pig",  "chicken",
+            "rabbit", 
+        ]
     },
     
     shopName: { type: String, required: true },
@@ -27,7 +30,7 @@ const UserSchema = new mongoose.Schema({
 
     role: {
         type: String, 
-        enum: ["seller", "admin", "customer", "farmer", "veterinary", "hotel"], 
+        enum: [  "customer", "farmer", "sale agent", "veterinary", "hotel", "admin"], 
         default: "customer"
     },
     

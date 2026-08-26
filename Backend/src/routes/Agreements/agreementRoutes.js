@@ -2,7 +2,7 @@ import express from "express";
 import Agreement from "../../models/Agreements/agreementModel.js";
 
 import { verifyToken } from "../../Middlewares/Auth/authMiddleware.js";
-import { authorizeAgreementRole } from "../../Middlewares/Auth/authorizationAgreement.js";
+import { isAdmin } from "../../Middlewares/Admin/amindMiddleware.js";
 
 import { createAgreementService } from "../../services/Agreements/agreementService.js";
 import { signAgreement } from "../../services/signals/signatureService.js";
@@ -14,12 +14,13 @@ const router = express.Router();
 router.post(
   "/agreements",
   verifyToken,
-  authorizeAgreementRole("buyer", "farmer", "veterinary"),
+  isAdmin,
   async (req, res) => {
     try {
       const result = await createAgreementService({
         ...req.body,
-        buyerId: req.user.id,
+        customerId: req.body.customerId,
+        createdBy: req.user.id,
       });
 
       res.status(201).json({
@@ -31,6 +32,39 @@ router.post(
     }
   }
 );
+
+router.get("/agreements/animal/:animalId", verifyToken, async (req, res) => {
+  try {
+    const partyFields = ["parties.customer", "parties.farmer"];
+    const agreement = await Agreement.findOne({
+      "animal.animalId": req.params.animalId,
+      $or: partyFields.map((field) => ({ [field]: req.user._id })),
+    }).sort({ createdAt: -1 });
+
+    if (!agreement) {
+      return res.status(404).json({ message: "Agreement not found" });
+    }
+
+    res.json({ success: true, data: agreement });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get("/agreements/my-agreements", verifyToken, async (req, res) => {
+  try {
+    const agreements = await Agreement.find({
+      $or: [
+        { "parties.customer": req.user._id },
+        { "parties.farmer": req.user._id },
+      ],
+    }).sort({ createdAt: -1 });
+
+    res.json({ success: true, data: agreements });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 
 
@@ -44,7 +78,21 @@ router.put("/agreements/:id/sign", verifyToken, async (req, res) => {
       return res.status(404).json({ message: "Agreement not found" });
     }
 
-    signAgreement(agreement, req.user, signature);
+    const isParty = [agreement.parties.customer, agreement.parties.farmer]
+      .filter(Boolean)
+      .some((partyId) => partyId.toString() === req.user._id.toString());
+    if (!isParty) {
+      return res.status(403).json({ message: "Only agreement parties can sign" });
+    }
+
+    if (typeof signature !== "string" || !signature.trim()) {
+      return res.status(400).json({ message: "A digital signature is required" });
+    }
+
+    signAgreement(agreement, req.user, signature.trim());
+    if (agreement.signatures.customer && agreement.signatures.farmer) {
+      agreement.status = "accepted";
+    }
 
     await agreement.save();
 
@@ -53,6 +101,35 @@ router.put("/agreements/:id/sign", verifyToken, async (req, res) => {
       message: "Agreement signed",
       data: agreement,
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.put("/agreements/:id/price", verifyToken, async (req, res) => {
+  try {
+    const { price } = req.body;
+    if (typeof price !== "number" || price < 0) {
+      return res.status(400).json({ message: "A valid price is required" });
+    }
+
+    const agreement = await Agreement.findById(req.params.id);
+    if (!agreement) return res.status(404).json({ message: "Agreement not found" });
+
+    const isParty = [agreement.parties.customer, agreement.parties.farmer]
+      .filter(Boolean)
+      .some((partyId) => partyId.toString() === req.user._id.toString());
+    if (req.user.role !== "admin" && !isParty) {
+      return res.status(403).json({ message: "Only agreement parties can update the price" });
+    }
+
+    if (agreement.signatures.customer || agreement.signatures.farmer) {
+      return res.status(409).json({ message: "Price cannot be changed after signing" });
+    }
+
+    agreement.price = price;
+    await agreement.save();
+    res.json({ success: true, message: "Agreement price updated", data: agreement });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

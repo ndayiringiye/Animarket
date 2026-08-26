@@ -14,10 +14,12 @@ import {
   FaIdCard,
   FaBuilding,
   FaGlobe,
+  FaBriefcase,
 } from "react-icons/fa6";
 import { useAuth } from "../../Contexts/AuthContext";
 import { useHotelAuth } from "../../Contexts/HotelAuthContext";
-import brand from "../../../public/images/brand.png"
+import brand from "../../../public/images/brand.png";
+
 const inputClass =
   "w-full px-6 py-[18px] pl-12 rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#16191f] text-gray-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[15px] focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-500 transition-all duration-200";
 
@@ -48,14 +50,17 @@ function SelectWithIcon({ icon: Icon, children, ...props }: any) {
   );
 }
 
-function LoginFormComponent({ onSubmit, loading, error, userType }: {
+function LoginFormComponent({
+  onSubmit,
+  loading,
+  error,
+}: {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void> | void;
   loading: boolean;
   error: string;
-  userType?: "user" | "hotel";
 }) {
   return (
-    <form className="w-full max-w-[380px] space-y-5" onSubmit={onSubmit as any}>
+    <form className="w-full max-w-[380px] space-y-5" onSubmit={onSubmit}>
       <InputWithIcon icon={FaEnvelope} name="email" type="email" placeholder="Email Address" required />
       <InputWithIcon icon={FaLock} name="password" type="password" placeholder="Password" required />
 
@@ -88,7 +93,11 @@ function LoginFormComponent({ onSubmit, loading, error, userType }: {
   );
 }
 
-function HotelSignupForm({ onSubmit, loading, error }: {
+function HotelSignupForm({
+  onSubmit,
+  loading,
+  error,
+}: {
   onSubmit: (e: React.FormEvent<HTMLFormElement>, files: Record<string, File | null>) => void;
   loading: boolean;
   error: string;
@@ -111,11 +120,9 @@ function HotelSignupForm({ onSubmit, loading, error }: {
 
   return (
     <form className="w-full max-w-[380px] space-y-5" onSubmit={handleSubmitInternal}>
-      {/* Hotel Basic Info */}
       <InputWithIcon icon={FaBuilding} name="hotelName" type="text" placeholder="Hotel Name" required />
       <InputWithIcon icon={FaEnvelope} name="email" type="email" placeholder="Email Address" required />
       <InputWithIcon icon={FaPhone} name="phone" type="tel" placeholder="Phone Number" required />
-      
       <InputWithIcon icon={FaIdCard} name="registrationNumber" type="text" placeholder="Registration Number" required />
 
       <div className="grid grid-cols-2 gap-4">
@@ -131,26 +138,25 @@ function HotelSignupForm({ onSubmit, loading, error }: {
 
         <SelectWithIcon icon={FaGlobe} name="country" required defaultValue="">
           <option value="" disabled>Country</option>
-          <option value="Pakistan">Pakistan</option>
-          <option value="India">India</option>
+          <option value="Rwanda">Rwanda</option>
+          <option value="Kenya">Kenya</option>
+          <option value="Uganda">Uganda</option>
+          <option value="Tanzania">Tanzania</option>
           <option value="Other">Other</option>
         </SelectWithIcon>
       </div>
 
-      <InputWithIcon icon={FaPhone} name="city" type="text" placeholder="City" required />
+      <InputWithIcon icon={FaBuilding} name="city" type="text" placeholder="City" required />
       <InputWithIcon icon={FaShop} name="address" type="text" placeholder="Address" required />
       <InputWithIcon icon={FaIdCard} name="zipCode" type="text" placeholder="Zip Code" />
 
-      {/* Contact Person */}
       <InputWithIcon icon={FaUser} name="contactPersonName" type="text" placeholder="Contact Person Name" required />
       <InputWithIcon icon={FaPhone} name="contactPersonPhone" type="tel" placeholder="Contact Person Phone" required />
       <InputWithIcon icon={FaEnvelope} name="contactPersonEmail" type="email" placeholder="Contact Person Email" />
 
-      {/* Password */}
       <InputWithIcon icon={FaLock} name="password" type="password" placeholder="Password" required />
       <InputWithIcon icon={FaLock} name="confirmPassword" type="password" placeholder="Confirm Password" required />
 
-      {/* File Uploads */}
       {[
         { label: "Hotel Logo *", name: "logo", accept: "image/*" },
         { label: "Cover Image *", name: "coverImage", accept: "image/*" },
@@ -199,7 +205,12 @@ function HotelSignupForm({ onSubmit, loading, error }: {
   );
 }
 
-function SignupForm({ onSubmit, loading, error, selectedRole }: {
+function SignupForm({
+  onSubmit,
+  loading,
+  error,
+  selectedRole,
+}: {
   onSubmit: (e: React.FormEvent<HTMLFormElement>, files: Record<string, File | null>) => void;
   loading: boolean;
   error: string;
@@ -217,30 +228,26 @@ function SignupForm({ onSubmit, loading, error, selectedRole }: {
     setFiles((prev) => ({ ...prev, [name]: f?.[0] || null }));
   };
 
-  // Intercept the submit locally to cleanly format fields for Multer
   const handleSubmitInternal = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onSubmit(e, files);
   };
 
-  return (
-    <form
-      className="w-full max-w-[380px] space-y-5"
-      onSubmit={handleSubmitInternal}
-    >
-      {/* Basic Info */}
-      <InputWithIcon icon={FaUser}     name="name"            type="text"  placeholder="Full Name"     required />
-      <InputWithIcon icon={FaEnvelope} name="email"           type="email" placeholder="Email Address" required />
-      <InputWithIcon icon={FaPhone}    name="phone"           type="tel"   placeholder="Phone Number"  required />
-      <InputWithIcon icon={FaLock}     name="password"        type="password" placeholder="Password"        required />
-      <InputWithIcon icon={FaLock}     name="confirmPassword" type="password" placeholder="Confirm Password" required />
+  const isVet = selectedRole.toLowerCase() === "veterinary";
+  const isAdmin = selectedRole.toLowerCase() === "admin";
 
-      {/* ID Number — required by schema */}
+  return (
+    <form className="w-full max-w-[380px] space-y-5" onSubmit={handleSubmitInternal}>
+      <InputWithIcon icon={FaUser} name="name" type="text" placeholder="Full Name" required />
+      <InputWithIcon icon={FaEnvelope} name="email" type="email" placeholder="Email Address" required />
+      <InputWithIcon icon={FaPhone} name="phone" type="tel" placeholder="Phone Number" required />
+      <InputWithIcon icon={FaLock} name="password" type="password" placeholder="Password" required />
+      <InputWithIcon icon={FaLock} name="confirmPassword" type="password" placeholder="Confirm Password" required />
+
       <InputWithIcon icon={FaIdCard} name="id_Number" type="text" placeholder="National ID Number" required />
 
-      {selectedRole?.toLowerCase() !== "veterinary" && (
+      {!isVet && (
         <div className="grid grid-cols-2 gap-4">
-          {/* Gender — required by schema */}
           <SelectWithIcon icon={FaUser} name="gender" required defaultValue="">
             <option value="" disabled>Gender</option>
             <option value="male">Male</option>
@@ -248,39 +255,47 @@ function SignupForm({ onSubmit, loading, error, selectedRole }: {
             <option value="other">Other</option>
           </SelectWithIcon>
 
-          {/* Category — required enum: Goat, cow, pigs, sheep */}
           <SelectWithIcon icon={FaShop} name="category" required defaultValue="">
             <option value="" disabled>Category</option>
-            <option value="Goat">Goat</option>
             <option value="cow">Cow</option>
-            <option value="pigs">Pigs</option>
+            <option value="goat">Goat</option>
             <option value="sheep">Sheep</option>
+            <option value="pig">Pig</option>
+            <option value="horse">Horse</option>
+            <option value="chicken">Chicken</option>
+            <option value="rabbit">Rabbit</option>
+            <option value="donkey">Donkey</option>
+            <option value="turkey">Turkey</option>
+            <option value="duck">Duck</option>
+            <option value="dog">Dog</option>
+            <option value="cat">Cat</option>
+            <option value="camel">Camel</option>
+            <option value="buffalo">Buffalo</option>
+            <option value="other">Other</option>
           </SelectWithIcon>
         </div>
       )}
 
-      {selectedRole?.toLowerCase() !== "veterinary" && (
+      {!isVet && !isAdmin && (
         <>
-          <InputWithIcon icon={FaShop} name="shopName"    type="text" placeholder="Shop / Farm Name" required />
-          <InputWithIcon icon={FaShop} name="shopAddress" type="text" placeholder="Shop Address"     required />
+          <InputWithIcon icon={FaShop} name="shopName" type="text" placeholder="Shop / Farm Name" required />
+          <InputWithIcon icon={FaShop} name="shopAddress" type="text" placeholder="Shop Address" required />
         </>
       )}
 
-      {/* Veterinary specific fields */}
-      {selectedRole?.toLowerCase() === "veterinary" && (
+      {isVet && (
         <>
           <h3 className="text-sm font-semibold text-slate-700 dark:text-white mt-2">Veterinary Details</h3>
-          <InputWithIcon icon={FaIdCard} name="licenseNumber" type="text" placeholder="License / Registration Number" />
-          <InputWithIcon icon={FaUser} name="clinicName" type="text" placeholder="Clinic / Practice Name" />
-          <InputWithIcon icon={FaPhone} name="yearsOfExperience" type="text" placeholder="Years of Experience" />
+          <InputWithIcon icon={FaIdCard} name="licenseNumber" type="text" placeholder="License / Registration Number" required />
+          <InputWithIcon icon={FaUser} name="clinicName" type="text" placeholder="Clinic / Practice Name" required />
+          <InputWithIcon icon={FaBriefcase} name="yearsOfExperience" type="text" placeholder="Years of Experience" required />
         </>
       )}
 
-      {/* File Uploads — controlled so FormData receives them */}
       {[
-        { label: "Profile Image *",  name: "profile_img",  accept: "image/*" },
-        { label: "ID Proof *",       name: "id_proof_img", accept: "image/*,application/pdf" },
-        ...(selectedRole?.toLowerCase() !== "veterinary" ? [{ label: "Shop Logo *",      name: "shopLogo",     accept: "image/*" }] : []),
+        { label: "Profile Image *", name: "profile_img", accept: "image/*" },
+        { label: "ID Proof *", name: "id_proof_img", accept: "image/*,application/pdf" },
+        ...(!isVet && !isAdmin ? [{ label: "Shop Logo *", name: "shopLogo", accept: "image/*" }] : []),
       ].map(({ label, name, accept }) => (
         <div key={name} className="space-y-1">
           <label className="block text-sm text-slate-500 px-2">{label}</label>
@@ -297,16 +312,9 @@ function SignupForm({ onSubmit, loading, error, selectedRole }: {
         </div>
       ))}
 
-      {error && (
-        <p className="text-red-500 text-sm text-center bg-red-50 dark:bg-red-900/20 p-3 rounded-2xl">
-          {error}
-        </p>
-      )}
-
-      {/* Veterinary license upload */}
-      {selectedRole?.toLowerCase() === "veterinary" && (
+      {isVet && (
         <div className="space-y-1">
-          <label className="block text-sm text-slate-500 px-2">License / Certification (optional)</label>
+          <label className="block text-sm text-slate-500 px-2">License / Certification *</label>
           <input
             type="file"
             name="license"
@@ -318,6 +326,12 @@ function SignupForm({ onSubmit, loading, error, selectedRole }: {
             <p className="text-xs text-emerald-600 px-2">✓ {files.license!.name}</p>
           )}
         </div>
+      )}
+
+      {error && (
+        <p className="text-red-500 text-sm text-center bg-red-50 dark:bg-red-900/20 p-3 rounded-2xl">
+          {error}
+        </p>
       )}
 
       <label className="flex items-start gap-2 text-sm text-slate-500 px-2 cursor-pointer">
@@ -345,9 +359,9 @@ function SignupForm({ onSubmit, loading, error, selectedRole }: {
 function SocialButtons() {
   const socials = [
     { icon: FaFacebookF, label: "Facebook", color: "hover:bg-[#1877F2]" },
-    { icon: FaGoogle,    label: "Google",   color: "hover:bg-[#DB4437]" },
-    { icon: FaInstagram, label: "Instagram",color: "hover:bg-[#E1306C]" },
-    { icon: FaLinkedinIn,label: "LinkedIn", color: "hover:bg-[#0A66C2]" },
+    { icon: FaGoogle, label: "Google", color: "hover:bg-[#DB4437]" },
+    { icon: FaInstagram, label: "Instagram", color: "hover:bg-[#E1306C]" },
+    { icon: FaLinkedinIn, label: "LinkedIn", color: "hover:bg-[#0A66C2]" },
   ];
 
   return (
@@ -392,18 +406,20 @@ function ModeToggle({ isLogin, setMode }: { isLogin: boolean; setMode: (mode: "l
 }
 
 export default function LoginPages() {
-  const [mode, setMode]               = useState<"login" | "register">("login");
-  const [userType, setUserType]       = useState<"user" | "hotel">("user");
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [userType, setUserType] = useState<"user" | "hotel">("user");
   const [selectedRole, setSelectedRole] = useState("Customer");
-  const [error, setError]             = useState("");
-  const [loading, setLoading]         = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const { login, register } = useAuth();
   const { login: hotelLogin, register: hotelRegister } = useHotelAuth();
   const navigate = useNavigate();
 
   const isLogin = mode === "login";
-  const roles   = ["Customer", "Hotel", "Veterinary", "Farmer"];
+
+  // Full role suite integrated
+  const roles = ["Customer", "Seller", "Farmer", "Veterinary", "Hotel", "Admin"];
 
   // ====================== LOGIN ======================
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -412,24 +428,40 @@ export default function LoginPages() {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const email    = formData.get("email")    as string;
+    const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
     try {
       if (userType === "hotel") {
-        const hotelData = await hotelLogin(email, password);
+        await hotelLogin(email, password);
         navigate("/dashboard/hotel", { replace: true });
       } else {
         const userData = await login(email, password);
-        let dashboardPath = "/dashboard";
+        let dashboardPath = "/dashboard"; 
 
         switch (userData.role?.toLowerCase()) {
-          case "seller":
-          case "farmer":      dashboardPath = "/dashboard/selling";    break;
           case "customer":
-          case "hotel":       dashboardPath = "/dashboard/buying";     break;
-          case "veterinary":  dashboardPath = "/dashboard/veterinary"; break;
-          case "admin":       dashboardPath = "/admin/dashboard";      break;
+            dashboardPath = "/dashboard/buying";
+            break;
+          case "hotel":
+            dashboardPath = "/dashboard/hotel";
+            break;
+          case "farmer":
+            dashboardPath = "/product/farmer";
+            break;
+          case "veterinary":
+            dashboardPath = "/health";
+            break;
+          case "sale agent":
+          case "sale_agent":
+          case "agent":
+            dashboardPath = "/agent/animal";
+            break;
+          case "admin":
+            dashboardPath = "/dashboard/admin";
+            break;
+          default:
+            dashboardPath = "/dashboard/buying";
         }
 
         navigate(dashboardPath, { replace: true });
@@ -453,10 +485,7 @@ export default function LoginPages() {
     const formData = new FormData(e.currentTarget);
 
     if (userType === "hotel") {
-      // Hotel registration
-      [
-        "logo", "coverImage", "profileImage"
-      ].forEach((fieldName) => {
+      ["logo", "coverImage", "profileImage"].forEach((fieldName) => {
         formData.delete(fieldName);
       });
 
@@ -472,8 +501,7 @@ export default function LoginPages() {
         setError(err.response?.data?.message || "Hotel registration failed. Please try again.");
       }
     } else {
-      // User registration
-      ["profile_img", "id_proof_img", "shopLogo"].forEach((fieldName) => {
+      ["profile_img", "id_proof_img", "shopLogo", "license"].forEach((fieldName) => {
         formData.delete(fieldName);
       });
 
@@ -481,15 +509,20 @@ export default function LoginPages() {
         if (file) formData.append(key, file);
       });
 
-      formData.append("profile", selectedRole.toLowerCase());
-
+      const normalizedRole = selectedRole.toLowerCase();
+      
+      // Role & Profile Mapping
       const roleMap: Record<string, string> = {
-        customer:   "customer",
-        hotel:      "hotel",
+        customer: "customer",
+        seller: "seller",
+        farmer: "farmer",
         veterinary: "veterinary",
-        farmer:     "farmer",
+        hotel: "hotel",
+        admin: "admin",
       };
-      formData.append("role", roleMap[selectedRole.toLowerCase()] ?? "customer");
+
+      formData.append("profile", normalizedRole);
+      formData.append("role", roleMap[normalizedRole] ?? "customer");
 
       try {
         const res = await register(formData);
@@ -504,7 +537,6 @@ export default function LoginPages() {
 
   return (
     <div className="min-h-screen flex font-poppins overflow-hidden bg-[#f4f6f8] dark:bg-[#0c0e12]">
-      
       <div className="w-full lg:w-[46%] min-h-screen bg-[#f4f6f8] dark:bg-[#0c0e12] flex flex-col items-center justify-center px-6 py-12 relative z-20">
         <Link to="/" className="mb-10">
           <img src={brand} alt="Animarket" className="h-11 w-auto object-contain" />
@@ -531,7 +563,7 @@ export default function LoginPages() {
             )}
 
             {isLogin ? (
-              <LoginFormComponent onSubmit={handleLogin} loading={loading} error={error} userType={userType} />
+              <LoginFormComponent onSubmit={handleLogin} loading={loading} error={error} />
             ) : userType === "hotel" ? (
               <HotelSignupForm onSubmit={handleRegister} loading={loading} error={error} />
             ) : (
@@ -569,9 +601,9 @@ export default function LoginPages() {
             Welcome to <span className="text-white">ANIMARKET</span>
           </h2>
 
-          <p className="text-lg mb-10 text-white/90">Are you a</p>
+          <p className="text-lg mb-8 text-white/90">Are you a</p>
 
-          <div className="grid grid-cols-2 gap-4 mb-10">
+          <div className="grid grid-cols-2 gap-3 mb-8">
             {roles.map((role) => (
               <motion.button
                 key={role}
@@ -581,9 +613,9 @@ export default function LoginPages() {
                   setSelectedRole(role);
                   setUserType(role === "Hotel" ? "hotel" : "user");
                 }}
-                className={`py-5 rounded-3xl font-semibold text-lg transition-all duration-300 border ${
+                className={`py-4 rounded-2xl font-semibold text-base transition-all duration-300 border ${
                   selectedRole === role
-                    ? "bg-white text-emerald-700 border-white"
+                    ? "bg-white text-emerald-700 border-white shadow-md"
                     : "bg-white/10 hover:bg-white/20 border-white/30 hover:border-white/50 text-white"
                 }`}
               >
@@ -592,8 +624,8 @@ export default function LoginPages() {
             ))}
           </div>
 
-          <p className="text-sm text-white/70 mb-8">
-            Choose your role to access the right features and dashboard
+          <p className="text-sm text-white/70 mb-6">
+            Choose your role to access customized feature suites and workflows
           </p>
 
           <ModeToggle isLogin={isLogin} setMode={setMode} />
@@ -604,7 +636,7 @@ export default function LoginPages() {
 
           <SocialButtons />
 
-          <Link to="/" className="block mt-12 text-xs text-white/60 hover:text-white transition-colors">
+          <Link to="/" className="block mt-8 text-xs text-white/60 hover:text-white transition-colors">
             ← Back to home
           </Link>
         </div>

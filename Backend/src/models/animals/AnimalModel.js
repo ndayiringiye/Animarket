@@ -5,7 +5,23 @@ const AnimalSchema = new mongoose.Schema({
     type: {
         type: String,
         required: true,
-        enum: ["cow", "goat", "sheep", "pig", "horse", "chicken"]
+        enum: [
+            "cow",
+            "goat",
+            "sheep",
+            "pig",
+            "horse",
+            "chicken",
+            "rabbit",
+            "donkey",
+            "turkey",
+            "duck",
+            "dog",
+            "cat",
+            "camel",
+            "buffalo",
+            "other"
+        ]
     },
     breed: { type: String, required: true },
     gender: { type: String, enum: ["male", "female"], required: true },

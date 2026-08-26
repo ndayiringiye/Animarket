@@ -13,6 +13,10 @@ import veterinaryRoutes from "./src/routes/Veterinary/veterinaryRoutes.js";
 import agreemenRoutes from "./src/routes/Agreements/agreementRoutes.js";
 import HotelsRoutes from "./src/routes/Hotels/hotelRoutes.js";
 import bookingRoute from "./src/routes/Booking/bookingRoute.js";
+import deliveryRoutes from "./src/routes/Delivery/deliveryRoutes.js";
+import interestRoutes from "./src/routes/Interest/interestRoutes.js";
+import chatRoutes from "./src/routes/Chat/chatRoutes.js";
+import trustRoutes from "./src/routes/Trust/trustRoutes.js";
 const app = express();
 dotenv.config();
 
@@ -39,6 +43,15 @@ app.use("/api/meeting", meetingRoute);
 app.use("/api/hotels", hotelRoutes);
 app.use("/api/veterinary", veterinaryRoutes);
 app.use("/api/agreements", agreemenRoutes);   
+app.use("/api/delivery", deliveryRoutes);
+app.use("/api/interest", interestRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/trust", trustRoutes);
+// global error handler to capture unexpected errors
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ message: err?.message || 'Server error', status: 500 });
+});
 const startServer = async () => {
   try {
     await connectDB();

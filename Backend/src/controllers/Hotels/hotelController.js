@@ -213,6 +213,47 @@ export const hotelLogin = async (req, res) => {
       });
     }
 
+    // ── Admin approval gate ─────────────────────────────────────────────
+    if (hotel.status === "pending") {
+      // Send a "waiting for approval" notification email
+      try {
+        const nodemailer = (await import("nodemailer")).default;
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+        });
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: hotel.email,
+          subject: "⏳ Your AniMarket Hotel Account is Awaiting Admin Approval",
+          html: `
+            <h2>Account Pending Approval</h2>
+            <p>Dear <strong>${hotel.hotelName}</strong>,</p>
+            <p>Your hotel account has been registered but is <strong>still awaiting admin approval</strong>.</p>
+            <p>You will receive another email once your account has been reviewed and approved.</p>
+            <p>If you have any questions, please contact support.</p>
+            <br/>
+            <p>Thank you for your patience,<br/>The AniMarket Team</p>
+          `,
+        });
+      } catch (mailErr) {
+        console.error("Approval-wait email failed:", mailErr.message);
+      }
+
+      return res.status(403).json({
+        message: "Your hotel account is awaiting admin approval. A notification email has been sent to you.",
+        status: 403,
+      });
+    }
+
+    if (hotel.status === "rejected") {
+      return res.status(403).json({
+        message: "Your hotel registration has been rejected. Please contact support for more information.",
+        status: 403,
+      });
+    }
+    // ───────────────────────────────────────────────────────────────────
+
     if (hotel.status === "suspended" || hotel.status === "inactive") {
       return res.status(403).json({
         message: `Hotel account is ${hotel.status}`,

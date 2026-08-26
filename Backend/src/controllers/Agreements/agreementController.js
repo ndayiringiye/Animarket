@@ -24,29 +24,67 @@ const generateAgreementPDF = async (agreement, animal, buyer, seller) => {
       const stream = fs.createWriteStream(filePath);
       doc.pipe(stream);
 
-      // HEADER
-      doc.fontSize(20).text("ANIMAL PURCHASE AGREEMENT", { align: "center" });
+      // Professional Purchase Agreement Header
+      doc.rect(0, 0, doc.page.width, 140).fill('#E6F7C6');
+      doc.fillColor('#0F172A');
+      doc.fontSize(28).font('Helvetica-Bold').text('Purchase Agreement', { align: 'center', valign: 'center' });
+      doc.moveDown(2);
+
+      // Agreement meta
+      doc.moveDown();
+      doc.fontSize(10).font('Helvetica').fillColor('#000');
+      doc.text(`Transaction ID: ${agreement.transactionId}`, { continued: true }).text(`   Date: ${new Date().toDateString()}`, { align: 'right' });
       doc.moveDown();
 
-      // CONTENT
-      doc.fontSize(12).text(`Transaction ID: ${agreement.transactionId}`);
-      doc.text(`Date: ${new Date().toDateString()}`);
+      // Parties
+      doc.fontSize(12).font('Helvetica-Bold').text('Parties', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(11).font('Helvetica').text(`Seller: ${seller?.name || 'Seller'}`);
+      doc.text(`Buyer: ${buyer?.name || 'Buyer'}`);
       doc.moveDown();
 
-      doc.text(`Seller: ${seller.name}`);
-      doc.text(`Buyer: ${buyer.name}`);
+      // Subject
+      doc.fontSize(12).font('Helvetica-Bold').text('Subject Matter of the Agreement', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(11).font('Helvetica').text(`The Seller agrees to sell and convey to the Buyer the following animal:`);
+      doc.moveDown(0.2);
+      doc.text(`- Animal: ${animal.name} (${animal.type || ''}, ${animal.breed || ''})`);
+      doc.text(`- Age: ${animal.age || 'N/A'}`);
+      doc.text(`- Health status: ${animal.health?.healthStatus || 'N/A'}`);
       doc.moveDown();
 
-      doc.text(`Animal: ${animal.name} (${animal.type}, ${animal.breed})`);
-      doc.text(`Price: ${animal.price} ${animal.currency}`);
-      doc.text(`Health: ${animal.health.healthStatus}`);
+      // Price and payment
+      doc.fontSize(12).font('Helvetica-Bold').text('Purchase Price and Payment Terms', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(11).font('Helvetica').text(`Total Purchase Price: ${agreement.price || animal.price} ${agreement.currency || animal.currency}`);
+      doc.moveDown(0.2);
+      doc.text('Payment Method: ' + (agreement.paymentMethod || 'To be agreed'));
       doc.moveDown();
 
-      doc.text("Terms:");
-      doc.text(agreement.terms);
-      doc.moveDown();
+      // Terms
+      doc.fontSize(12).font('Helvetica-Bold').text('Terms', { underline: true });
+      doc.moveDown(0.5);
+      if (agreement.terms) {
+        doc.fontSize(11).font('Helvetica').text(agreement.terms);
+      } else {
+        doc.fontSize(11).font('Helvetica').text('The parties agree to the standard terms for the sale as set out in this agreement.');
+      }
+      doc.moveDown(1);
 
-      doc.text("This document is legally binding in digital form.");
+      // Signature placeholders
+      const sigY = doc.y + 20;
+      doc.moveDown(2);
+      doc.fontSize(11).text('Seller Signature:', { continued: false });
+      doc.moveDown(3);
+      doc.text('______________________________', { continued: true });
+      doc.moveDown(1);
+      doc.text('Name: ' + (seller?.name || 'Seller'));
+      doc.moveDown(2);
+      doc.text('Buyer Signature:', { continued: false });
+      doc.moveDown(3);
+      doc.text('______________________________', { continued: true });
+      doc.moveDown(1);
+      doc.text('Name: ' + (buyer?.name || 'Buyer'));
 
       doc.end();
 

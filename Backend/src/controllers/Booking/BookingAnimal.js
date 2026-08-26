@@ -2,6 +2,7 @@ import * as bookingService from "../../services/bookings/bookingService.js";
 
 export const createBooking = async (req, res) => {
   try {
+    console.log('createBooking controller invoked for user:', req.user?.id);
     const result = await bookingService.createBookingService(
       req.body,
       req.user.id
