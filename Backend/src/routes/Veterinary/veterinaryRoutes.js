@@ -10,6 +10,7 @@ const router = express.Router();
 
 // Service Job Routes
 router.post("/service-job/create", verifyToken, veterinaryController.createServiceJob);
+router.post("/request", verifyToken, veterinaryController.createCustomerRequest);
 router.get("/service-jobs", veterinaryController.listServiceJobs);
 router.post("/service-job/:jobId/accept", verifyToken, isVeterinarian, veterinaryController.acceptServiceJob);
 router.post("/service-job/:jobId/complete", verifyToken, isVeterinarian, veterinaryController.completeServiceJob);

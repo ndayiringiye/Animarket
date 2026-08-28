@@ -2,6 +2,7 @@ import User from "../../models/users/UserModel.js";
 import Animal from "../../models/animals/AnimalModel.js";
 import Meeting from "../../models/Meetings/meettingModels.js";
 import axios from "axios";
+import { sendZoomMeetingNotification } from "../emails/emailService.js";
 
 import { v4 as uuidv4 } from "uuid";
 import crypto from "crypto";
@@ -18,20 +19,26 @@ const getZoomAccessToken = async () => {
         `${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`
     ).toString("base64");
 
-    const response = await axios.post(
-        "https://zoom.us/oauth/token",
-        null,
-        {
-            params: {
-                grant_type: "account_credentials",
-                account_id: process.env.ZOOM_ACCOUNT_ID,
-            },
-            headers: {
-                Authorization: `Basic ${auth}`,
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
-        }
-    );
+    let response;
+    try {
+        response = await axios.post(
+            "https://zoom.us/oauth/token",
+            null,
+            {
+                params: {
+                    grant_type: "account_credentials",
+                    account_id: process.env.ZOOM_ACCOUNT_ID,
+                    scope: "meeting:write:meeting",
+                },
+                headers: {
+                    Authorization: `Basic ${auth}`,
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+            }
+        );
+    } catch (error) {
+        throw new Error(`Zoom authentication failed: ${error.response?.data?.message || error.message}`);
+    }
 
     cachedToken = response.data.access_token;
     tokenExpiry = Date.now() + (response.data.expires_in * 1000 - 300000); // 5 min buffer
@@ -40,8 +47,6 @@ const getZoomAccessToken = async () => {
 };
 
 export const createRealZoomMeeting = async (details) => {
-    const token = await getZoomAccessToken();
-
     const payload = {
         topic: details.title,
         type: 2, // Scheduled
@@ -59,16 +64,37 @@ export const createRealZoomMeeting = async (details) => {
         }
     };
 
-    const response = await axios.post(
-        "https://api.zoom.us/v2/users/me/meetings",
-        payload,
-        {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json"
+    let response;
+    let token = await getZoomAccessToken();
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+            response = await axios.post(
+                "https://api.zoom.us/v2/users/me/meetings",
+                payload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
+            break;
+        } catch (error) {
+            if (error.response?.data?.code !== 4711 || attempt === 1) {
+                if (error.response?.data?.code === 4711) {
+                    throw new Error(
+                        "Zoom token has no meeting creation scope. In Zoom Marketplace, add `meeting:write:meeting` to the same Server-to-Server OAuth app used by ZOOM_CLIENT_ID, activate it, and restart the backend."
+                    );
+                }
+
+                throw new Error(`Zoom meeting creation failed: ${error.response?.data?.message || error.message}`);
             }
+
+            cachedToken = null;
+            tokenExpiry = null;
+            token = await getZoomAccessToken();
         }
-    );
+    }
 
     const zoom = response.data;
 
@@ -154,7 +180,7 @@ export const createMeetingService = async (req) => {
 
         validParticipants.push({
             user: adminUser._id,
-            role: "host",
+            role: "admin",
             status: "invited"
         });
     }
@@ -199,6 +225,25 @@ export const createMeetingService = async (req) => {
         zoomMeetingData,
         status: "pending"
     });
+
+    if (provider === "zoom" && animal?.owner) {
+        const owner = await User.findById(animal.owner).select("name email");
+        if (owner?.email) {
+            try {
+                await sendZoomMeetingNotification({
+                    email: owner.email,
+                    ownerName: owner.name,
+                    animalName: animal.name,
+                    title,
+                    meetingDate,
+                    meetingLink: videoCall.meetingLink,
+                    password: videoCall.password
+                });
+            } catch (error) {
+                console.error("Zoom meeting owner notification failed:", error.message);
+            }
+        }
+    }
 
     return meeting;
 };

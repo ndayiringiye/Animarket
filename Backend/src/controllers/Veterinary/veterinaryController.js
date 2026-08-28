@@ -4,6 +4,22 @@ export const createServiceJob = async (req, res) => {
   return await veterinaryService.createVeterinaryServiceJob(req, res);
 };
 
+export const createCustomerRequest = async (req, res) => {
+  req.body = {
+    ...req.body,
+    title: req.body.title || "Veterinary visit request",
+    description: req.body.description || req.body.notes,
+    serviceType: req.body.serviceType || "checkup",
+    requesterId: req.user.id,
+    requesterRole: req.user.role === "seller" ? "seller" : req.user.role,
+    estimatedCost: req.body.estimatedCost || 0,
+    serviceDate: req.body.serviceDate || req.body.preferredDate,
+    notes: req.body.notes,
+  };
+
+  return await veterinaryService.createVeterinaryServiceJob(req, res);
+};
+
 export const listServiceJobs = async (req, res) => {
   return await veterinaryService.getAllServiceJobs(req, res);
 };

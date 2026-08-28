@@ -10,6 +10,7 @@ import Layout from '../Components/Layout';
 import DashboardPage from '../Pages/Dashboards/HotelDashboard';
 import CustomerDashboard from '../Pages/Dashboards/Buying/CustomerDashboard';
 import HotelDashboard from "../Pages/Dashboards/HotelDashboard"
+import VeterinaryRequests from "../Pages/Dashboards/VeterinaryRequests";
 
 const AppRoutes = () => {
   return (
@@ -28,6 +29,7 @@ const AppRoutes = () => {
         {/* Customer Dashboard standalone */}
         <Route path="/dashboard/buying" element={<CustomerDashboard />} />
         <Route path="/dashboard/hotel" element={<HotelDashboard />} />
+        <Route path="/dashboard/veterinary" element={<VeterinaryRequests />} />
 
       </Routes>
     </BrowserRouter>

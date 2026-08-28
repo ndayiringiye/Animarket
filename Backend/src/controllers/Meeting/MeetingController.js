@@ -22,8 +22,9 @@ export const createMeetingController = async (req, res) => {
             data: meeting
         });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ success: false, message: error.message });
+        console.error("Create meeting failed:", error.message);
+        const isZoomError = error.message.startsWith("Zoom ");
+        return res.status(isZoomError ? 502 : 500).json({ success: false, message: error.message });
     }
 };
 

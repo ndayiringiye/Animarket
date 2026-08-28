@@ -1892,6 +1892,8 @@ const CustomerDashboard = () => {
         else if (Array.isArray(data.animals)) animals = data.animals;
         else if (Array.isArray(data.data)) animals = data.data;
         else animals = [];
+
+        animals = animals.filter((animal: any) => animal.isAvailable !== false);
         
         setAnimalData(animals);
         
@@ -2078,7 +2080,8 @@ const res = await fetch(`${baseurl}/api/meeting/`, {
   };
 
   const handlePayAnimal = async (method: string, details: Record<string, string>) => {
-    const res = await fetch(`${baseurl}/api/payments/create`, {
+    const paymentMethod = method === "mobile" ? "momo" : method === "bank" ? "bank" : "stripe";
+    const bookingRes = await fetch(`${baseurl}/api/bookings/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2087,13 +2090,29 @@ const res = await fetch(`${baseurl}/api/meeting/`, {
       body: JSON.stringify({
         animalId: selectedAnimal?._id,
         userId: getUserId(),
-        amount: selectedAnimal?.price || 0,
-        method,
+        paymentMethod,
         details,
       }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.message || "Payment failed.");
+    const bookingData = await bookingRes.json();
+    if (!bookingRes.ok) throw new Error(bookingData?.message || "Payment failed.");
+
+    const bookingId = bookingData?.data?.booking?._id || bookingData?.data?._id;
+    if (!bookingId) throw new Error("Booking was not created.");
+
+    const initiateRes = await fetch(`${baseurl}/api/bookings/${bookingId}/initiate-payment`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    const initiateData = await initiateRes.json();
+    if (!initiateRes.ok) throw new Error(initiateData?.message || "Payment failed.");
+
+    const escrowRes = await fetch(`${baseurl}/api/bookings/${bookingId}/hold-escrow`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    const escrowData = await escrowRes.json();
+    if (!escrowRes.ok) throw new Error(escrowData?.message || "Payment failed.");
   };
 
   const handleFetchChatMessages = async (

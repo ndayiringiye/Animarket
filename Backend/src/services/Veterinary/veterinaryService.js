@@ -5,6 +5,7 @@ import Animal from "../../models/animals/AnimalModel.js";
 import User from "../../models/users/UserModel.js";
 import QRCode from "qrcode";
 import crypto from "crypto";
+import { sendVeterinaryRequestNotification } from "../emails/emailService.js";
 
 // Create Veterinary Service Job (Post a job)
 export const createVeterinaryServiceJob = async (req, res) => {
@@ -58,6 +59,8 @@ export const createVeterinaryServiceJob = async (req, res) => {
       animalName: animal.name,
       animalType: animal.type,
       animalHealth: animal.health.healthStatus,
+      animalImage: animal.images?.[0],
+      animalLocation: animal.location,
       requester: requesterId,
       requesterRole,
       location,
@@ -67,6 +70,25 @@ export const createVeterinaryServiceJob = async (req, res) => {
       notes,
       status: "posted",
     });
+
+    const admins = await User.find({ role: "admin" }).select("email");
+    const adminEmails = admins.map((admin) => admin.email).filter(Boolean);
+    if (adminEmails.length > 0) {
+      try {
+        await Promise.all(adminEmails.map((email) => sendVeterinaryRequestNotification({
+          email,
+          customerName: requester.name,
+          customerPhone: requester.phone,
+          animalName: animal.name,
+          animalLocation: animal.location,
+          animalImage: animal.images?.[0],
+          preferredDate: serviceDate,
+          notes,
+        })));
+      } catch (error) {
+        console.error("Veterinary request notification failed:", error.message);
+      }
+    }
 
     return res.status(201).json({
       message: "Veterinary service job posted successfully",
@@ -96,7 +118,7 @@ export const getAllServiceJobs = async (req, res) => {
     if (veterinarianId) query.assignedVeterinarian = veterinarianId;
 
     const jobs = await VeterinaryServiceJob.find(query)
-      .populate("animal", "name type breed")
+      .populate("animal", "name type breed images location")
       .populate("requester", "name email phone")
       .populate("assignedVeterinarian", "name email")
       .limit(limit * 1)

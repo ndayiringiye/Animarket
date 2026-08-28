@@ -13,7 +13,7 @@ const meetingValidationSchema = Joi.object({
             user: objectIdSchema,
             role: Joi.string().valid("seller", "admin", "customer", "farmer", "veterinary", "hotel").required()
         })
-    ).min(1).required()
+    ).min(1).optional()
         .messages({ "array.min": "At least one participant is required" }),
 
     meetingType: Joi.string().valid(

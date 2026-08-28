@@ -32,6 +32,17 @@ const VeterinaryServiceJobSchema = new mongoose.Schema(
     animalName: String,
     animalType: String,
     animalHealth: String,
+    animalImage: String,
+    animalLocation: {
+      country: String,
+      province: String,
+      district: String,
+      sector: String,
+      cell: String,
+      village: String,
+      latitude: Number,
+      longitude: Number,
+    },
 
     // Owner/Requester Information
     requester: {
