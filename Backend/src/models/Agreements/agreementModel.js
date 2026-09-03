@@ -79,6 +79,7 @@ const agreementSchema = new Schema(
     },
 
     pdfUrl: String,
+    terms: { type: String, trim: true },
     emailSent: { type: Boolean, default: false },
 
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },

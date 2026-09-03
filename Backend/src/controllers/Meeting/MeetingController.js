@@ -137,8 +137,9 @@ export const endMeetingController = async (req, res) => {
 export const updateMeetingController = async (req, res) => {
     try {
         const meeting = await updateMeetingService(req.params.meetingId, req.user.id, req.body);
-        res.status(200).json({ success: true, meeting });
+        res.status(200).json({ success: true, data: meeting });
     } catch (err) {
+        console.error("Update meeting error:", err.message);
         res.status(400).json({ success: false, message: err.message });
     }
 };

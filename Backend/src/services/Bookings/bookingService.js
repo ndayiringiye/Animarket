@@ -59,10 +59,6 @@ export const createBookingService = async (data, userId) => {
             }
         }
 
-        // Admin still handles commission/escrow oversight, tracked separately from farmer
-        const adminUser = await User.findOne({ role: "admin" });
-        if (!adminUser) throw new Error("Admin not found to handle booking");
-
         let meeting = null;
         if (meetingId) {
             meeting = await Meeting.findById(meetingId);
@@ -86,7 +82,7 @@ export const createBookingService = async (data, userId) => {
             paymentStatus: "pending"
         });
 
-        // Admin owns the creation step, while both booking parties can review and sign.
+        // The agreement belongs to the customer and animal owner.
         const agreement = await createAgreementService({
             bookingId: booking._id,
             animalId: animal._id,
@@ -95,7 +91,6 @@ export const createBookingService = async (data, userId) => {
             price: finalPrice,
             paymentMethod,
             deliveryDate: booking.deliveryDate,
-            createdBy: adminUser._id,
         });
 
         const qrPayload = {
@@ -129,6 +124,27 @@ export const createBookingService = async (data, userId) => {
         };
 
         await transporter.sendMail(mailOptions);
+
+        if (farmerEmail && farmerEmail !== buyer.email) {
+            try {
+                await transporter.sendMail({
+                    from: process.env.EMAIL_USER,
+                    to: farmerEmail,
+                    subject: `New booking for ${animal.name || "your animal"}`,
+                    html: `
+                        <h2>New animal booking</h2>
+                        <p><strong>Customer:</strong> ${buyer.name || buyer.email}</p>
+                        <p><strong>Customer email:</strong> ${buyer.email}</p>
+                        <p><strong>Animal:</strong> ${animal.name || "Livestock"}</p>
+                        <p><strong>Booking No:</strong> ${booking.bookingNumber}</p>
+                        <p><strong>Amount:</strong> ${finalPrice} ${booking.currency}</p>
+                        <p><strong>Status:</strong> ${booking.status}</p>
+                    `
+                });
+            } catch (error) {
+                console.error("Farmer booking notification failed:", error.message);
+            }
+        }
 
         return {
             booking,

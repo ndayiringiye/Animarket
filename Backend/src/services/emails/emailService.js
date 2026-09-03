@@ -22,7 +22,7 @@ export const sendAgreementEmail = async (emails, pdfUrl, transactionId) => {
     attachments: [
       {
         filename: `Agreement_${transactionId}.pdf`,
-        path: pdfUrl, 
+        href: pdfUrl,
         contentType: 'application/pdf'
       }
     ],

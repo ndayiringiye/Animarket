@@ -34,7 +34,9 @@ const meetingValidationSchema = Joi.object({
 
     provider: Joi.string().valid("webrtc", "zoom", "google_meet", "custom").default("webrtc"),
 
-    timezone: Joi.string().default("Africa/Kigali")
+    timezone: Joi.string().default("Africa/Kigali"),
+
+    meetingLink: Joi.string().uri().allow("").optional()
 });
 
 const paramsIdSchema = Joi.object({

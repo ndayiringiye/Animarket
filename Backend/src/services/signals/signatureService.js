@@ -1,4 +1,5 @@
 ﻿export const signAgreement = (agreement, user, signature) => {
+  if (!agreement.signatures) agreement.signatures = {};
   if (user.role === "customer") {
     agreement.signatures.customer = signature;
   } else if (user.role === "farmer") {

@@ -11,6 +11,9 @@ import DashboardPage from '../Pages/Dashboards/HotelDashboard';
 import CustomerDashboard from '../Pages/Dashboards/Buying/CustomerDashboard';
 import HotelDashboard from "../Pages/Dashboards/HotelDashboard"
 import VeterinaryRequests from "../Pages/Dashboards/VeterinaryRequests";
+import FarmerDashboard from "../Pages/Dashboards/Farmer/FarmerDashboard";
+import AgentDashboard from "../Pages/Dashboards/AgentDashboard";
+import AdminDashboard from "../Pages/Dashboards/AdminDashboard";
 
 const AppRoutes = () => {
   return (
@@ -29,6 +32,9 @@ const AppRoutes = () => {
         {/* Customer Dashboard standalone */}
         <Route path="/dashboard/buying" element={<CustomerDashboard />} />
         <Route path="/dashboard/hotel" element={<HotelDashboard />} />
+        <Route path="/product/farmer" element={<FarmerDashboard />} />
+        <Route path="/agent/animal" element={<AgentDashboard />} />
+        <Route path="/dashboard/admin" element={<AdminDashboard />} />
         <Route path="/dashboard/veterinary" element={<VeterinaryRequests />} />
 
       </Routes>

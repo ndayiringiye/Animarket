@@ -1218,12 +1218,18 @@ const chartData = [
   { name: 'Jul', value: 3490, volume: 4300 },
 ];
 
-const AssetChart = () => {
-  const topCategories = [
-    { name: "Electronics", sales: 1200000, color: "#059669" },
-    { name: "Fashion", sales: 950000, color: "#10b981" },
-    { name: "Home & Kitchen", sales: 750000, color: "#34d399" },
-    { name: "Beauty & Personal Care", sales: 500000, color: "#86eac5" },
+const AssetChart = ({ categoryStats }: { categoryStats?: { cattle: number; goat: number; chicken: number; pig: number; rabbit: number; total: number } }) => {
+  const topCategories = categoryStats && categoryStats.total > 0 ? [
+    { name: "Cattle", sales: categoryStats.cattle, color: "#059669" },
+    { name: "Goat", sales: categoryStats.goat, color: "#10b981" },
+    { name: "Chicken", sales: categoryStats.chicken, color: "#34d399" },
+    { name: "Pig", sales: categoryStats.pig, color: "#86eac5" },
+    { name: "Rabbit", sales: categoryStats.rabbit, color: "#a7f3d0" },
+  ].filter(c => c.sales > 0) : [
+    { name: "Cattle", sales: 12, color: "#059669" },
+    { name: "Goat", sales: 9, color: "#10b981" },
+    { name: "Chicken", sales: 7, color: "#34d399" },
+    { name: "Pig", sales: 5, color: "#86eac5" },
   ];
 
   const totalSales = topCategories.reduce((sum, cat) => sum + cat.sales, 0);
@@ -1285,9 +1291,9 @@ const AssetChart = () => {
         </svg>
 
         <div className="absolute flex flex-col items-center justify-center">
-          <span className="text-xs text-gray-400">Total Sales</span>
+          <span className="text-xs text-gray-400">Animals</span>
           <span className="text-2xl font-bold text-slate-900">
-            ${(totalSales / 1000000).toFixed(1)}M
+            {totalSales}
           </span>
         </div>
       </div>
@@ -1371,7 +1377,7 @@ const AssetChart = () => {
                 <span className="text-sm text-gray-600">{item.name}</span>
               </div>
               <span className="text-sm font-semibold text-slate-900">
-                ${(item.sales / 1000000).toFixed(1)}M
+                {item.sales} head
               </span>
             </div>
           ))}
@@ -1442,6 +1448,233 @@ const ShoppingCart = ({ cart, onClose, onRemove }: { cart: any[]; onClose: () =>
     </div>
   );
 };
+// ─── Vaccination Certificate Modal ──────────────────────────────────
+const VaccinationCertificateModal = ({
+  record,
+  animal,
+  onClose,
+  isDark,
+}: {
+  record: any;
+  animal: any;
+  onClose: () => void;
+  isDark: boolean;
+}) => {
+  if (!record) return null;
+
+  const issueDate = record.date ? new Date(record.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+  const proofType = record.vaccinationProof || '';
+  const proofUrl  = record.vaccinationProofUrl || '';
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="relative bg-white text-gray-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-red-100 hover:text-red-600 flex items-center justify-center text-gray-500 transition-all z-10"
+        >
+          <Icon d={icons.x} size={16} />
+        </button>
+
+        {/* Certificate document */}
+        <div className="p-8 font-serif" style={{ fontFamily: 'Georgia, serif' }}>
+          {/* Title */}
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold tracking-wide text-gray-900">Animal Vaccination Record</h1>
+            <div className="mt-3 flex items-center gap-3 justify-center text-sm">
+              <span className="text-gray-500">Certificate Issue Date:</span>
+              <span className="border-b border-gray-400 min-w-[160px] text-center pb-0.5 text-gray-800 font-medium">
+                {issueDate}
+              </span>
+            </div>
+          </div>
+
+          {/* Owner / Custodian Identification */}
+          <div className="mb-5">
+            <div className="bg-gray-900 text-white text-center py-1.5 px-3 text-sm font-bold tracking-wide mb-3">
+              Owner / Custodian Identification
+            </div>
+            <div className="grid grid-cols-1 gap-2 text-sm">
+              <div className="flex gap-2">
+                <span className="text-gray-600 min-w-[70px]">Name:</span>
+                <span className="border-b border-gray-400 flex-1 pb-0.5">{animal?.owner?.name || '—'}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-gray-600 min-w-[70px]">Address:</span>
+                <span className="border-b border-gray-400 flex-1 pb-0.5">
+                  {[animal?.location?.district, animal?.location?.province, animal?.location?.country].filter(Boolean).join(', ') || '—'}
+                </span>
+              </div>
+              <div className="flex gap-4">
+                <div className="flex gap-2 flex-1">
+                  <span className="text-gray-600">Phone:</span>
+                  <span className="border-b border-gray-400 flex-1 pb-0.5">{animal?.owner?.phone || '—'}</span>
+                </div>
+                <div className="flex gap-2 flex-1">
+                  <span className="text-gray-600">Email:</span>
+                  <span className="border-b border-gray-400 flex-1 pb-0.5">{animal?.owner?.email || '—'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Animal Identification */}
+          <div className="mb-5">
+            <div className="bg-gray-900 text-white text-center py-1.5 px-3 text-sm font-bold tracking-wide mb-3">
+              Animal Identification
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="flex gap-2">
+                <span className="text-gray-600 min-w-[90px]">Animal Name:</span>
+                <span className="border-b border-gray-400 flex-1 pb-0.5 font-medium">{animal?.name || '—'}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-gray-600 min-w-[110px]">Breed / Color:</span>
+                <span className="border-b border-gray-400 flex-1 pb-0.5">{animal?.breed || '—'}</span>
+              </div>
+              <div className="flex gap-2 items-center">
+                <span className="text-gray-600 min-w-[90px]">Species:</span>
+                <span className="capitalize font-medium">{animal?.type || '—'}</span>
+              </div>
+              <div className="flex gap-2 items-center">
+                <span className="text-gray-600 min-w-[40px]">Sex:</span>
+                <span className="capitalize">{animal?.gender || '—'}</span>
+              </div>
+              <div className="flex gap-2 items-center">
+                <span className="text-gray-600 min-w-[90px]">Age:</span>
+                <span>{animal?.age ? `${animal.age}` : '—'}</span>
+              </div>
+              <div className="flex gap-2 items-center">
+                <span className="text-gray-600 min-w-[90px]">Weight:</span>
+                <span>{animal?.weight ? `${animal.weight} kg` : '—'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Vaccine History */}
+          <div className="mb-5">
+            <div className="bg-gray-900 text-white text-center py-1.5 px-3 text-sm font-bold tracking-wide mb-3">
+              Vaccine History
+            </div>
+            <div className="text-sm space-y-1.5 pl-2">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full border-2 border-gray-700 flex-shrink-0" />
+                <span>First vaccination for this animal</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-gray-800 flex-shrink-0" />
+                <span>
+                  Certificate presented: date of vaccination —
+                  <strong className="ml-1">{issueDate}</strong>
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full border-2 border-gray-700 flex-shrink-0" />
+                <span>Owner reported: date of vaccination</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Vaccine Administration Details */}
+          <div className="mb-5">
+            <div className="bg-gray-900 text-white text-center py-1.5 px-3 text-sm font-bold tracking-wide mb-3">
+              Vaccine Administration Details
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="flex gap-2">
+                <span className="text-gray-600 min-w-[110px]">Vaccine Name / Lot #:</span>
+                <span className="border-b border-gray-400 flex-1 pb-0.5 font-semibold">{record.vaccineName || '—'}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-gray-600 min-w-[110px]">Date of Vaccination:</span>
+                <span className="border-b border-gray-400 flex-1 pb-0.5">{issueDate}</span>
+              </div>
+              <div className="col-span-2 flex gap-4 items-center">
+                <span className="text-gray-600">Duration of Immunity:</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-gray-800" /> 1 Year</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full border-2 border-gray-700" /> 3 Years</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-gray-600 min-w-[110px]">Verified by Vet:</span>
+                <span className={`font-semibold ${record.verifiedByVet ? 'text-emerald-600' : 'text-orange-500'}`}>
+                  {record.verifiedByVet ? 'Yes ✓' : 'Not yet verified'}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-gray-600 min-w-[110px]">Health Status:</span>
+                <span className="capitalize font-medium">{animal?.health?.healthStatus || '—'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Proof Attachment */}
+          {proofUrl && (
+            <div className="mb-5">
+              <div className="bg-gray-900 text-white text-center py-1.5 px-3 text-sm font-bold tracking-wide mb-3">
+                Attached Proof of Vaccination
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-gray-50">
+                {proofType === 'image' && (
+                  <img
+                    src={proofUrl}
+                    alt="Vaccination proof"
+                    className="w-full max-h-56 object-contain rounded-lg border border-gray-200"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                )}
+                {proofType === 'video' && (
+                  <video
+                    src={proofUrl}
+                    controls
+                    className="w-full max-h-56 rounded-lg"
+                  />
+                )}
+                {proofType === 'pdf' && (
+                  <a
+                    href={proofUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 border border-red-200 text-red-600 font-semibold text-sm hover:bg-red-100"
+                  >
+                    <Icon d={icons.document} size={18} /> View PDF Document
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Signature line */}
+          <div className="mt-6 pt-4 border-t border-gray-300 flex items-end justify-between text-xs text-gray-500">
+            <div className="text-center">
+              <div className="border-b border-gray-400 w-36 mb-1" />
+              <span>Farmer / Owner Signature</span>
+            </div>
+            <div className="text-center">
+              <div className="border-b border-gray-400 w-36 mb-1" />
+              <span>Date</span>
+            </div>
+            <div className="text-center">
+              <div className="border-b border-gray-400 w-36 mb-1" />
+              <span>Veterinarian Signature (if applicable)</span>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="mt-4 text-center text-[10px] text-gray-400">
+            Issued via AniMarket Platform · {new Date().getFullYear()}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ─── Animal Detail Modal ─────────────────────────────────────────────
 const AnimalDetailModal = ({ 
@@ -1450,14 +1683,27 @@ const AnimalDetailModal = ({
   isDark,
   addToCart,
   openModal,
+  fetchMessages,
+  sendChatMessage,
 }: { 
   animal: any; 
   onClose: () => void;
   isDark: boolean;
   addToCart: (animal: any) => void;
   openModal: (animal: any, modal: "booking" | "agreement" | "calendar" | "chat" | "zoom" | "payment") => void;
+  fetchMessages: (animalId: string) => Promise<{ text: string; sender: "user" | "other"; timestamp: Date }[]>;
+  sendChatMessage: (animalId: string, text: string) => Promise<{ text: string; sender: "user" | "other"; timestamp: Date } | null>;
 }) => {
   const [addedId, setAddedId] = useState<string | null>(null);
+  const [activeVaccineCert, setActiveVaccineCert] = useState<any | null>(null);
+  const [activeDetailTab, setActiveDetailTab] = useState<'overview' | 'vaccination' | 'ownership' | 'location' | 'contact' | 'agreement' | 'chat'>('overview');
+  const [eSignName, setESignName] = useState('');
+  const [eSignLoading, setESignLoading] = useState(false);
+  const [eSignSuccess, setESignSuccess] = useState('');
+  const [eSignError, setESignError] = useState('');
+  const baseurl = 'http://localhost:4000';
+  const getToken = () => localStorage.getItem('token') || '';
+  const getUserData = () => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } };
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>, animal: any) => {
     e.stopPropagation();
@@ -1466,12 +1712,63 @@ const AnimalDetailModal = ({
     setTimeout(() => setAddedId(null), 1200);
   };
 
+  const handleESign = async () => {
+    if (!eSignName.trim()) { setESignError('Please enter your full legal name.'); return; }
+    setESignLoading(true);
+    setESignError('');
+    try {
+      const userData = getUserData();
+      const cRes = await fetch(`${baseurl}/api/agreements/agreements`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ animalId: animal?._id, buyerId: userData?._id || userData?.id }),
+      });
+      const cData = await cRes.json();
+      if (!cRes.ok) throw new Error(cData?.message || 'Failed to create agreement.');
+      const agreementId = cData?.data?._id || '';
+      if (!agreementId) throw new Error('Agreement ID not returned.');
+      const sRes = await fetch(`${baseurl}/api/agreements/agreements/${agreementId}/sign`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ signature: eSignName }),
+      });
+      const sData = await sRes.json();
+      if (!sRes.ok) throw new Error(sData?.message || 'Failed to sign agreement.');
+      setESignSuccess('Agreement signed successfully! The farmer will countersign shortly.');
+      setESignName('');
+    } catch (err: any) {
+      setESignError(err.message || 'E-Sign failed. Please try again.');
+    } finally {
+      setESignLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    const printContent = document.getElementById('farm-agreement-print');
+    if (!printContent) return;
+    const originalBody = document.body.innerHTML;
+    document.body.innerHTML = `<style>body{font-family:Georgia,serif;padding:20px;color:#000}h1,h2,h3{text-align:center}table{width:100%;border-collapse:collapse}td,th{border:1px solid #333;padding:6px 10px;font-size:12px}@media print{button{display:none}}</style>${printContent.outerHTML}`;
+    window.print();
+    document.body.innerHTML = originalBody;
+    window.location.reload();
+  };
+
   if (!animal) return null;
 
   const muted = isDark ? 'text-slate-400' : 'text-slate-500';
   const surface = isDark ? 'bg-white/[0.03]' : 'bg-slate-50';
-  const divider = isDark ? 'border-white/10' : 'border-slate-100';
   const modalBg = isDark ? 'bg-[#16191f] text-white' : 'bg-white text-slate-900';
+  const userData = getUserData();
+
+  const DETAIL_TABS: { id: typeof activeDetailTab; label: string; icon: string }[] = [
+    { id: 'overview', label: 'Overview', icon: icons.beef },
+    { id: 'vaccination', label: 'Vaccination', icon: icons.shield },
+    { id: 'ownership', label: 'Ownership', icon: icons.document },
+    { id: 'location', label: 'Location', icon: icons.home },
+    { id: 'contact', label: 'Contact', icon: icons.phone },
+    { id: 'agreement', label: 'Agreement', icon: icons.pen },
+    { id: 'chat', label: 'Chat', icon: icons.message },
+  ];
 
   return (
     <div
@@ -1479,240 +1776,502 @@ const AnimalDetailModal = ({
       onClick={onClose}
     >
       <div
-        className={`w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl ${modalBg} max-h-[92vh] overflow-y-auto`}
+        className={`w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl ${modalBg} max-h-[95vh] flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Hero Image */}
-        <div className="relative h-64">
+        <div className="relative h-52 flex-shrink-0">
           {animal.images?.length > 0 ? (
             <img
               src={animal.images[0]}
               alt={animal.name}
               className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-slate-200 dark:bg-slate-700">
-              <Icon d={icons.beef} size={64} className="text-slate-400" />
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-900 to-slate-900">
+              <Icon d={icons.beef} size={64} className="text-emerald-400/60" />
             </div>
           )}
-
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur text-white flex items-center justify-center hover:bg-red-500 transition-all"
-          >
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+          <button onClick={onClose} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur text-white flex items-center justify-center hover:bg-red-500 transition-all">
             <Icon d={icons.x} size={20} />
           </button>
-
           {animal.verified && (
             <div className="absolute top-4 left-4 flex items-center gap-1 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-              <Icon d={icons.verify} size={14} />
-              VERIFIED
+              <Icon d={icons.verify} size={14} /> VERIFIED
             </div>
           )}
-
-          <div className="absolute bottom-5 left-6">
-            <h2 className="text-3xl font-black text-white">{animal.name}</h2>
-            <div className="flex items-center gap-1 text-white/80 text-sm mt-1">
-              <Icon d={icons.user} size={14} />
-              {animal.owner?.name || 'Unknown Owner'}
-            </div>
+          <div className="absolute bottom-4 left-6">
+            <h2 className="text-2xl font-black text-white">{animal.name}</h2>
+            <p className="text-white/70 text-sm mt-0.5">{animal.type} · {animal.breed}</p>
           </div>
-
-          <div className="absolute bottom-5 right-6 text-right">
-            <div className="text-3xl font-black text-white">
-              FRW {animal.price?.toLocaleString() || 0}
-            </div>
+          <div className="absolute bottom-4 right-6 text-right">
+            <div className="text-2xl font-black text-white">FRW {animal.price?.toLocaleString() || 0}</div>
             <div className="text-white/70 text-sm">per head</div>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 grid lg:grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="space-y-5">
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: 'Weight', value: animal.weight || '—' },
-                { label: 'Age', value: animal.age || '—' },
-                { label: 'Breed', value: animal.breed || 'Unknown' },
-              ].map((s) => (
-                <div key={s.label} className={`rounded-xl p-3 text-center ${surface}`}>
-                  <p className={`text-xs mb-1 ${muted}`}>{s.label}</p>
-                  <p className="font-bold text-sm">{s.value}</p>
+        {/* Tab Navigation */}
+        <div className={`flex gap-1 px-4 pt-4 border-b ${isDark ? 'border-white/10' : 'border-slate-100'} flex-shrink-0 overflow-x-auto`} style={{ scrollbarWidth: 'none' }}>
+          {DETAIL_TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveDetailTab(tab.id)}
+              className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-semibold whitespace-nowrap rounded-t-xl transition-all ${
+                activeDetailTab === tab.id
+                  ? 'bg-emerald-500 text-white'
+                  : isDark ? 'text-slate-400 hover:text-white hover:bg-white/5' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <Icon d={tab.icon} size={14} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+
+          {/* ─── OVERVIEW TAB ─── */}
+          {activeDetailTab === 'overview' && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Weight', value: animal.weight || '—' },
+                  { label: 'Age', value: animal.age || '—' },
+                  { label: 'Breed', value: animal.breed || 'Unknown' },
+                  { label: 'Gender', value: animal.gender || '—' },
+                ].map((s) => (
+                  <div key={s.label} className={`rounded-xl p-3 text-center ${surface}`}>
+                    <p className={`text-xs mb-1 ${muted}`}>{s.label}</p>
+                    <p className="font-bold text-sm capitalize">{s.value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className={`rounded-xl p-4 ${surface}`}>
+                  <p className={`text-xs mb-1 ${muted}`}>Status</p>
+                  <p className={`text-xl font-black ${animal.isAvailable ? 'text-emerald-500' : 'text-red-500'}`}>
+                    {animal.isAvailable ? 'Available' : 'Sold Out'}
+                  </p>
                 </div>
-              ))}
-            </div>
-
-            {/* Status & Rating */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className={`rounded-xl p-4 ${surface}`}>
-                <p className={`text-xs mb-1 ${muted}`}>Status</p>
-                <p className={`text-xl font-black ${animal.isAvailable ? 'text-emerald-500' : 'text-red-500'}`}>
-                  {animal.isAvailable ? 'Available' : 'Sold Out'}
-                </p>
-              </div>
-              <div className={`rounded-xl p-4 ${surface}`}>
-                <p className={`text-xs mb-1 ${muted}`}>Health Score</p>
-                <p className="text-xl font-black text-[#10b981]">
-                  {animal.healthScore || '—'}
-                </p>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div>
-              <h3 className="font-bold mb-2 text-sm uppercase tracking-wide text-emerald-500">About</h3>
-              <p className={`text-sm leading-7 ${muted}`}>
-                {animal.description || 'No description available for this animal.'}
-              </p>
-            </div>
-
-            {/* Genetic Lineage */}
-            {animal.geneticLineage && (
-              <div>
-                <h3 className="font-bold mb-2 text-sm uppercase tracking-wide text-emerald-500">Genetic Lineage</h3>
-                <div className={`rounded-xl p-3 ${surface}`}>
-                  <p className="text-sm font-medium">{animal.geneticLineage}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Vaccinations */}
-            {animal.vaccinatedFor && animal.vaccinatedFor.length > 0 && (
-              <div>
-                <h3 className="font-bold mb-3 text-sm uppercase tracking-wide text-emerald-500 flex items-center gap-2">
-                  <Icon d={icons.shield} size={16} />
-                  Vaccinations
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {animal.vaccinatedFor.map((v: string) => (
-                    <span
-                      key={v}
-                      className="flex items-center gap-1 text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 font-semibold"
-                    >
-                      <Icon d={icons.check} size={12} />
-                      {v}
-                    </span>
-                  ))}
+                <div className={`rounded-xl p-4 ${surface}`}>
+                  <p className={`text-xs mb-1 ${muted}`}>Health Score</p>
+                  <p className="text-xl font-black text-emerald-500">{animal.health?.healthStatus || animal.healthScore || '—'}</p>
                 </div>
               </div>
-            )}
-
-            {/* Owner Contact */}
-            <div className={`rounded-xl p-4 ${surface}`}>
-              <h3 className="font-bold mb-3 text-sm uppercase tracking-wide text-emerald-500 flex items-center gap-2">
-                <Icon d={icons.user} size={16} />
-                Owner Contact
-              </h3>
-              <p className="font-bold mb-2">{animal.owner?.name || 'Unknown Owner'}</p>
-              <div className={`flex items-center gap-2 text-sm mb-1 ${muted}`}>
-                <Icon d={icons.phone} size={14} />
-                {animal.owner?.phone || '+250 788 000 000'}
-              </div>
-              <div className={`flex items-center gap-2 text-sm ${muted}`}>
-                <Icon d={icons.send} size={14} />
-                {animal.owner?.email || 'owner@animarket.rw'}
-              </div>
-              {animal.location && (
-                <div className={`flex items-center gap-2 text-sm mt-1 ${muted}`}>
-                  <Icon d={icons.user} size={14} />
-                  📍 {animal.location}
+              {animal.description && (
+                <div>
+                  <h3 className="font-bold mb-2 text-sm uppercase tracking-wide text-emerald-500">About</h3>
+                  <p className={`text-sm leading-7 ${muted}`}>{animal.description}</p>
                 </div>
               )}
+              {animal.geneticLineage && (
+                <div>
+                  <h3 className="font-bold mb-2 text-sm uppercase tracking-wide text-emerald-500">Genetic Lineage</h3>
+                  <div className={`rounded-xl p-3 ${surface}`}><p className="text-sm font-medium">{animal.geneticLineage}</p></div>
+                </div>
+              )}
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => openModal(animal, "booking")}
+                  disabled={!animal.isAvailable}
+                  className={`flex-1 h-12 rounded-xl font-bold text-sm transition-all ${animal.isAvailable ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:scale-[1.02]' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
+                >
+                  {animal.isAvailable ? 'Apply for Purchase' : 'Unavailable'}
+                </button>
+                <button onClick={() => openModal(animal, "zoom")} className={`h-12 px-4 rounded-xl border font-bold text-sm transition-all ${isDark ? 'border-white/10 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                  <Icon d={icons.video} size={18} />
+                </button>
+                <button onClick={() => setActiveDetailTab('chat')} className="h-12 px-4 rounded-xl border border-blue-500/30 text-blue-500 hover:bg-blue-500/10 font-bold text-sm transition-all">
+                  <Icon d={icons.message} size={18} />
+                </button>
+                <button
+                  onClick={(e) => handleAddToCart(e, animal)}
+                  className={`h-12 w-12 rounded-xl border flex items-center justify-center transition-all flex-shrink-0 ${addedId === animal._id ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-emerald-500/30 text-emerald-500 hover:bg-emerald-500 hover:text-white'}`}
+                >
+                  {addedId === animal._id ? <Icon d={icons.check} size={20} /> : <Icon d={icons.shoppingCart} size={20} />}
+                </button>
+              </div>
             </div>
+          )}
 
-            {/* Actions */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => openModal(animal, "booking")}
-                className={`flex-1 h-12 rounded-xl font-bold text-sm transition-all ${
-                  animal.isAvailable
-                    ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:scale-[1.02]'
-                    : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                }`}
-                disabled={!animal.isAvailable}
-              >
-                {animal.isAvailable ? 'Apply for Purchase' : 'Unavailable'}
-              </button>
-
-              <button
-                onClick={() => openModal(animal, "zoom")}
-                className={`h-12 px-4 rounded-xl border font-bold text-sm transition-all ${
-                  isDark ? 'border-white/10 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                <Icon d={icons.video} size={18} />
-              </button>
-
-              <button
-                onClick={(e) => handleAddToCart(e, animal)}
-                className={`h-12 w-12 rounded-xl border flex items-center justify-center transition-all flex-shrink-0 ${
-                  addedId === animal._id
-                    ? 'bg-emerald-500 border-emerald-500 text-white'
-                    : 'border-emerald-500/30 text-emerald-500 hover:bg-emerald-500 hover:text-white'
-                }`}
-              >
-                {addedId === animal._id ? (
-                  <Icon d={icons.check} size={20} />
-                ) : (
-                  <Icon d={icons.shoppingCart} size={20} />
-                )}
-              </button>
+          {/* ─── VACCINATION TAB ─── */}
+          {activeDetailTab === 'vaccination' && (
+            <div className="space-y-4">
+              <div className={`flex items-center gap-3 p-4 rounded-xl ${surface}`}>
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                  <Icon d={icons.shield} size={20} className="text-emerald-500" />
+                </div>
+                <div>
+                  <p className="font-bold text-sm">Vaccination Status</p>
+                  <p className={`text-xs ${muted}`}>{animal.health?.vaccinated ? '✅ Vaccinated' : '⚠️ Not vaccinated / No records'}</p>
+                </div>
+              </div>
+              {(() => {
+                const records: any[] = animal.health?.vaccinationRecords || [];
+                if (records.length === 0) return (
+                  <div className={`text-center py-12 ${muted}`}>
+                    <Icon d={icons.shield} size={48} className="mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No vaccination records found for this animal.</p>
+                  </div>
+                );
+                return (
+                  <div className="space-y-3">
+                    {records.map((rec: any, idx: number) => (
+                      <div key={idx} className={`rounded-xl p-4 ${surface} border ${isDark ? 'border-white/5' : 'border-emerald-100'}`}>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                              <Icon d={icons.check} size={16} className="text-emerald-500" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold">{rec.vaccineName || 'Unknown vaccine'}</p>
+                              <p className={`text-xs ${muted}`}>
+                                {rec.date ? new Date(rec.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Date unknown'}
+                                {rec.verifiedByVet && <span className="ml-2 text-emerald-500 font-semibold">· Vet Verified ✓</span>}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setActiveVaccineCert(rec)}
+                            className="flex items-center gap-1 text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all"
+                          >
+                            <Icon d={icons.document} size={12} />
+                            View Certificate
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
-          </div>
+          )}
 
-          {/* Right Column - Map */}
-          <div className="flex flex-col gap-4">
-            <h3 className="font-bold text-sm uppercase tracking-wide text-emerald-500 flex items-center gap-2">
-              <Icon d={icons.user} size={14} />
-              Location
-            </h3>
-            <div className="rounded-2xl overflow-hidden flex-1 min-h-[400px] border border-emerald-500/20">
-              {animal.location ? (
-                <iframe
-                  width="100%"
-                  height="100%"
-                  style={{ minHeight: '400px', border: 0 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://www.google.com/maps?q=${encodeURIComponent(animal.location)}&output=embed`}
-                />
+          {/* ─── OWNERSHIP TAB ─── */}
+          {activeDetailTab === 'ownership' && (
+            <div className="space-y-4">
+              <h3 className="font-bold text-sm uppercase tracking-wide text-emerald-500">Ownership History</h3>
+              {/* Current Owner */}
+              <div className={`rounded-xl p-4 ${surface} border ${isDark ? 'border-white/5' : 'border-emerald-100'}`}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-sm">
+                    {(animal.owner?.name || 'F')[0]}
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm">{animal.owner?.name || 'Current Farmer'}</p>
+                    <p className={`text-xs ${muted}`}>Current Owner · {animal.owner?.email || 'owner@animarket.rw'}</p>
+                  </div>
+                  <span className="ml-auto px-2.5 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-bold rounded-full">CURRENT</span>
+                </div>
+              </div>
+              {/* Previous Owner */}
+              {(animal.previousOwnerName || animal.previousOwnerAgreementPhoto || animal.previousOwnerIdPhoto) ? (
+                <div className={`rounded-xl p-4 ${surface} border ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-500/10 flex items-center justify-center text-slate-500 font-bold text-sm">
+                      {(animal.previousOwnerName || 'P')[0]}
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm">{animal.previousOwnerName || 'Previous Owner'}</p>
+                      <p className={`text-xs ${muted}`}>Previous Owner · ID documents available</p>
+                    </div>
+                    <span className="ml-auto px-2.5 py-1 bg-slate-500/10 text-slate-500 text-[10px] font-bold rounded-full">PREVIOUS</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {animal.previousOwnerAgreementPhoto && (
+                      <a href={animal.previousOwnerAgreementPhoto} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-600">
+                        <Icon d={icons.document} size={12} /> Ownership Agreement
+                      </a>
+                    )}
+                    {animal.previousOwnerIdPhoto && (
+                      <a href={animal.previousOwnerIdPhoto} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/30 px-3 py-2 text-xs font-bold text-emerald-500 hover:bg-emerald-500/10">
+                        <Icon d={icons.user} size={12} /> ID Document
+                      </a>
+                    )}
+                  </div>
+                </div>
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-400">
-                  Location not available
+                <div className={`text-center py-8 ${muted}`}>
+                  <Icon d={icons.document} size={40} className="mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No previous ownership records for this animal.</p>
                 </div>
               )}
             </div>
-            {animal.location && (
-              <a
-                href={`https://www.google.com/maps/search/${encodeURIComponent(animal.location)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-center text-sm text-emerald-500 font-semibold hover:underline"
-              >
-                Open in Google Maps →
-              </a>
-            )}
+          )}
 
-            <div className={`rounded-xl p-4 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
-              <h3 className="font-bold text-emerald-500 mb-1 text-sm flex items-center gap-2">
-                <Icon d={icons.shield} size={14} />
-                AniMarket Guarantee
-              </h3>
-              <p className={`text-xs leading-6 ${muted}`}>
-                Every verified livestock purchase is protected against fraud and includes trusted delivery verification.
-              </p>
+          {/* ─── LOCATION TAB ─── */}
+          {activeDetailTab === 'location' && (
+            <div className="space-y-4">
+              {animal.location || (animal.location?.district) ? (
+                <>
+                  <div className={`rounded-xl p-3 ${surface} flex items-center gap-3`}>
+                    <Icon d={icons.home} size={16} className="text-emerald-500" />
+                    <p className="text-sm font-medium">
+                      {typeof animal.location === 'string'
+                        ? animal.location
+                        : [animal.location?.village, animal.location?.district, animal.location?.country].filter(Boolean).join(', ')}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl overflow-hidden border border-emerald-500/20" style={{ height: '420px' }}>
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={(() => {
+                        if (animal.location?.latitude && animal.location?.longitude) {
+                          return `https://www.google.com/maps?q=${animal.location.latitude},${animal.location.longitude}&output=embed`;
+                        }
+                        const textAddr = typeof animal.location === 'string'
+                          ? animal.location
+                          : [animal.location?.district, animal.location?.province, 'Rwanda'].filter(Boolean).join(', ');
+                        return `https://www.google.com/maps?q=${encodeURIComponent(textAddr)}&output=embed`;
+                      })()}
+                    />
+                  </div>
+                  <a
+                    href={`https://www.google.com/maps/search/${encodeURIComponent(typeof animal.location === 'string' ? animal.location : [animal.location?.district, 'Rwanda'].filter(Boolean).join(', '))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-center text-sm text-emerald-500 font-semibold hover:underline"
+                  >
+                    Open in Google Maps →
+                  </a>
+                </>
+              ) : (
+                <div className={`text-center py-16 ${muted}`}>
+                  <Icon d={icons.home} size={48} className="mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Location not available for this animal.</p>
+                </div>
+              )}
             </div>
-          </div>
+          )}
+
+          {/* ─── CONTACT TAB ─── */}
+          {activeDetailTab === 'contact' && (
+            <div className="space-y-4">
+              {/* Owner/Farmer Contact */}
+              <h3 className="font-bold text-sm uppercase tracking-wide text-emerald-500">Farmer / Seller</h3>
+              <div className={`rounded-xl p-5 ${surface}`}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xl">
+                    {(animal.owner?.name || 'F')[0]}
+                  </div>
+                  <div>
+                    <p className="font-bold">{animal.owner?.name || 'Animal Farmer'}</p>
+                    <p className={`text-xs ${muted}`}>Verified Seller · AniMarket Partner</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className={`flex items-center gap-3 text-sm ${muted}`}>
+                    <Icon d={icons.phone} size={14} className="text-emerald-500" />
+                    <span>{animal.owner?.phone || '+250 788 000 000'}</span>
+                  </div>
+                  <div className={`flex items-center gap-3 text-sm ${muted}`}>
+                    <Icon d={icons.send} size={14} className="text-emerald-500" />
+                    <span>{animal.owner?.email || 'owner@animarket.rw'}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveDetailTab('chat')}
+                  className="mt-4 w-full h-10 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <Icon d={icons.message} size={14} />
+                  Message Farmer
+                </button>
+              </div>
+              {/* Admin Contact */}
+              <h3 className="font-bold text-sm uppercase tracking-wide text-emerald-500 mt-2">AniMarket Admin</h3>
+              <div className={`rounded-xl p-5 ${surface}`}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-14 h-14 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 font-bold text-xl">A</div>
+                  <div>
+                    <p className="font-bold">AniMarket Support Team</p>
+                    <p className={`text-xs ${muted}`}>Platform Administrator · Help Desk</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className={`flex items-center gap-3 text-sm ${muted}`}>
+                    <Icon d={icons.phone} size={14} className="text-blue-500" />
+                    <span>+250 788 100 200</span>
+                  </div>
+                  <div className={`flex items-center gap-3 text-sm ${muted}`}>
+                    <Icon d={icons.send} size={14} className="text-blue-500" />
+                    <span>support@animarket.rw</span>
+                  </div>
+                </div>
+              </div>
+              <div className={`rounded-xl p-4 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                <h3 className="font-bold text-emerald-500 mb-1 text-sm flex items-center gap-2">
+                  <Icon d={icons.shield} size={14} /> AniMarket Guarantee
+                </h3>
+                <p className={`text-xs leading-6 ${muted}`}>
+                  Every verified livestock purchase is protected against fraud and includes trusted delivery verification.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ─── AGREEMENT TAB ─── */}
+          {activeDetailTab === 'agreement' && (
+            <div className="space-y-5">
+              {/* Farm Purchase Agreement Document */}
+              <div id="farm-agreement-print" className="bg-white text-gray-900 rounded-2xl border border-gray-200 p-8 font-serif" style={{ fontFamily: 'Georgia, serif' }}>
+                {/* Title */}
+                <div className="text-center mb-6 border-b-2 border-gray-800 pb-4">
+                  <h1 className="text-2xl font-black tracking-widest uppercase text-gray-900">Farm Purchase Agreement</h1>
+                  <div className="flex justify-between items-center mt-3 text-xs text-gray-500">
+                    <span>State: <span className="border-b border-gray-400 min-w-[80px] inline-block text-gray-800">Rwanda</span></span>
+                    <span>Rev: <span className="border-b border-gray-400 min-w-[40px] inline-block text-gray-800">1.0</span></span>
+                    <span>Date: <span className="border-b border-gray-400 min-w-[100px] inline-block text-gray-800">{new Date().toLocaleDateString('en-GB')}</span></span>
+                  </div>
+                </div>
+
+                {/* Seller Block */}
+                <div className="mb-5">
+                  <div className="bg-gray-900 text-white text-center py-1.5 px-3 text-sm font-bold tracking-wide mb-3">SELLER (FARMER)</div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex gap-2"><span className="text-gray-600 min-w-[60px]">Name:</span><span className="border-b border-gray-400 flex-1 font-medium">{animal.owner?.name || '—'}</span></div>
+                    <div className="flex gap-2"><span className="text-gray-600 min-w-[60px]">Phone:</span><span className="border-b border-gray-400 flex-1">{animal.owner?.phone || '—'}</span></div>
+                    <div className="flex gap-2 col-span-2"><span className="text-gray-600 min-w-[60px]">Email:</span><span className="border-b border-gray-400 flex-1">{animal.owner?.email || '—'}</span></div>
+                    <div className="flex items-center gap-4 col-span-2 text-xs mt-1">
+                      <span className="text-gray-600">Entity:</span>
+                      {['Individual', 'Corporation', 'Partnership', 'LLC'].map(t => (
+                        <label key={t} className="flex items-center gap-1"><input type="checkbox" readOnly defaultChecked={t === 'Individual'} className="w-3 h-3" />{t}</label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Buyer Block */}
+                <div className="mb-5">
+                  <div className="bg-gray-900 text-white text-center py-1.5 px-3 text-sm font-bold tracking-wide mb-3">BUYER (CUSTOMER)</div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex gap-2"><span className="text-gray-600 min-w-[60px]">Name:</span><span className="border-b border-gray-400 flex-1 font-medium">{userData?.name || '—'}</span></div>
+                    <div className="flex gap-2"><span className="text-gray-600 min-w-[60px]">Phone:</span><span className="border-b border-gray-400 flex-1">{userData?.phone || '—'}</span></div>
+                    <div className="flex gap-2 col-span-2"><span className="text-gray-600 min-w-[60px]">Email:</span><span className="border-b border-gray-400 flex-1">{userData?.email || '—'}</span></div>
+                    <div className="flex items-center gap-4 col-span-2 text-xs mt-1">
+                      <span className="text-gray-600">Entity:</span>
+                      {['Individual', 'Corporation', 'Partnership', 'LLC'].map(t => (
+                        <label key={t} className="flex items-center gap-1"><input type="checkbox" readOnly defaultChecked={t === 'Individual'} className="w-3 h-3" />{t}</label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sections */}
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <p className="font-bold text-gray-900">1. Property Description</p>
+                    <p className="text-gray-600 mt-1 leading-relaxed">
+                      The Seller agrees to sell the following livestock to the Buyer: <strong>{animal.name}</strong>, a {animal.gender || '—'} {animal.type || '—'} of breed <strong>{animal.breed || '—'}</strong>, aged approximately <strong>{animal.age || '—'}</strong>, weighing <strong>{animal.weight || '—'}</strong>. The animal is identified with unique record in the AniMarket Platform (ID: {animal._id?.slice(-8) || '—'}).
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900">2. Purchase Price</p>
+                    <p className="text-gray-600 mt-1">
+                      The total purchase price for the above-described property shall be: <strong className="text-emerald-700 text-base">FRW {animal.price?.toLocaleString() || '0'}</strong> (Rwandan Francs). Payment shall be made in full at closing unless otherwise agreed.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900">3. Earnest Money Deposit</p>
+                    <p className="text-gray-600 mt-1">
+                      Buyer shall deposit an earnest money amount as mutually agreed through AniMarket escrow service. Said amount shall be applied toward the purchase price at closing.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900">4. Closing</p>
+                    <p className="text-gray-600 mt-1">
+                      The closing of this sale shall occur on a date mutually agreed upon by both parties, facilitated by AniMarket Platform. Both parties shall execute all documents necessary to complete the transfer.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Signature Block */}
+                <div className="mt-8 pt-6 border-t-2 border-gray-300 grid grid-cols-2 gap-8">
+                  <div>
+                    <div className="border-b border-gray-400 h-12 mb-1" />
+                    <p className="text-xs text-gray-500">Seller Signature / Date</p>
+                    <p className="text-xs font-medium mt-1">{animal.owner?.name || '—'}</p>
+                  </div>
+                  <div>
+                    <div className="border-b border-gray-400 h-12 mb-1" />
+                    <p className="text-xs text-gray-500">Buyer Signature / Date</p>
+                    <p className="text-xs font-medium mt-1">{userData?.name || '—'}</p>
+                  </div>
+                </div>
+                <div className="mt-4 text-center text-[10px] text-gray-400">
+                  Generated via AniMarket Platform · {new Date().getFullYear()} · This is a binding document upon signatures of both parties.
+                </div>
+              </div>
+
+              {/* E-Sign & Download Actions */}
+              <div className={`rounded-xl p-5 ${surface} space-y-4`}>
+                <h3 className="font-bold text-sm">E-Sign this Agreement</h3>
+                {eSignSuccess ? (
+                  <div className="flex items-center gap-2 text-emerald-500 text-sm">
+                    <Icon d={icons.check} size={16} />
+                    {eSignSuccess}
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="Type your full legal name to sign"
+                      value={eSignName}
+                      onChange={e => setESignName(e.target.value)}
+                      className={`w-full rounded-xl px-4 py-3 text-sm border ${isDark ? 'bg-white/5 border-white/10 text-white placeholder:text-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'} focus:outline-none focus:border-emerald-500/50`}
+                    />
+                    {eSignError && <p className="text-red-500 text-xs">{eSignError}</p>}
+                    <button
+                      onClick={handleESign}
+                      disabled={eSignLoading}
+                      className="w-full h-11 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                    >
+                      {eSignLoading ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Signing…</> : <><Icon d={icons.pen} size={16} />E-Sign Agreement</>}
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={handleDownloadPDF}
+                  className={`w-full h-11 border font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 ${isDark ? 'border-white/10 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
+                >
+                  <Icon d={icons.document} size={16} />
+                  Download as PDF
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ─── CHAT TAB ─── */}
+          {activeDetailTab === 'chat' && (
+            <div>
+              <ChatWidget
+                animal={animal}
+                onClose={() => setActiveDetailTab('overview')}
+                fetchMessages={fetchMessages}
+                sendChatMessage={sendChatMessage}
+              />
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Vaccination Certificate Modal */}
+      {activeVaccineCert && (
+        <VaccinationCertificateModal
+          record={activeVaccineCert}
+          animal={animal}
+          onClose={() => setActiveVaccineCert(null)}
+          isDark={isDark}
+        />
+      )}
     </div>
   );
 };
@@ -1765,13 +2324,15 @@ const CustomerDashboard = () => {
 
   // Agreement
   const [digitalSignature, setDigitalSignature] = useState("");
-  const [agreementId, setAgreementId] = useState("");
-  const [agreement, setAgreement] = useState<any>(null);
-  const [agreementPrice, setAgreementPrice] = useState("");
-  const [agreementFetching, setAgreementFetching] = useState(false);
   const [agreementLoading, setAgreementLoading] = useState(false);
   const [agreementSuccess, setAgreementSuccess] = useState("");
+  const [agreementPdfUrl, setAgreementPdfUrl] = useState("");
+  const [agreementId, setAgreementId] = useState("");
   const [agreementError, setAgreementError] = useState("");
+  // Agreement form fields (filled by customer)
+  const [agreementPaymentMethod, setAgreementPaymentMethod] = useState("mobile_money");
+  const [agreementDeliveryDate, setAgreementDeliveryDate] = useState("");
+  const [agreementTerms, setAgreementTerms] = useState("");
 
   const baseurl = "http://localhost:4000";
   const getToken = () => localStorage.getItem("token") || "";
@@ -1846,35 +2407,6 @@ const CustomerDashboard = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (activeModal !== "agreement" || !selectedAnimal?._id) return;
-
-    const loadAgreement = async () => {
-      setAgreementFetching(true);
-      setAgreementId("");
-      setAgreement(null);
-      setAgreementPrice("");
-      setAgreementError("");
-      try {
-        const res = await fetch(`${baseurl}/api/agreements/agreements/animal/${selectedAnimal._id}`, {
-          headers: { Authorization: `Bearer ${getToken()}` },
-        });
-        if (res.status === 404) return;
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.message || "Failed to load agreement.");
-        setAgreement(data?.data || null);
-        setAgreementId(data?.data?._id || "");
-        setAgreementPrice(data?.data?.price?.toString() || "");
-      } catch (e: any) {
-        setAgreementError(e.message);
-      } finally {
-        setAgreementFetching(false);
-      }
-    };
-
-    loadAgreement();
-  }, [activeModal, selectedAnimal]);
-
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -1892,8 +2424,6 @@ const CustomerDashboard = () => {
         else if (Array.isArray(data.animals)) animals = data.animals;
         else if (Array.isArray(data.data)) animals = data.data;
         else animals = [];
-
-        animals = animals.filter((animal: any) => animal.isAvailable !== false);
         
         setAnimalData(animals);
         
@@ -1928,6 +2458,11 @@ const CustomerDashboard = () => {
       setDigitalSignature("");
       setAgreementSuccess("");
       setAgreementError("");
+      setAgreementPaymentMethod("mobile_money");
+      setAgreementDeliveryDate("");
+      setAgreementTerms("");
+      setAgreementId("");
+      setAgreementPdfUrl("");
     }
   };
 
@@ -1959,12 +2494,8 @@ const CustomerDashboard = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Failed to book animal.");
-      const createdAgreement = data?.data?.agreement;
-      if (createdAgreement?._id) {
-        setAgreement(createdAgreement);
-        setAgreementId(createdAgreement._id);
-        setAgreementPrice(createdAgreement.price?.toString() || "");
-      }
+      setAgreementId(data?.data?.agreement?._id || "");
+      setAgreementPdfUrl(data?.data?.agreement?.pdfUrl || "");
       setBookingSuccess(`${selectedAnimal?.name} booked successfully! You can now sign the agreement.`);
     } catch (e: any) {
       setBookingError(e.message);
@@ -1973,49 +2504,36 @@ const CustomerDashboard = () => {
     }
   };
 
-  const handleUpdateAgreementPrice = async () => {
-    const price = Number(agreementPrice);
-    if (!agreementId || !Number.isFinite(price) || price < 0) {
-      setAgreementError("Please enter a valid price.");
-      return;
-    }
-    setAgreementLoading(true);
-    setAgreementError("");
-    try {
-      const res = await fetch(`${baseurl}/api/agreements/agreements/${agreementId}/price`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`,
-        },
-        body: JSON.stringify({ price }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to update price.");
-      setAgreement(data?.data || agreement);
-      setAgreementPrice(data?.data?.price?.toString() || agreementPrice);
-      setAgreementSuccess("Agreement price updated successfully.");
-    } catch (e: any) {
-      setAgreementError(e.message);
-    } finally {
-      setAgreementLoading(false);
-    }
-  };
-
   const handleSignAgreement = async () => {
     if (!digitalSignature.trim()) {
       setAgreementError("Please enter your digital signature.");
-      return;
-    }
-    if (!agreementId) {
-      setAgreementError("This agreement is waiting for admin creation.");
       return;
     }
     setAgreementLoading(true);
     setAgreementError("");
     setAgreementSuccess("");
     try {
-      const sRes = await fetch(`${baseurl}/api/agreements/agreements/${agreementId}/sign`, {
+      let currentAgreementId = agreementId;
+      if (!currentAgreementId) {
+        const cRes = await fetch(`${baseurl}/api/agreements/agreements`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+          body: JSON.stringify({
+            animalId: selectedAnimal?._id,
+            buyerId: getUserId(),
+            paymentMethod: agreementPaymentMethod,
+            deliveryDate: agreementDeliveryDate || undefined,
+            terms: agreementTerms || undefined,
+          }),
+        });
+        const cData = await cRes.json();
+        if (!cRes.ok) throw new Error(cData?.message || "Failed to create agreement.");
+        currentAgreementId = cData?.data?._id || "";
+        setAgreementId(currentAgreementId);
+        setAgreementPdfUrl(cData?.data?.pdfUrl || "");
+      }
+      if (!currentAgreementId) throw new Error("Agreement ID not returned.");
+      const sRes = await fetch(`${baseurl}/api/agreements/agreements/${currentAgreementId}/sign`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -2025,7 +2543,8 @@ const CustomerDashboard = () => {
       });
       const sData = await sRes.json();
       if (!sRes.ok) throw new Error(sData?.message || "Failed to sign agreement.");
-      setAgreementSuccess("Agreement signed successfully!");
+      setAgreementPdfUrl(sData?.data?.pdfUrl || agreementPdfUrl);
+      setAgreementSuccess("Agreement filled, created & signed successfully! The farmer will countersign shortly.");
     } catch (e: any) {
       setAgreementError(e.message);
     } finally {
@@ -2080,8 +2599,7 @@ const res = await fetch(`${baseurl}/api/meeting/`, {
   };
 
   const handlePayAnimal = async (method: string, details: Record<string, string>) => {
-    const paymentMethod = method === "mobile" ? "momo" : method === "bank" ? "bank" : "stripe";
-    const bookingRes = await fetch(`${baseurl}/api/bookings/create`, {
+    const res = await fetch(`${baseurl}/api/payments/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2090,29 +2608,13 @@ const res = await fetch(`${baseurl}/api/meeting/`, {
       body: JSON.stringify({
         animalId: selectedAnimal?._id,
         userId: getUserId(),
-        paymentMethod,
+        amount: selectedAnimal?.price || 0,
+        method,
         details,
       }),
     });
-    const bookingData = await bookingRes.json();
-    if (!bookingRes.ok) throw new Error(bookingData?.message || "Payment failed.");
-
-    const bookingId = bookingData?.data?.booking?._id || bookingData?.data?._id;
-    if (!bookingId) throw new Error("Booking was not created.");
-
-    const initiateRes = await fetch(`${baseurl}/api/bookings/${bookingId}/initiate-payment`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${getToken()}` },
-    });
-    const initiateData = await initiateRes.json();
-    if (!initiateRes.ok) throw new Error(initiateData?.message || "Payment failed.");
-
-    const escrowRes = await fetch(`${baseurl}/api/bookings/${bookingId}/hold-escrow`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${getToken()}` },
-    });
-    const escrowData = await escrowRes.json();
-    if (!escrowRes.ok) throw new Error(escrowData?.message || "Payment failed.");
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.message || "Payment failed.");
   };
 
   const handleFetchChatMessages = async (
@@ -2939,7 +3441,7 @@ const res = await fetch(`${baseurl}/api/meeting/`, {
                     </div>
                     <div className="flex justify-between border-t border-[rgba(15,23,42,0.08)] pt-2 mt-2">
                       <span className="text-[#475569]">Price</span>
-                      <span className="font-bold text-[#10b981]">{agreement?.currency || "RWF"} {Number(agreement?.price ?? selectedAnimal.price ?? 0).toLocaleString()}</span>
+                      <span className="font-bold text-[#10b981]">FRW {selectedAnimal.price?.toLocaleString()}</span>
                     </div>
                   </div>
                   {bookingError && <p className="text-red-600 text-sm">{bookingError}</p>}
@@ -2971,9 +3473,9 @@ const res = await fetch(`${baseurl}/api/meeting/`, {
 
               {activeModal === "agreement" && (
                 <>
-                  {agreementFetching && <p className="text-[#475569] text-sm">Loading agreement…</p>}
+                  {/* ── Agreement Details (read-only) ── */}
                   <div className="bg-[#f8fafc] border border-[rgba(15,23,42,0.08)] rounded-2xl p-4 space-y-3 text-sm">
-                    <p className="text-xs font-semibold text-[#10b981] uppercase tracking-wider">Agreement details</p>
+                    <p className="text-xs font-semibold text-[#10b981] uppercase tracking-wider">Animal details</p>
                     <div className="flex justify-between gap-4">
                       <span className="text-[#475569]">Animal</span>
                       <span className="font-semibold text-[#0f172a] text-right">{selectedAnimal.name}</span>
@@ -2983,71 +3485,96 @@ const res = await fetch(`${baseurl}/api/meeting/`, {
                       <span className="font-medium text-[#0f172a] text-right">{selectedAnimal.type} / {selectedAnimal.breed || "Not specified"}</span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-[#475569]">Seller</span>
+                      <span className="text-[#475569]">Seller (Farmer)</span>
                       <span className="font-medium text-[#0f172a] text-right">{selectedAnimal.owner?.name || "Animal owner"}</span>
                     </div>
                     <div className="flex justify-between gap-4 border-t border-[rgba(15,23,42,0.08)] pt-3">
                       <span className="text-[#475569]">Purchase price</span>
                       <span className="font-bold text-[#10b981]">FRW {selectedAnimal.price?.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-[#475569]">Payment method</span>
-                      <span className="font-medium text-[#0f172a]">{agreement?.paymentMethod || "To be agreed"}</span>
-                    </div>
-                    <p className="text-xs text-[#475569] leading-relaxed border-t border-[rgba(15,23,42,0.08)] pt-3">
-                      The seller agrees to sell this animal to the buyer. By signing below, you accept these purchase terms and confirm the information shown above.
-                    </p>
-                    {!agreementFetching && !agreementId && (
-                      <p className="text-xs text-amber-600 border-t border-[rgba(15,23,42,0.08)] pt-3">
-                        This agreement is waiting for admin creation. Refresh after the administrator publishes it.
-                      </p>
-                    )}
                   </div>
-                  {agreementId && (
-                    <div className="mt-4 flex gap-2">
-                      <input
-                        type="number"
-                        min="0"
-                        value={agreementPrice}
-                        onChange={(e) => setAgreementPrice(e.target.value)}
-                        className="min-w-0 flex-1 bg-[#f8fafc] border border-[rgba(15,23,42,0.08)] rounded-2xl px-4 py-3 text-sm text-[#0f172a] focus:outline-none focus:border-[#10b981]/50"
-                        aria-label="Agreement price"
-                      />
-                      <button
-                        onClick={handleUpdateAgreementPrice}
-                        disabled={agreementLoading || Boolean(agreement?.signatures?.customer || agreement?.signatures?.farmer)}
-                        className="px-4 rounded-2xl border border-[#10b981]/40 text-[#059669] font-semibold text-sm disabled:opacity-50"
+
+                  {/* ── Customer-Fillable Fields ── */}
+                  <div className="mt-4 space-y-3">
+                    <p className="text-xs font-semibold text-[#475569] uppercase tracking-wider">Fill in agreement details</p>
+
+                    {/* Payment Method */}
+                    <div>
+                      <label className="block text-xs font-medium text-[#475569] mb-1">Payment Method *</label>
+                      <select
+                        value={agreementPaymentMethod}
+                        onChange={(e) => setAgreementPaymentMethod(e.target.value)}
+                        disabled={!!agreementSuccess}
+                        className="w-full bg-[#f8fafc] border border-[rgba(15,23,42,0.08)] rounded-2xl px-4 py-3 text-sm text-[#0f172a] focus:outline-none focus:border-[#10b981]/50 transition-colors disabled:opacity-60"
                       >
-                        Set price
-                      </button>
+                        <option value="mobile_money">Mobile Money</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                      </select>
                     </div>
-                  )}
+
+                    {/* Delivery Date */}
+                    <div>
+                      <label className="block text-xs font-medium text-[#475569] mb-1">Expected Delivery Date</label>
+                      <input
+                        type="date"
+                        value={agreementDeliveryDate}
+                        onChange={(e) => setAgreementDeliveryDate(e.target.value)}
+                        disabled={!!agreementSuccess}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="w-full bg-[#f8fafc] border border-[rgba(15,23,42,0.08)] rounded-2xl px-4 py-3 text-sm text-[#0f172a] focus:outline-none focus:border-[#10b981]/50 transition-colors disabled:opacity-60"
+                      />
+                    </div>
+
+                    {/* Terms / Notes */}
+                    <div>
+                      <label className="block text-xs font-medium text-[#475569] mb-1">Additional Terms / Notes</label>
+                      <textarea
+                        value={agreementTerms}
+                        onChange={(e) => setAgreementTerms(e.target.value)}
+                        disabled={!!agreementSuccess}
+                        rows={3}
+                        placeholder="E.g. animal must pass health inspection before handover, transport arranged by seller…"
+                        className="w-full bg-[#f8fafc] border border-[rgba(15,23,42,0.08)] rounded-2xl px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#475569] focus:outline-none focus:border-[#10b981]/50 transition-colors resize-none disabled:opacity-60"
+                      />
+                    </div>
+                  </div>
+
+                  {/* ── Customer Signature ── */}
                   <div className="mt-4">
                     <label className="block text-xs font-semibold text-[#475569] uppercase tracking-wider mb-2">
-                      Digital Signature *
+                      Your Digital Signature (Buyer) *
                     </label>
                     <input
                       type="text"
-                      placeholder="Type your full legal name"
+                      placeholder="Type your full legal name to sign"
                       value={digitalSignature}
                       onChange={(e) => setDigitalSignature(e.target.value)}
-                      className="w-full bg-[#f8fafc] border border-[rgba(15,23,42,0.08)] rounded-2xl px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#475569] focus:outline-none focus:border-[#10b981]/50 transition-colors"
+                      disabled={!!agreementSuccess}
+                      className="w-full bg-[#f8fafc] border border-[rgba(15,23,42,0.08)] rounded-2xl px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#475569] focus:outline-none focus:border-[#10b981]/50 transition-colors disabled:opacity-60"
                     />
+                    <p className="text-[10px] text-[#475569] mt-1">By typing your name you are digitally signing this purchase agreement.</p>
                   </div>
+
                   {agreementError && <p className="text-red-600 text-sm mt-2">{agreementError}</p>}
                   {agreementSuccess && (
-                    <p className="text-[#10b981] text-sm flex items-center gap-2 mt-2">
-                      <Icon d={icons.check} size={14} />
-                      {agreementSuccess}
-                    </p>
+                    <div className="mt-3 space-y-2">
+                      <p className="text-[#10b981] text-sm flex items-center gap-2">
+                        <Icon d={icons.check} size={14} />
+                        {agreementSuccess}
+                      </p>
+                      <p className="text-xs text-[#475569]">The farmer will review and countersign. You will be notified once both parties have signed.</p>
+                      {agreementPdfUrl && <a href={agreementPdfUrl} target="_blank" rel="noreferrer" download className="inline-flex rounded-xl bg-[#10b981] px-4 py-2 text-sm font-semibold text-white hover:bg-[#059669]">Download signed agreement PDF</a>}
+                    </div>
                   )}
                   {!agreementSuccess && (
                     <button
                       onClick={handleSignAgreement}
-                      disabled={agreementLoading || agreementFetching || !agreementId}
+                      disabled={agreementLoading}
                       className="w-full mt-4 bg-[#10b981] hover:bg-[#059669] disabled:opacity-50 text-white font-semibold py-3 rounded-2xl transition-all"
                     >
-                      {agreementLoading ? "Submitting…" : "Sign Agreement"}
+                      {agreementLoading ? "Submitting…" : "Submit & Sign Agreement"}
                     </button>
                   )}
                 </>

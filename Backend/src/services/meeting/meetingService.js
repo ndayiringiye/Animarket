@@ -149,7 +149,7 @@ export const cancelRealZoomMeeting = async (zoomMeetingId) => {
 export const createMeetingService = async (req) => {
     let {
         title, description, participants, meetingType, animalId,
-        meetingDate, durationMinutes, provider = "webrtc", timezone, scheduledAt, note
+        meetingDate, durationMinutes, provider = "webrtc", timezone, scheduledAt, note, meetingLink
     } = req.body;
 
     const userId = req.user.id;
@@ -191,6 +191,14 @@ export const createMeetingService = async (req) => {
         if (!animal) throw new Error("Animal not found");
     }
 
+    if (animal?.owner && !validParticipants.some(p => p.user.toString() === animal.owner.toString())) {
+        validParticipants.push({
+            user: animal.owner,
+            role: "farmer",
+            status: "invited"
+        });
+    }
+
     let videoCall = {
         provider,
         meetingId: uuidv4(),
@@ -206,8 +214,12 @@ export const createMeetingService = async (req) => {
         });
         videoCall = { ...videoCall, ...zoomResult };
         zoomMeetingData = zoomResult.zoomMeetingData;
+        // If farmer provided a custom meeting link, use it
+        if (meetingLink) {
+            videoCall.meetingLink = meetingLink;
+        }
     } else {
-        videoCall.meetingLink = `${process.env.FRONTEND_URL}/meeting/${videoCall.meetingId}`;
+        videoCall.meetingLink = meetingLink || `${process.env.FRONTEND_URL}/meeting/${videoCall.meetingId}`;
     }
 
     const meeting = await Meeting.create({
@@ -300,29 +312,51 @@ export const startMeetingService = async (meetingId, userId) => {
 };
 
 export const updateMeetingService = async (meetingId, userId, updates) => {
-    const meeting = await Meeting.findById(meetingId);
-    if (!meeting) throw new Error("Meeting not found");
+    try {
+        const meeting = await Meeting.findById(meetingId);
+        if (!meeting) throw new Error("Meeting not found");
 
-    const requester = await User.findById(userId);
-    const isAdmin = requester?.role === "admin";
-    const isOrganizer = meeting.organizer.toString() === userId;
+        const requester = await User.findById(userId);
+        const isAdmin = requester?.role === "admin";
+        const isOrganizer = meeting.organizer.toString() === userId;
 
-    if (!isAdmin && !isOrganizer) {
-        throw new Error("Only admin or organizer can update the meeting");
+        if (!isAdmin && !isOrganizer) {
+            throw new Error("Only admin or organizer can update the meeting");
+        }
+
+        // Only call Zoom API if the meeting has a real Zoom meeting ID
+        if (meeting.videoCall?.provider === "zoom" && meeting.videoCall?.meetingId) {
+            try {
+                await updateRealZoomMeeting(meeting.videoCall.meetingId, updates);
+            } catch (zoomError) {
+                // Log Zoom API error but don't fail the entire update
+                console.error("Zoom API update error:", zoomError.message);
+            }
+        }
+
+        if (updates.title) meeting.title = updates.title;
+        if (updates.description) meeting.description = updates.description;
+        if (updates.meetingDate) meeting.meetingDate = updates.meetingDate;
+        if (updates.durationMinutes) meeting.durationMinutes = updates.durationMinutes;
+        if (updates.meetingLink) {
+            if (!meeting.videoCall) meeting.videoCall = {};
+            meeting.videoCall.meetingLink = updates.meetingLink;
+        }
+
+        await meeting.save();
+        
+        // Send notification to participants about the update
+        if (updates.meetingDate || updates.meetingLink) {
+            await sendZoomMeetingNotification(meeting, 'update');
+        }
+
+        return meeting;
+    } catch (error) {
+        console.error("Update meeting service error:", error.message);
+        throw error;
     }
-
-    if (meeting.videoCall?.provider === "zoom" && meeting.videoCall?.meetingId) {
-        await updateRealZoomMeeting(meeting.videoCall.meetingId, updates);
-    }
-
-    if (updates.title) meeting.title = updates.title;
-    if (updates.description) meeting.description = updates.description;
-    if (updates.meetingDate) meeting.meetingDate = updates.meetingDate;
-    if (updates.durationMinutes) meeting.durationMinutes = updates.durationMinutes;
-
-    await meeting.save();
-    return meeting;
 };
+
 
 export const cancelMeetingService = async (meetingId, userId) => {
     const meeting = await Meeting.findById(meetingId);
@@ -376,6 +410,9 @@ export const acceptMeetingService = async (meetingId, userId) => {
     if (!participant) throw new Error("Not invited");
 
     participant.status = "accepted";
+    if (participant.role === "farmer" && meeting.status === "pending") {
+        meeting.status = "accepted";
+    }
     await meeting.save();
     return meeting;
 };

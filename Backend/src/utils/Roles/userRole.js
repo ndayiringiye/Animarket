@@ -11,7 +11,7 @@ export const protectRolePostAnimal = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
 
-        const role = req.user?.role;
+        const role = String(req.user?.role || "").trim().toLowerCase();
         if (!role) {
             return res.status(401).json({ message: "Role missing from token" });
         }

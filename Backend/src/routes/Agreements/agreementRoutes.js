@@ -2,11 +2,12 @@ import express from "express";
 import Agreement from "../../models/Agreements/agreementModel.js";
 
 import { verifyToken } from "../../Middlewares/Auth/authMiddleware.js";
-import { isAdmin } from "../../Middlewares/Admin/amindMiddleware.js";
 
-import { createAgreementService } from "../../services/Agreements/agreementService.js";
+import { createAgreementService, refreshAgreementPdf } from "../../services/Agreements/agreementService.js";
 import { signAgreement } from "../../services/signals/signatureService.js";
 import { releaseEscrowPayment } from "../../services/score/escrowService.js";
+import { sendAgreementEmail } from "../../services/emails/emailService.js";
+import User from "../../models/users/UserModel.js";
 
 const router = express.Router();
 
@@ -14,12 +15,11 @@ const router = express.Router();
 router.post(
   "/agreements",
   verifyToken,
-  isAdmin,
   async (req, res) => {
     try {
       const result = await createAgreementService({
         ...req.body,
-        customerId: req.body.customerId,
+        customerId: req.user._id,
         createdBy: req.user.id,
       });
 
@@ -58,7 +58,10 @@ router.get("/agreements/my-agreements", verifyToken, async (req, res) => {
         { "parties.customer": req.user._id },
         { "parties.farmer": req.user._id },
       ],
-    }).sort({ createdAt: -1 });
+    })
+      .populate("parties.customer", "name email")
+      .populate("parties.farmer", "name email")
+      .sort({ createdAt: -1 });
 
     res.json({ success: true, data: agreements });
   } catch (err) {
@@ -89,12 +92,23 @@ router.put("/agreements/:id/sign", verifyToken, async (req, res) => {
       return res.status(400).json({ message: "A digital signature is required" });
     }
 
+    const wasFarmerUnsigned = !agreement.signatures?.farmer;
     signAgreement(agreement, req.user, signature.trim());
     if (agreement.signatures.customer && agreement.signatures.farmer) {
       agreement.status = "accepted";
     }
 
     await agreement.save();
+
+    const fullySignedByFarmer = wasFarmerUnsigned && agreement.signatures?.customer && agreement.signatures?.farmer;
+    if (fullySignedByFarmer) {
+      const signedAgreement = await refreshAgreementPdf(agreement._id);
+      const customer = await User.findById(agreement.parties.customer).select("email");
+      if (customer?.email && signedAgreement.pdfUrl) {
+        await sendAgreementEmail([customer.email], signedAgreement.pdfUrl, signedAgreement.transactionId);
+      }
+      agreement.pdfUrl = signedAgreement.pdfUrl;
+    }
 
     res.json({
       success: true,
