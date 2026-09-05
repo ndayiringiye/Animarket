@@ -554,7 +554,7 @@ const LivestockDashboard = () => {
   useEffect(() => {
     const fetchAnimals = async () => {
       try {
-        const response = await fetch('http://localhost:4000/api/animal/animals');
+        const response = await fetch('http://localhost:4000/api/animal/animals?owned=true');
         if (!response.ok) {
           throw new Error('Failed to fetch animals');
         }

@@ -88,7 +88,7 @@ const MiddleSection = () => {
   const [muted, setMuted] = useState(true);
   const [transitioning, setTransitioning] = useState(false);
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
 

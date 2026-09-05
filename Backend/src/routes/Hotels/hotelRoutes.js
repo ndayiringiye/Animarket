@@ -3,6 +3,7 @@ import express from 'express';
 import * as hotelController from '../../controllers/Hotels/hotelController.js';
 import * as hotelAgreementController from '../../controllers/Hotels/hotelAgreementController.js';
 import { verifyToken } from '../../Middlewares/Auth/authMiddleware.js';
+import { verifyHotelToken } from '../../Middlewares/Auth/hotelAuthMiddleware.js';
 import { isAdmin } from '../../Middlewares/Admin/amindMiddleware.js'; // Fixed typo
 import upload from '../../Middlewares/user/uplaodMiddleware.js'; // Fixed typo
 
@@ -65,7 +66,7 @@ router.get(
 
 router.post(
   '/:hotelId/book-animal',
-  verifyToken,
+  verifyHotelToken,
   hotelController.bookAnimalForHotel
 );
 

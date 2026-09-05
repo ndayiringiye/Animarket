@@ -1,4 +1,5 @@
 import Animal from "../../models/animals/AnimalModel.js";
+import User from "../../models/users/UserModel.js";
 import { animalIsVerified } from "../../validoators/Animal/animalvalidator.js";
 import { uploadToCloudinary, uploadMultipleFiles } from "../upload/mediaService.js";
 import cloudinary from "../../config/cloudinary.js";
@@ -167,13 +168,16 @@ export const createAnimal = async (req) => {
 
 // ─── READ ALL ─────────────────────────────────────────────────────────────────
 export const getAllAnimals = async (query) => {
-  const { type, gender, health, minPrice, maxPrice, location, page = 1, limit = 20 } = query;
+  const { type, gender, health, minPrice, maxPrice, location, owned, page = 1, limit = 20 } = query;
 
   const filter = {};
   if (type)     filter.type     = type;
   if (gender)   filter.gender   = gender;
   if (health)   filter.health   = health;
   if (location) filter.location = { $regex: location, $options: "i" };
+  if (owned === "true") {
+    filter.owner = { $in: await User.distinct("_id") };
+  }
   if (minPrice || maxPrice) {
     filter.price = {};
     if (minPrice) filter.price.$gte = Number(minPrice);
