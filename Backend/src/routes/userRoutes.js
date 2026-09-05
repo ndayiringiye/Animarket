@@ -25,4 +25,19 @@ router.get('/', verifyToken, isAdmin, userController.getAllUsers);
 router.delete('/:id', verifyToken, isAdmin, userController.deleteUser);
 router.put('/:id/role', verifyToken, isAdmin, userController.updateUserRole);
 
+// Public – poll farmer online status (no auth required so customer can call it)
+router.get('/:id/online-status', async (req, res) => {
+  try {
+    const { default: User } = await import('../models/users/UserModel.js');
+    const user = await User.findById(req.params.id).select('lastSeen name');
+    if (!user) return res.status(404).json({ online: false });
+    const ONLINE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+    const online = user.lastSeen && (Date.now() - new Date(user.lastSeen).getTime()) < ONLINE_THRESHOLD_MS;
+    res.json({ online: Boolean(online), lastSeen: user.lastSeen, name: user.name });
+  } catch (err) {
+    res.status(500).json({ online: false, message: err.message });
+  }
+});
+
+
 export default router;

@@ -202,6 +202,11 @@ const FarmerDashboard: React.FC = () => {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [agreements, setAgreements] = useState<AgreementNotification[]>([]);
+  const [chatThreads, setChatThreads] = useState<any[]>([]);
+  const [selectedChatThread, setSelectedChatThread] = useState<any | null>(null);
+  const [chatReplyText, setChatReplyText] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatMessage, setChatMessage] = useState('');
   const [farmerSignature, setFarmerSignature] = useState('');
   const [selectedAgreement, setSelectedAgreement] = useState<AgreementNotification | null>(null);
   const [selectedOwnershipDoc, setSelectedOwnershipDoc] = useState<{ title: string; url: string } | null>(null);
@@ -361,6 +366,31 @@ const FarmerDashboard: React.FC = () => {
     loadNotifications();
     const notificationInterval = window.setInterval(loadNotifications, 30000);
     return () => window.clearInterval(notificationInterval);
+  }, [user?._id, token]);
+
+  React.useEffect(() => {
+    const loadChatThreads = async () => {
+      if (!user?._id || !token) return;
+      try {
+        const response = await axios.get('http://localhost:4000/api/chat/farmer-messages', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const threads = response.data.data || [];
+        setChatThreads(threads);
+        setSelectedChatThread((prev: any) => {
+          if (!prev) return prev;
+          const updated = threads.find(
+            (t: any) => t.animalId === prev.animalId && t.customerId === prev.customerId
+          );
+          return updated || prev;
+        });
+      } catch {
+        setChatMessage('Unable to load customer messages.');
+      }
+    };
+    loadChatThreads();
+    const chatInterval = window.setInterval(loadChatThreads, 30000);
+    return () => window.clearInterval(chatInterval);
   }, [user?._id, token]);
 
   const approveMeeting = async (meetingId: string): Promise<void> => {
@@ -536,6 +566,49 @@ const FarmerDashboard: React.FC = () => {
       setNotificationMessage('Agreement signed successfully.');
     } catch (error: any) {
       setNotificationMessage(error.response?.data?.message || 'Unable to sign the agreement.');
+    }
+  };
+
+  const handleSendChatReply = async (): Promise<void> => {
+    if (!selectedChatThread || !chatReplyText.trim()) return;
+    if (!token) {
+      setChatMessage('Please log in before replying.');
+      return;
+    }
+    setChatLoading(true);
+    setChatMessage('');
+    try {
+      const response = await axios.post(
+        'http://localhost:4000/api/chat/reply',
+        {
+          animalId: selectedChatThread.animalId,
+          customerId: selectedChatThread.customerId,
+          text: chatReplyText.trim(),
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const sent = response.data.data;
+      const newMsg = {
+        _id: sent._id,
+        text: sent.text,
+        senderId: sent.sender?._id || sent.sender,
+        senderName: sent.sender?.name || user?.name,
+        createdAt: sent.createdAt,
+        isMine: true,
+      };
+      setSelectedChatThread((prev: any) => prev ? { ...prev, messages: [...prev.messages, newMsg] } : prev);
+      setChatThreads((prev) =>
+        prev.map((t) =>
+          t.animalId === selectedChatThread.animalId && t.customerId === selectedChatThread.customerId
+            ? { ...t, messages: [...t.messages, newMsg] }
+            : t
+        )
+      );
+      setChatReplyText('');
+    } catch (error: any) {
+      setChatMessage(error.response?.data?.message || 'Unable to send reply.');
+    } finally {
+      setChatLoading(false);
     }
   };
 
@@ -830,7 +903,7 @@ const FarmerDashboard: React.FC = () => {
 
   const secondaryMenus = [
     { name: 'ownership', label: 'Ownership', icon: 'fa-id-card', color: 'text-indigo-500', active: 'bg-indigo-50', hover: 'hover:text-indigo-700 hover:bg-indigo-50', links: [['Ownership Documents', '#ownership-documents'], ['Ownership Transfers', '#ownership-documents'], ['Ownership History', '#animal-history']] },
-    { name: 'customer', label: 'Customer', icon: 'fa-comments', color: 'text-cyan-600', active: 'bg-cyan-50', hover: 'hover:text-cyan-700 hover:bg-cyan-50', links: [['Customer requests', '#customer-booked'], ['Zoom meetings', '#customer-booked'], ['Activity insights', '#chart'], ['Schedule Zoom call', '# add-zoom'],] },
+    { name: 'customer', label: 'Customer', icon: 'fa-comments', color: 'text-cyan-600', active: 'bg-cyan-50', hover: 'hover:text-cyan-700 hover:bg-cyan-50', links: [['Messages', '#customer-messages'], ['Customer requests', '#customer-booked'], ['Zoom meetings', '#customer-booked'], ['Activity insights', '#chart'], ['Schedule Zoom call', '# add-zoom'],] },
     { name: 'agreements', label: 'Agreements', icon: 'fa-file-signature', color: 'text-violet-500', active: 'bg-violet-50', hover: 'hover:text-violet-700 hover:bg-violet-50', links: [['Create Agreement', '#agreements'], ['Pending Agreements', '#agreements'], ['Active Agreements', '#agreements'], ['Completed Agreements', '#agreements'], ['Agreement Documents', '#agreements']] },
     { name: 'inspection', label: 'Inspection', icon: 'fa-clipboard-check', color: 'text-emerald-600', active: 'bg-emerald-50', hover: 'hover:text-emerald-700 hover:bg-emerald-50', links: [['Request Inspection', '#inspection'], ['Scheduled Inspections', '#inspection'], ['Inspection Results', '#inspection'], ['Inspection Reports', '#inspection']] },
     { name: 'transactions', label: 'Transactions', icon: 'fa-handshake', color: 'text-slate-600', active: 'bg-slate-100', hover: 'hover:text-slate-800 hover:bg-slate-100', links: [['Sales', '#transactions'], ['Purchases', '#transactions'], ['Payments', '#transactions'], ['Escrow', '#transactions'], ['Transaction History', '#transactions']] },
@@ -1433,6 +1506,94 @@ const FarmerDashboard: React.FC = () => {
                   </div>
                 ))}
               </div>
+            </div>
+        )}
+
+            {activeSection === 'customer-messages' && (
+        <div id="customer-messages" className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 scroll-mt-32">
+              <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-3">
+                <i className="fas fa-comments text-cyan-600"></i> Customer messages
+                <span className="ml-auto text-[10px] bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded-full">
+                  {chatThreads.length} conversation{chatThreads.length === 1 ? '' : 's'}
+                </span>
+              </h4>
+              {chatMessage && <p className="text-xs text-red-600 mb-2">{chatMessage}</p>}
+
+              {!selectedChatThread ? (
+                <div className="space-y-2">
+                  {chatThreads.length === 0 ? (
+                    <p className="text-xs text-slate-500">No customer messages yet.</p>
+                  ) : (
+                    chatThreads.map((thread: any) => {
+                      const lastMsg = thread.messages[thread.messages.length - 1];
+                      return (
+                        <button
+                          key={thread.animalId + '__' + thread.customerId}
+                          type="button"
+                          onClick={() => setSelectedChatThread(thread)}
+                          className="w-full text-left rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 p-3 transition"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-semibold text-slate-800">{thread.customerName || 'Customer'}</span>
+                            <span className="text-[10px] text-slate-400">{lastMsg ? new Date(lastMsg.createdAt).toLocaleDateString() : ''}</span>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-0.5">Animal: {thread.animalName}</p>
+                          {lastMsg && (
+                            <p className="text-xs text-slate-600 mt-1 truncate">
+                              {lastMsg.isMine ? 'You: ' : ''}{lastMsg.text}
+                            </p>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedChatThread(null)}
+                    className="text-[11px] text-cyan-600 hover:underline mb-3"
+                  >
+                    Back to conversations
+                  </button>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 mb-3">
+                    <p className="text-sm font-semibold text-slate-800">{selectedChatThread.customerName || 'Customer'}</p>
+                    <p className="text-xs text-slate-500">About: {selectedChatThread.animalName}</p>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto space-y-2 mb-3 pr-1">
+                    {selectedChatThread.messages.map((msg: any) => (
+                      <div key={msg._id} className={'flex ' + (msg.isMine ? 'justify-end' : 'justify-start')}>
+                        <div className={(msg.isMine ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-800') + ' max-w-[75%] px-3 py-2 rounded-xl text-xs'}>
+                          {msg.text}
+                          <div className={(msg.isMine ? 'text-white/70' : 'text-slate-400') + ' text-[9px] mt-1'}>
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={chatReplyText}
+                      onChange={(e) => setChatReplyText(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSendChatReply()}
+                      placeholder="Type a reply..."
+                      disabled={chatLoading}
+                      className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSendChatReply}
+                      disabled={!chatReplyText.trim() || chatLoading}
+                      className="rounded-lg bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white px-3 py-2 text-xs font-semibold transition"
+                    >
+                      {chatLoading ? '...' : 'Send'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
         )}
 

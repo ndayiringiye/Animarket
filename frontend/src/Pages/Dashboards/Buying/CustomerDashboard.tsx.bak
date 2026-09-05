@@ -3345,8 +3345,6 @@ const res = await fetch(`${baseurl}/api/meeting/`, {
           isDark={isDarkMode}
           addToCart={addToCart}
           openModal={openModal}
-          fetchMessages={handleFetchChatMessages}
-          sendChatMessage={handleSendChatMessage}
         />
       )}
 

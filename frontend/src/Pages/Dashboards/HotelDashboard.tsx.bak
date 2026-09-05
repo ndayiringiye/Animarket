@@ -1,85 +1,11 @@
 'use client';
 
-import { useState, useEffect, type KeyboardEvent, type ReactNode } from "react";
-import brand from "../../../public/images/brand.png";
+import { useState, useEffect } from "react";
+import brand from "../../../public/images/brand.png"
 import { FaCartPlus } from "react-icons/fa";
-import hotelProfile from "../../../public/images/hotelPofile.png";
-import { useHotelAuth } from "../../Contexts/HotelAuthContext";
+import hotelProfile from "../../../public/images/hotelPofile.png"
 
-type Animal = {
-  id?: string;
-  _id?: string;
-  name?: string;
-  type?: string;
-  breed?: string;
-  age?: number | string;
-  weight?: number | string;
-  status?: string;
-  images?: string[];
-  price?: number | string;
-  amount?: number | string;
-  currency?: string;
-  birthDate?: string;
-};
-
-type IconProps = {
-  d: string | string[];
-  size?: number;
-  className?: string;
-  viewBox?: string;
-  stroke?: boolean;
-};
-
-type BadgeProps = {
-  children: ReactNode;
-  color?: "green" | "yellow" | "red" | "blue";
-};
-
-type StatCardProps = {
-  label: string;
-  value: string | number;
-  sub?: string;
-  icon?: string | string[];
-  color?: "green" | "blue" | "purple" | "amber";
-  change?: string;
-  positive?: boolean;
-};
-
-type VerificationItemProps = {
-  id: string;
-  title: string;
-  subtitle: string;
-};
-
-type RiskRowProps = {
-  id: string;
-  sender: string;
-  receiver: string;
-  asset: string;
-  value: string;
-  score: number;
-};
-
-type SidebarProps = {
-  active: string;
-  setActive: (id: string) => void;
-};
-
-type AnimalCardProps = {
-  animal: Animal;
-  onSelect: (animal: Animal) => void;
-};
-
-type AnimalDetailModalProps = {
-  animal: Animal;
-  onClose: () => void;
-  onBook: () => void;
-  bookingLoading: boolean;
-  bookingMessage: string;
-  bookingError: string;
-};
-
-const Icon = ({ d, size = 16, className = "", viewBox = "0 0 24 24", stroke = true }: IconProps) => (
+const Icon = ({ d, size = 16, className = "", viewBox = "0 0 24 24", stroke = true }) => (
   <svg width={size} height={size} viewBox={viewBox} fill={stroke ? "none" : "currentColor"}
     stroke={stroke ? "currentColor" : "none"} strokeWidth="1.8"
     strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -125,19 +51,10 @@ const icons = {
   delete: "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
   delivery: "M4 16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4H4v12zM6 12h12M6 8h12",
   booking: "M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z",
-  video: "M23 7l-6 5.33V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5.33L23 17V7z",
-  phone: "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.574 2.81.7A2 2 0 0 1 22 16.92z",
-  calendar: "M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z",
-  clock: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z",
-  check: "M20 6L9 17l-5-5",
-  weight: "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
-  calendarCheck: "M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10l2 2 4-4",
-  mapPin: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
-  mail: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zM22 6l-10 7L2 6"
 };
 
-const Badge = ({ children, color = "green" }: BadgeProps) => {
-  const map: Record<string, string> = {
+const Badge = ({ children, color = "green" }) => {
+  const map = {
     green: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
     yellow: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20",
     red: "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20",
@@ -146,8 +63,8 @@ const Badge = ({ children, color = "green" }: BadgeProps) => {
   return <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${map[color]}`}>{children}</span>;
 };
 
-const StatCard = ({ label, value, sub, icon, color, change, positive }: StatCardProps) => {
-  const colorMap: Record<string, { bg: string; text: string }> = {
+const StatCard = ({ label, value, sub, icon, color, change, positive }) => {
+  const colorMap = {
     green: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400" },
     blue: { bg: "bg-sky-500/10", text: "text-sky-600 dark:text-sky-400" },
     purple: { bg: "bg-violet-500/10", text: "text-violet-600 dark:text-violet-400" },
@@ -179,7 +96,7 @@ const StatCard = ({ label, value, sub, icon, color, change, positive }: StatCard
   );
 };
 
-const VerificationItem = ({ id, title, subtitle }: VerificationItemProps) => (
+const VerificationItem = ({ id, title, subtitle }) => (
   <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-white/[0.06] last:border-0 hover:bg-gray-50 dark:hover:bg-white/[0.02] px-2 -mx-2 rounded-lg transition-all">
     <div>
       <div className="font-semibold text-gray-900 dark:text-white text-sm">{id}</div>
@@ -191,7 +108,7 @@ const VerificationItem = ({ id, title, subtitle }: VerificationItemProps) => (
   </div>
 );
 
-const RiskRow = ({ id, sender, receiver, asset, value, score }: RiskRowProps) => (
+const RiskRow = ({ id, sender, receiver, asset, value, score }) => (
   <tr className="border-b border-gray-100 dark:border-white/[0.06] last:border-0 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-all">
     <td className="py-3 px-4 text-xs font-mono font-semibold text-gray-700 dark:text-gray-300">{id}</td>
     <td className="py-3 px-4 text-xs text-gray-600 dark:text-gray-400">{sender} / {receiver}</td>
@@ -206,19 +123,19 @@ const RiskRow = ({ id, sender, receiver, asset, value, score }: RiskRowProps) =>
   </tr>
 );
 
-const statusStyles: Record<string, { dot: string; text: string; ring: string }> = {
+const statusStyles = {
   available: { dot: "bg-emerald-400", text: "text-emerald-300", ring: "ring-emerald-400/30" },
   booked: { dot: "bg-amber-400", text: "text-amber-300", ring: "ring-amber-400/30" },
   sick: { dot: "bg-rose-400", text: "text-rose-300", ring: "ring-rose-400/30" },
   unknown: { dot: "bg-gray-400", text: "text-gray-300", ring: "ring-gray-400/30" },
 };
 
-const AnimalCard = ({ animal, onSelect }: AnimalCardProps) => {
+const AnimalCard = ({ animal, onSelect }) => {
   const statusKey = (animal.status || "unknown").toLowerCase();
   const status = statusStyles[statusKey] || statusStyles.unknown;
 
   const handleActivate = () => onSelect && onSelect(animal);
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       handleActivate();
@@ -246,8 +163,10 @@ const AnimalCard = ({ animal, onSelect }: AnimalCardProps) => {
           </div>
         )}
 
+        {/* scrim so name reads over any photo */}
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
+        {/* status dot, top right */}
         <div className={`absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm ring-1 ${status.ring}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
           <span className={`text-[11px] font-medium capitalize ${status.text}`}>{animal.status || "Unknown"}</span>
@@ -261,6 +180,7 @@ const AnimalCard = ({ animal, onSelect }: AnimalCardProps) => {
           </div>
         ) : null}
 
+        {/* name + id on the photo */}
         <div className="absolute inset-x-0 bottom-0 p-4">
           <h4 className="font-semibold text-white text-base leading-tight">{animal.name || animal.type || "Unknown"}</h4>
           <span className="text-xs text-white/70">ID: {animal.id || animal._id || "N/A"}</span>
@@ -290,6 +210,7 @@ const AnimalCard = ({ animal, onSelect }: AnimalCardProps) => {
         </div>
       </div>
 
+      {/* quiet hover affordance instead of a button */}
       <div className="absolute bottom-3 right-3 w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-300">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path d="M9 18l6-6-6-6" />
@@ -299,21 +220,21 @@ const AnimalCard = ({ animal, onSelect }: AnimalCardProps) => {
   );
 };
 
-const Sidebar = ({ active, setActive }: SidebarProps) => {
-  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({
+const Sidebar = ({ active, setActive }) => {
+  const [openDropdowns, setOpenDropdowns] = useState({
     transactions: false,
     zoom: false,
     agreement: false
   });
 
-  const toggleDropdown = (key: string) => {
+  const toggleDropdown = (key) => {
     setOpenDropdowns(prev => ({
       ...prev,
       [key]: !prev[key]
     }));
   };
 
-  const handleNavClick = (id: string) => {
+  const handleNavClick = (id) => {
     setActive(id);
     setOpenDropdowns({
       transactions: false,
@@ -322,7 +243,7 @@ const Sidebar = ({ active, setActive }: SidebarProps) => {
     });
   };
 
-  const handleDropdownItemClick = (id: string) => {
+  const handleDropdownItemClick = (id) => {
     setActive(id);
   };
 
@@ -336,7 +257,7 @@ const Sidebar = ({ active, setActive }: SidebarProps) => {
     { id: "booking", label: "Booking", icon: icons.booking },
   ];
 
-  const dropdownItems: Record<string, Array<{ id: string; label: string; icon: string }>> = {
+  const dropdownItems = {
     transactions: [
       { id: "pay-animal", label: "Pay Animal", icon: icons.pay },
       { id: "pay-commission", label: "Pay Commission", icon: icons.pay }
@@ -444,7 +365,7 @@ const Sidebar = ({ active, setActive }: SidebarProps) => {
 };
 
 const Topbar = ({ darkMode, setDarkMode }) => (
-  <div className="h-16 flex items-center justify-between px-8 border-b border-gray-200 fixed top-0 left-48 right-0 shadow-md dark:border-white/[0.06] bg-white/80 dark:bg-[#0c0e12]/80 backdrop-blur-sm shrink-0">
+  <div className="h-16 flex items-center justify-between px-8 border-b border-gray-200 dark:border-white/[0.06] bg-white/80 dark:bg-[#0c0e12]/80 backdrop-blur-sm shrink-0">
     <div>
       <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent font-['Sora']">
         Welcome, Mariote Hotel
@@ -491,65 +412,6 @@ const LivestockDashboard = () => {
   const [animals, setAnimals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedAnimal, setSelectedAnimal] = useState(null);
-  const { hotel, token } = useHotelAuth();
-  const [bookingLoading, setBookingLoading] = useState(false);
-  const [bookingMessage, setBookingMessage] = useState("");
-  const [bookingError, setBookingError] = useState("");
-
-  const handleHotelBooking = async () => {
-    if (!hotel?._id) {
-      setBookingError("Please log in as a hotel to book an animal.");
-      return;
-    }
-
-    if (!selectedAnimal?._id) {
-      setBookingError("No animal selected.");
-      return;
-    }
-
-    setBookingLoading(true);
-    setBookingError("");
-    setBookingMessage("");
-
-    try {
-      const hotelId = hotel._id;
-      const price = Number(selectedAnimal.price || selectedAnimal.amount || 0);
-      const checkInDate = new Date();
-      const checkOutDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-      const response = await fetch(`http://localhost:4000/api/hotels/${hotelId}/book-animal`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          animalId: selectedAnimal._id,
-          serviceType: "boarding",
-          checkInDate: checkInDate.toISOString(),
-          checkOutDate: checkOutDate.toISOString(),
-          price,
-          paymentMethod: "mobile_money",
-          specialRequests: "Hotel booking request from hotel dashboard",
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.message || "Hotel booking failed.");
-      }
-
-      setBookingMessage("Animal booked successfully. The hotel booking has been created.");
-      setTimeout(() => {
-        setSelectedAnimal(null);
-      }, 1200);
-    } catch (error) {
-      setBookingError(error?.message || "Something went wrong while booking.");
-    } finally {
-      setBookingLoading(false);
-    }
-  };
 
   useEffect(() => {
     const fetchAnimals = async () => {
@@ -573,7 +435,7 @@ const LivestockDashboard = () => {
 
   return (
     <div className="p-6 flex flex-col gap-6 overflow-y-auto bg-gray-50 dark:bg-[#0c0e12]">
-      <div className="grid grid-cols-4 gap-5">
+      <div className="grid grid-cols-4 gap-5 mt-28">
         <StatCard 
           label="Gross Merchandise Value" 
           value="$4.2M" 
@@ -660,7 +522,7 @@ const LivestockDashboard = () => {
         ) : (
           <div className="grid grid-cols-3 gap-4">
             {animals.map((animal, index) => (
-              <AnimalCard key={animal.id || animal._id || index} animal={animal} onSelect={(a) => setSelectedAnimal(a)} />
+              <AnimalCard key={animal.id || animal._id || index} animal={animal} onSelect={(a) => console.log("Animal clicked:", a)} />
             ))}
           </div>
         )}
@@ -685,174 +547,8 @@ const LivestockDashboard = () => {
               <RiskRow id="TX-1025" sender="GreenPastures" receiver="ExportHub" asset="Goats" value="$87,200" score={65} />
               <RiskRow id="TX-1026" sender="Sunrise Ranch" receiver="MeatDist" asset="Poultry" value="$210,000" score={91} />
               <RiskRow id="TX-1027" sender="DairyPlus" receiver="Processors" asset="Milk" value="$45,000" score={32} />
-              {selectedAnimal && (
-                <AnimalDetailModal
-                  animal={selectedAnimal}
-                  onClose={() => setSelectedAnimal(null)}
-                  onBook={handleHotelBooking}
-                  bookingLoading={bookingLoading}
-                  bookingMessage={bookingMessage}
-                  bookingError={bookingError}
-                />
-              )}
             </tbody>
           </table>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMessage, bookingError }: AnimalDetailModalProps) => {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border bg-white dark:bg-[#16191f] border-gray-200 dark:border-white/[0.07] shadow-2xl">
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-2 gap-6 p-6">
-          {/* Left Column - Animal Image & Details */}
-          <div className="space-y-4">
-            {/* Animal Image */}
-            <div className="rounded-xl overflow-hidden bg-gray-100 dark:bg-white/[0.03] h-64">
-              {animal?.images && animal.images[0] ? (
-                <img
-                  src={animal.images[0]}
-                  alt={animal.name || "animal"}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                  <Icon d={icons.herd} size={48} />
-                </div>
-              )}
-            </div>
-
-            {/* Animal Name & Price */}
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {animal?.name || "Jersey Cow"} #{animal?.id || "45"}
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-[#94a3b8]">cow · {animal?.breed || "Jersey"}</p>
-              <div className="mt-2">
-                <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">FRW 450,000</span>
-                <span className="text-sm text-gray-500 dark:text-[#94a3b8] ml-2">per head</span>
-              </div>
-            </div>
-
-            {/* Overview Section */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Overview</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
-                  Vaccination
-                </button>
-                <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
-                  Ownership
-                </button>
-                <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
-                  Location
-                </button>
-                <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
-                  Contact
-                </button>
-                <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
-                  Agreement
-                </button>
-                <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
-                  Chat
-                </button>
-                 <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
-                  Booking
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - Details */}
-          <div className="space-y-4">
-            {/* Info Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-50 dark:bg-[#0c0e12] rounded-lg p-3">
-                <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Weight</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">{animal?.weight || "320"} kg</p>
-              </div>
-              <div className="bg-gray-50 dark:bg-[#0c0e12] rounded-lg p-3">
-                <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Age</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">{animal?.age || "3"} yrs</p>
-              </div>
-              <div className="bg-gray-50 dark:bg-[#0c0e12] rounded-lg p-3">
-                <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Breed</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">{animal?.breed || "Jersey"}</p>
-              </div>
-              <div className="bg-gray-50 dark:bg-[#0c0e12] rounded-lg p-3">
-                <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Gender</p>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">Female</p>
-              </div>
-            </div>
-
-            {/* Status & Health */}
-            <div className="flex items-center gap-6">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Status</p>
-                <Badge color="green">{animal?.status || "Available"}</Badge>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Health Score</p>
-                <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 capitalize">excellent</span>
-              </div>
-            </div>
-
-            {/* Location & Contact Details */}
-            <div className="bg-gray-50 dark:bg-[#0c0e12] rounded-lg p-4 space-y-3">
-              <h4 className="text-xs font-semibold text-gray-500 dark:text-[#94a3b8] uppercase tracking-wider">Location & Contact</h4>
-              
-              <div className="flex items-center gap-3">
-                <Icon d={icons.mapPin} size={16} className="text-gray-400" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Nairobi, Kenya</span>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Icon d={icons.phone} size={16} className="text-gray-400" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">+254 712 345 678</span>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Icon d={icons.mail} size={16} className="text-gray-400" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">john@greenvalley.com</span>
-              </div>
-
-              {/* Google Map */}
-              <div className="mt-2 rounded-lg overflow-hidden h-32 bg-gray-200 dark:bg-[#0c0e12] border border-gray-200 dark:border-white/[0.06]">
-                <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-[#94a3b8] text-sm">
-                  <div className="text-center">
-                    <Icon d={icons.mapPin} size={24} className="mx-auto mb-1 text-emerald-500" />
-                    <p>Google Map Location</p>
-                    <p className="text-xs">-1.2921° S, 36.8219° E</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="p-6 border-t border-gray-200 dark:border-white/[0.07] space-y-3">
-          {bookingError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-              {bookingError}
-            </div>
-          )}
-          {bookingMessage && (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-              {bookingMessage}
-            </div>
-          )}
-          <button
-            onClick={onBook}
-            disabled={bookingLoading}
-            className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors"
-          >
-            {bookingLoading ? "Booking..." : "Book Animal"}
-          </button>
         </div>
       </div>
     </div>

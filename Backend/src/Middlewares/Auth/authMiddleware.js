@@ -26,6 +26,9 @@ export const verifyToken = async (req, res, next) => {
             });
         }
 
+        // Update lastSeen timestamp (fire-and-forget, don't block the request)
+        User.findByIdAndUpdate(req.user._id, { lastSeen: new Date() }).exec().catch(() => {});
+
         next();
     } catch (error) {
         return res.status(401).json({
