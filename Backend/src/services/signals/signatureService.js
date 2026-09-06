@@ -1,4 +1,4 @@
-﻿export const signAgreement = (agreement, user, signature) => {
+export const signAgreement = (agreement, user, signature) => {
   if (!agreement.signatures) agreement.signatures = {};
   if (user.role === "customer") {
     agreement.signatures.customer = signature;
@@ -6,6 +6,8 @@
     agreement.signatures.farmer = signature;
   } else if (user.role === "veterinary") {
     agreement.signatures.vet = signature;
+  } else if (user.role === "hotel") {
+    agreement.signatures.hotel = signature;
   } else {
     throw new Error(`Role '${user.role}' is not permitted to sign this agreement`);
   }

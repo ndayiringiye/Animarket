@@ -80,14 +80,80 @@ const uploadAgreementPdf = (agreement, animal, customer, farmer) => new Promise(
 	document.end();
 });
 
+const uploadHotelAgreementPdf = (agreement, animal, hotel, farmer) => new Promise((resolve, reject) => {
+        const document = new PDFDocument();
+        const chunks = [];
+        document.on("data", chunk => chunks.push(chunk));
+        document.on("end", () => {
+                const upload = cloudinary.uploader.upload_stream(
+                        { resource_type: "raw", folder: "agreements", format: "pdf" },
+                        (error, result) => error ? reject(error) : resolve(result.secure_url)
+                );
+                upload.end(Buffer.concat(chunks));
+        });
+        document.on("error", reject);
+
+        document.rect(0, 0, document.page.width, 120).fill('#E8F5E9');
+        document.fillColor('#0F172A');
+        document.fontSize(20).font('Helvetica-Bold').text("AniMarket", { align: "center" });
+        document.fontSize(14).font('Helvetica').text("Hotel Purchase Agreement", { align: "center" });
+        document.moveDown(0.5);
+        document.fontSize(10).font('Helvetica').fillColor('#555');
+        document.text(`Transaction ID: ${agreement.transactionId}`, { continued: true });
+        document.text(`   Date: ${new Date().toDateString()}`, { align: 'right' });
+        document.moveDown();
+
+        document.fontSize(12).font('Helvetica-Bold').fillColor('#000').text('Parties', { underline: true });
+        document.moveDown(0.3);
+        document.fontSize(11).font('Helvetica');
+        document.text(`Seller (Farmer): ${farmer?.name || farmer?.email || "Farmer"}`);
+        document.text(`Buyer (Hotel): ${hotel?.hotelName || hotel?.email || "Hotel"}`);
+        document.moveDown();
+
+        document.fontSize(12).font('Helvetica-Bold').text('1. Animal Description', { underline: true });
+        document.moveDown(0.3);
+        document.fontSize(11).font('Helvetica');
+        document.text(`Animal: ${animal.name} (${animal.type || ''}, ${animal.breed || ''})`);
+        if (animal.age) document.text(`Age: ${animal.age}`);
+        if (animal.weight) document.text(`Weight: ${animal.weight} kg`);
+        document.moveDown();
+
+        document.fontSize(12).font('Helvetica-Bold').text('2. Purchase Price & Payment', { underline: true });
+        document.moveDown(0.3);
+        document.fontSize(11).font('Helvetica');
+        document.text(`Total Price: ${agreement.price} ${agreement.currency || 'RWF'}`);
+        if (agreement.paymentMethod) document.text(`Payment Method: ${agreement.paymentMethod.replace(/_/g, ' ')}`);
+        document.moveDown();
+
+        document.fontSize(12).font('Helvetica-Bold').text('3. Terms', { underline: true });
+        document.moveDown(0.3);
+        document.fontSize(11).font('Helvetica');
+        document.text(agreement.terms || 'The parties agree to the standard terms for the sale as set out in this agreement, facilitated via the AniMarket platform.');
+        document.moveDown(2);
+
+        document.fontSize(11).font('Helvetica');
+        document.text('Buyer (Hotel) Signature:', { continued: false });
+        document.text(agreement.signatures?.hotel ? `  ${agreement.signatures.hotel}` : '  ______________________________');
+        document.text(`Name: ${hotel?.hotelName || hotel?.email || "Hotel"}`);
+        document.moveDown();
+        document.text('Seller (Farmer) Signature:', { continued: false });
+        document.text(agreement.signatures?.farmer ? `  ${agreement.signatures.farmer}` : '  ______________________________');
+        document.text(`Name: ${farmer?.name || farmer?.email || "Seller"}`);
+
+        document.end();
+});
+
 export const refreshAgreementPdf = async (agreementId) => {
 	const agreement = await Agreement.findById(agreementId)
 		.populate("parties.customer", "name email")
-		.populate("parties.farmer", "name email");
+		.populate("parties.farmer", "name email")
+                .populate("parties.hotel", "hotelName email");
 	if (!agreement) throw new Error("Agreement not found");
 	const animal = await Animal.findById(agreement.animal.animalId);
 	if (!animal) throw new Error("Animal not found");
-	agreement.pdfUrl = await uploadAgreementPdf(agreement, animal, agreement.parties.customer, agreement.parties.farmer);
+        agreement.pdfUrl = agreement.parties.hotel
+                ? await uploadHotelAgreementPdf(agreement, animal, agreement.parties.hotel, agreement.parties.farmer)
+                : await uploadAgreementPdf(agreement, animal, agreement.parties.customer, agreement.parties.farmer);
 	await agreement.save();
 	return agreement;
 };
@@ -115,6 +181,7 @@ const createAgreementService = async (agreementData) => {
 		parties: {
 			customer: booking?.customer || agreementData.customerId,
 			farmer: booking?.farmer || agreementData.farmerId || animal.owner?._id || animal.owner,
+                        hotel: agreementData.hotelId,
 		},
 		animal: {
 			animalId: animal._id,

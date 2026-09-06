@@ -21,6 +21,7 @@ const agreementSchema = new Schema(
       farmer: { type: Schema.Types.ObjectId, ref: "User" },
       veterinarian: { type: Schema.Types.ObjectId, ref: "User" },
       requester: { type: Schema.Types.ObjectId, ref: "User" },
+      hotel: { type: Schema.Types.ObjectId, ref: "Hotel" },
     },
 
     animal: {
@@ -65,6 +66,7 @@ const agreementSchema = new Schema(
       customer: String,
       farmer: String,
       vet: String,
+      hotel: String,
     },
 
     signedAt: Date,

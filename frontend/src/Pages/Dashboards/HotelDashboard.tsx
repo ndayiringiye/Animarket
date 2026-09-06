@@ -77,6 +77,15 @@ type AnimalDetailModalProps = {
   bookingLoading: boolean;
   bookingMessage: string;
   bookingError: string;
+  agreement: any;
+  agreementLoading: boolean;
+  agreementError: string;
+  agreementSignature: string;
+  setAgreementSignature: (value: string) => void;
+  agreementSigning: boolean;
+  onSignAgreement: () => void;
+  showAgreementPanel: boolean;
+  onToggleAgreementPanel: () => void;
 };
 
 const Icon = ({ d, size = 16, className = "", viewBox = "0 0 24 24", stroke = true }: IconProps) => (
@@ -550,6 +559,64 @@ const LivestockDashboard = () => {
       setBookingLoading(false);
     }
   };
+  const [agreement, setAgreement] = useState<any>(null);
+  const [agreementLoading, setAgreementLoading] = useState(false);
+  const [agreementError, setAgreementError] = useState("");
+  const [agreementSignature, setAgreementSignature] = useState("");
+  const [agreementSigning, setAgreementSigning] = useState(false);
+  const [showAgreementPanel, setShowAgreementPanel] = useState(false);
+  const handleLoadAgreement = async () => {
+    if (!selectedAnimal?._id) return;
+    setAgreementLoading(true);
+    setAgreementError("");
+    try {
+      const response = await fetch(`http://localhost:4000/api/agreements/agreements/animal/${selectedAnimal._id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.message || "Failed to load agreement.");
+      }
+      setAgreement(data.data);
+    } catch (error: any) {
+      setAgreementError(error?.message || "Something went wrong while loading the agreement.");
+      setAgreement(null);
+    } finally {
+      setAgreementLoading(false);
+    }
+  };
+  const handleSignAgreement = async () => {
+    if (!agreement?._id) return;
+    if (!agreementSignature.trim()) {
+      setAgreementError("Please type your name to sign.");
+      return;
+    }
+    setAgreementSigning(true);
+    setAgreementError("");
+    try {
+      const response = await fetch(`http://localhost:4000/api/agreements/agreements/${agreement._id}/sign`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ signature: agreementSignature.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.message || "Failed to sign agreement.");
+      }
+      setAgreement(data.data);
+    } catch (error: any) {
+      setAgreementError(error?.message || "Something went wrong while signing.");
+    } finally {
+      setAgreementSigning(false);
+    }
+  };
 
   useEffect(() => {
     const fetchAnimals = async () => {
@@ -575,30 +642,27 @@ const LivestockDashboard = () => {
     <div className="p-6 flex flex-col gap-6 overflow-y-auto bg-gray-50 dark:bg-[#0c0e12]">
       <div className="grid grid-cols-4 gap-5">
         <StatCard 
-          label="Gross Merchandise Value" 
-          value="$4.2M" 
-          change="+12%" 
+          label="animal" 
+          value="0" 
           positive 
           icon={icons.creditCard} 
           color="green" 
         />
         <StatCard 
-          label="Ecosystem Population" 
-          value="12k" 
-          sub="Farmers: 8.4k  Buyers: 3.6k" 
+          label="booked" 
+          value="0" 
           icon={icons.herd} 
           color="blue" 
         />
         <StatCard 
-          label="Escrow Volume" 
-          value="$1.8M" 
-          sub="Locked" 
+          label="paid" 
+          value="0" 
           icon={icons.escrow} 
           color="purple" 
         />
         <StatCard 
-          label="Risk Profile" 
-          value="Low (2.4)" 
+          label="new Hotels" 
+          value="0" 
           icon={icons.risk} 
           color="green" 
         />
@@ -693,6 +757,18 @@ const LivestockDashboard = () => {
                   bookingLoading={bookingLoading}
                   bookingMessage={bookingMessage}
                   bookingError={bookingError}
+                  agreement={agreement}
+                  agreementLoading={agreementLoading}
+                  agreementError={agreementError}
+                  agreementSignature={agreementSignature}
+                  setAgreementSignature={setAgreementSignature}
+                  agreementSigning={agreementSigning}
+                  onSignAgreement={handleSignAgreement}
+                  showAgreementPanel={showAgreementPanel}
+                  onToggleAgreementPanel={() => {
+                    setShowAgreementPanel((v) => !v);
+                    if (!agreement) handleLoadAgreement();
+                  }}
                 />
               )}
             </tbody>
@@ -703,7 +779,7 @@ const LivestockDashboard = () => {
   );
 };
 
-const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMessage, bookingError }: AnimalDetailModalProps) => {
+const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMessage, bookingError, agreement, agreementLoading, agreementError, agreementSignature, setAgreementSignature, agreementSigning, onSignAgreement, showAgreementPanel, onToggleAgreementPanel }: AnimalDetailModalProps) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border bg-white dark:bg-[#16191f] border-gray-200 dark:border-white/[0.07] shadow-2xl">
@@ -754,7 +830,9 @@ const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMes
                 <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
                   Contact
                 </button>
-                <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
+                <button
+                  onClick={onToggleAgreementPanel}
+                  className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
                   Agreement
                 </button>
                 <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
@@ -767,6 +845,58 @@ const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMes
             </div>
           </div>
 
+            {showAgreementPanel && (
+              <div className="bg-gray-50 dark:bg-[#0c0e12] rounded-lg p-4 space-y-3">
+                <h4 className="text-xs font-semibold text-gray-500 dark:text-[#94a3b8] uppercase tracking-wider">Booking & Payment Agreement</h4>
+                {agreementLoading && (
+                  <p className="text-sm text-gray-500 dark:text-[#94a3b8]">Loading agreement...</p>
+                )}
+                {agreementError && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                    {agreementError}
+                  </div>
+                )}
+                {agreement && !agreementLoading && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{agreement.title}</p>
+                    <p className="text-sm text-gray-500 dark:text-[#94a3b8]">
+                      Price: {agreement.price} {agreement.currency || "RWF"}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Status: {agreement.status}</p>
+                    {agreement.pdfUrl && (
+                      <a
+                        href={agreement.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
+                      >
+                        View Agreement PDF
+                      </a>
+                    )}
+                    {agreement.signatures?.hotel ? (
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400">You have signed this agreement.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={agreementSignature}
+                          onChange={(e) => setAgreementSignature(e.target.value)}
+                          placeholder="Type your full name to sign"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#16191f] text-sm text-gray-900 dark:text-white"
+                        />
+                        <button
+                          onClick={onSignAgreement}
+                          disabled={agreementSigning}
+                          className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          {agreementSigning ? "Signing..." : "Sign Agreement"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           {/* Right Column - Details */}
           <div className="space-y-4">
             {/* Info Grid */}

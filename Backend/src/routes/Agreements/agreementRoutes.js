@@ -35,7 +35,7 @@ router.post(
 
 router.get("/agreements/animal/:animalId", verifyToken, async (req, res) => {
   try {
-    const partyFields = ["parties.customer", "parties.farmer"];
+    const partyFields = ["parties.customer", "parties.farmer", "parties.hotel"];
     const agreement = await Agreement.findOne({
       "animal.animalId": req.params.animalId,
       $or: partyFields.map((field) => ({ [field]: req.user._id })),
@@ -81,7 +81,7 @@ router.put("/agreements/:id/sign", verifyToken, async (req, res) => {
       return res.status(404).json({ message: "Agreement not found" });
     }
 
-    const isParty = [agreement.parties.customer, agreement.parties.farmer]
+    const isParty = [agreement.parties.customer, agreement.parties.farmer, agreement.parties.hotel]
       .filter(Boolean)
       .some((partyId) => partyId.toString() === req.user._id.toString());
     if (!isParty) {
@@ -94,7 +94,7 @@ router.put("/agreements/:id/sign", verifyToken, async (req, res) => {
 
     const wasFarmerUnsigned = !agreement.signatures?.farmer;
     signAgreement(agreement, req.user, signature.trim());
-    if (agreement.signatures.customer && agreement.signatures.farmer) {
+    if ((agreement.signatures.customer && agreement.signatures.farmer) || (agreement.signatures.hotel && agreement.signatures.farmer)) {
       agreement.status = "accepted";
     }
 

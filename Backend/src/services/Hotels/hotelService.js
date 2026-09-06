@@ -10,6 +10,7 @@ import nodemailer from "nodemailer";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import otpGenerator from "otp-generator";
+import { createAgreementService } from "../Agreements/agreementService.js";
 
 dotenv.config();
 
@@ -318,6 +319,21 @@ export const bookAnimalForHotel = async (req, res) => {
       qrCodeGeneratedAt: new Date(),
     };
     await booking.save();
+
+    // Create a purchase/booking agreement for this hotel booking (view + sign flow)
+    try {
+      await createAgreementService({
+        animalId,
+        hotelId,
+        farmerId: animal.owner._id,
+        price,
+        paymentMethod,
+        title: `Booking agreement for ${animal.name || "animal"} - ${hotel.hotelName}`,
+        createdBy: hotelId,
+      });
+    } catch (agreementErr) {
+      console.error("Failed to create agreement for hotel booking:", agreementErr.message);
+    }
 
     // Send Email to Hotel
     await transporter.sendMail({

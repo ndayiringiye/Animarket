@@ -18,16 +18,24 @@ export const verifyToken = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         // Attach user to request
-        req.user = await User.findById(decoded.id).select("-password");
-
-        if (!req.user) {
-            return res.status(401).json({
-                message: "User not found."
-            });
+        if (decoded.type === "hotel") {
+            const Hotel = (await import("../../models/Hotels/hotelModel.js")).default;
+            const hotel = await Hotel.findById(decoded.id).select("-password");
+            if (!hotel) {
+                return res.status(401).json({
+                    message: "Hotel not found."
+                });
+            }
+            req.user = { ...hotel.toObject(), role: "hotel" };
+        } else {
+            req.user = await User.findById(decoded.id).select("-password");
+            if (!req.user) {
+                return res.status(401).json({
+                    message: "User not found."
+                });
+            }
+            User.findByIdAndUpdate(req.user._id, { lastSeen: new Date() }).exec().catch(() => {});
         }
-
-        // Update lastSeen timestamp (fire-and-forget, don't block the request)
-        User.findByIdAndUpdate(req.user._id, { lastSeen: new Date() }).exec().catch(() => {});
 
         next();
     } catch (error) {
