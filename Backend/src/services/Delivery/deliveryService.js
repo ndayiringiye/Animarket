@@ -1,4 +1,19 @@
 import Booking from "../../models/Bookings/bookingModel.js";
+import HotelAnimalBooking from "../../models/Hotels/hotelAnimalBookingModel.js";
+
+export const requestHotelDeliveryService = async (bookingId, hotelId, data) => {
+  const booking = await HotelAnimalBooking.findOne({ _id: bookingId, hotelId });
+  if (!booking) throw new Error("Hotel booking not found");
+  if (!data.address || !data.deliveryDate) throw new Error("Address and delivery date are required");
+
+  booking.deliveryAddress = { address: data.address };
+  booking.deliveryDate = data.deliveryDate;
+  booking.deliveryStatus = "scheduled";
+  booking.deliveryRequestedAt = new Date();
+  booking.notes = data.notes || booking.notes;
+  await booking.save();
+  return booking;
+};
 
 export const requestDeliveryService = async (bookingId, userId, data) => {
   const { address, deliveryDate, notes } = data;

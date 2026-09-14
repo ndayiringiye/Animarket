@@ -1,6 +1,7 @@
 import User from "../../models/users/UserModel.js";
 import Animal from "../../models/animals/AnimalModel.js";
 import Meeting from "../../models/Meetings/meettingModels.js";
+import Hotel from "../../models/Hotels/hotelModel.js";
 import axios from "axios";
 import { sendZoomMeetingNotification } from "../emails/emailService.js";
 
@@ -316,11 +317,14 @@ export const updateMeetingService = async (meetingId, userId, updates) => {
         const meeting = await Meeting.findById(meetingId);
         if (!meeting) throw new Error("Meeting not found");
 
+        const normalizedUserId = String(userId);
         const requester = await User.findById(userId);
+        const hotelRequester = await Hotel.findById(userId);
         const isAdmin = requester?.role === "admin";
-        const isOrganizer = meeting.organizer.toString() === userId;
+        const isOrganizer = meeting.organizer.toString() === normalizedUserId;
+        const isHotelOrganizer = hotelRequester && meeting.organizerType === "hotel" && isOrganizer;
 
-        if (!isAdmin && !isOrganizer) {
+        if (!isAdmin && !isOrganizer && !isHotelOrganizer) {
             throw new Error("Only admin or organizer can update the meeting");
         }
 
@@ -347,7 +351,23 @@ export const updateMeetingService = async (meetingId, userId, updates) => {
         
         // Send notification to participants about the update
         if (updates.meetingDate || updates.meetingLink) {
-            await sendZoomMeetingNotification(meeting, 'update');
+            const animal = meeting.animal ? await Animal.findById(meeting.animal).select("name owner") : null;
+            const owner = animal?.owner ? await User.findById(animal.owner).select("name email") : null;
+            if (owner?.email) {
+                try {
+                    await sendZoomMeetingNotification({
+                        email: owner.email,
+                        ownerName: owner.name,
+                        animalName: animal?.name || "Animal",
+                        title: meeting.title,
+                        meetingDate: meeting.meetingDate,
+                        meetingLink: meeting.videoCall?.meetingLink,
+                        password: meeting.videoCall?.password,
+                    });
+                } catch (notificationError) {
+                    console.error("Zoom meeting update notification failed:", notificationError.message);
+                }
+            }
         }
 
         return meeting;
@@ -362,11 +382,14 @@ export const cancelMeetingService = async (meetingId, userId) => {
     const meeting = await Meeting.findById(meetingId);
     if (!meeting) throw new Error("Meeting not found");
 
+    const normalizedUserId = String(userId);
     const requester = await User.findById(userId);
+    const hotelRequester = await Hotel.findById(userId);
     const isAdmin = requester?.role === "admin";
-    const isOrganizer = meeting.organizer.toString() === userId;
+    const isOrganizer = meeting.organizer.toString() === normalizedUserId;
+    const isHotelOrganizer = hotelRequester && meeting.organizerType === "hotel" && isOrganizer;
 
-    if (!isAdmin && !isOrganizer) {
+    if (!isAdmin && !isOrganizer && !isHotelOrganizer) {
         throw new Error("Only admin or organizer can cancel the meeting");
     }
 
@@ -380,13 +403,17 @@ export const cancelMeetingService = async (meetingId, userId) => {
     return meeting;
 };
 
-export const getUserMeetingsService = async (userId) => {
-    return await Meeting.find({
-        $or: [
-            { organizer: userId },
-            { "participants.user": userId }
-        ]
-    })
+export const getUserMeetingsService = async (userId, organizerType) => {
+    const query = organizerType === "hotel"
+        ? { organizer: userId, organizerType: "hotel" }
+        : {
+            $or: [
+                { organizer: userId },
+                { "participants.user": userId }
+            ]
+        };
+
+    return await Meeting.find(query)
     .populate("organizer", "name email")
     .populate("participants.user", "name email")
     .populate("animal");

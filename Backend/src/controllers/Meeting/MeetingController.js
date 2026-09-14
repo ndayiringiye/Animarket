@@ -7,7 +7,8 @@ import {
     endMeetingService,
     addFeedbackService,
     startMeetingService,
-    cancelMeetingService
+    cancelMeetingService,
+    updateMeetingService
 } from "../../services/meeting/meetingService.js";
 
 export const createMeetingController = async (req, res) => {
@@ -47,7 +48,7 @@ export const startMeetingController = async (req, res) => {
 
 export const cancelMeetingController = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id || req.user.id;
         const { meetingId } = req.params;
 
         const meeting = await cancelMeetingService(meetingId, userId);
@@ -64,8 +65,11 @@ export const cancelMeetingController = async (req, res) => {
 
 export const getUserMeetingsController = async (req, res) => {
     try {
-        const userId = req.user.id;
-        const meetings = await getUserMeetingsService(userId);
+        const userId = req.user._id || req.user.id;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Authenticated user ID is missing" });
+        }
+        const meetings = await getUserMeetingsService(userId, req.user.role === "hotel" ? "hotel" : undefined);
 
         return res.status(200).json({ success: true, data: meetings });
     } catch (error) {
@@ -136,7 +140,7 @@ export const endMeetingController = async (req, res) => {
 };
 export const updateMeetingController = async (req, res) => {
     try {
-        const meeting = await updateMeetingService(req.params.meetingId, req.user.id, req.body);
+        const meeting = await updateMeetingService(req.params.meetingId, req.user._id || req.user.id, req.body);
         res.status(200).json({ success: true, data: meeting });
     } catch (err) {
         console.error("Update meeting error:", err.message);

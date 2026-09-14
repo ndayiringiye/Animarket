@@ -18,6 +18,8 @@ interface Hotel {
   profileImage?: string;
   status: string;
   isVerified: boolean;
+  canRegisterOtherHotels?: boolean;
+  maxChildHotelsAllowed?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -55,19 +57,11 @@ export const HotelAuthProvider = ({ children }: { children: ReactNode }) => {
       if (token) {
         try {
           const decoded: any = jwtDecode(token);
-          setHotel({
-            _id: decoded.id || decoded._id,
-            hotelName: "",
-            email: "",
-            phone: "",
-            registrationNumber: "",
-            hotelType: "",
-            country: "",
-            city: "",
-            address: "",
-            status: "pending",
-            isVerified: false,
+          const hotelId = decoded.id || decoded._id;
+          const response = await axios.get(`${API_BASE}/${hotelId}/profile`, {
+            headers: { Authorization: `Bearer ${token}` },
           });
+          setHotel(response.data.data);
         } catch (error) {
           console.error("Invalid token");
           localStorage.removeItem('hotelToken');

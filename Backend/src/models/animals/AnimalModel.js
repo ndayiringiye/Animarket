@@ -57,6 +57,12 @@ const AnimalSchema = new mongoose.Schema({
             default: "good"
         }
     },
+    ratings: [{
+        hotel: { type: mongoose.Schema.Types.ObjectId, ref: "Hotel", required: true },
+        rating: { type: Number, min: 1, max: 5, required: true },
+        comment: String,
+        createdAt: { type: Date, default: Date.now }
+    }],
     location: {
         country: String,
         province: String,

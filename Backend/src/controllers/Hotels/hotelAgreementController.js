@@ -195,8 +195,8 @@ export const updateHotelAgreement = async (req, res) => {
       });
     }
 
-    // Only draft or pending agreements can be updated
-    if (!["draft", "pending_approval"].includes(agreement.status)) {
+    // Completed and terminated agreements are immutable.
+    if (["terminated", "completed"].includes(agreement.status)) {
       return res.status(400).json({
         message: `Cannot update agreement with status: ${agreement.status}`,
         status: 400,

@@ -61,7 +61,7 @@ export const validateCreateMeeting = (req, res, next) => {
 };
 
 export const validateMeetingId = (req, res, next) => {
-    const { error } = paramsIdSchema.validate(req.params);
+    const { error } = paramsIdSchema.validate({ meetingId: req.params.meetingId });
     if (error) {
         return res.status(400).json({
             success: false,

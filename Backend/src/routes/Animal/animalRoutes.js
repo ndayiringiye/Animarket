@@ -8,6 +8,7 @@ import {
   deleteAnimalController,
   deleteAnimalMediaController
 } from "../../controllers/animals/animalController.js";
+import { rateAnimalController } from "../../controllers/animals/animalController.js";
 
 import { verifyToken } from "../../Middlewares/Auth/authMiddleware.js";
 import { protectRolePostAnimal } from "../../utils/Roles/userRole.js";
@@ -33,6 +34,8 @@ router.post(
 
 router.get("/animals", getAnimals);
 router.get("/animals/:id", getSingleAnimal);
+
+router.post("/animals/:id/rating", verifyToken, rateAnimalController);
 
 router.put(
   "/animals/:id",

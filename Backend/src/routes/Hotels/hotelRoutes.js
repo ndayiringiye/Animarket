@@ -6,6 +6,12 @@ import { verifyToken } from '../../Middlewares/Auth/authMiddleware.js';
 import { verifyHotelToken } from '../../Middlewares/Auth/hotelAuthMiddleware.js';
 import { isAdmin } from '../../Middlewares/Admin/amindMiddleware.js'; // Fixed typo
 import upload from '../../Middlewares/user/uplaodMiddleware.js'; // Fixed typo
+import {
+  getUserMeetingsController,
+  updateMeetingController,
+  cancelMeetingController,
+} from '../../controllers/Meeting/MeetingController.js';
+import { validateMeetingId } from '../../validoators/meetings/meetingValidator.js';
 
 const router = express.Router();
 
@@ -62,7 +68,6 @@ router.get(
   verifyToken,
   hotelController.getHotelStatistics
 );
-
 
 router.post(
   '/:hotelId/book-animal',
@@ -161,6 +166,26 @@ router.post(
 );
 
 // ====================== MEETING ROUTES ======================
+
+router.get(
+  '/:hotelId/meetings',
+  verifyToken,
+  getUserMeetingsController
+);
+
+router.put(
+  '/:hotelId/meetings/:meetingId',
+  verifyToken,
+  validateMeetingId,
+  updateMeetingController
+);
+
+router.put(
+  '/:hotelId/meetings/:meetingId/cancel',
+  verifyToken,
+  validateMeetingId,
+  cancelMeetingController
+);
 
 router.post(
   '/:hotelId/meetings/create',

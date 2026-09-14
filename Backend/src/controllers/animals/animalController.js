@@ -145,3 +145,24 @@ export const deleteAnimalMediaController = async (req, res) => {
     });
   }
 };
+
+export const rateAnimalController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const rating = Number(req.body.rating);
+    const comment = String(req.body.comment || "").trim();
+    const hotelId = req.user?._id || req.user?.id;
+    if (!hotelId || req.user?.role !== "hotel") return res.status(403).json({ message: "Only hotels can rate animals" });
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) return res.status(400).json({ message: "Rating must be between 1 and 5" });
+
+    const animal = await (await import("../../models/animals/AnimalModel.js")).default.findById(id);
+    if (!animal) return res.status(404).json({ message: "Animal not found" });
+    const existing = animal.ratings.find((entry) => entry.hotel.toString() === hotelId.toString());
+    if (existing) { existing.rating = rating; existing.comment = comment; existing.createdAt = new Date(); }
+    else animal.ratings.push({ hotel: hotelId, rating, comment });
+    await animal.save();
+    return res.status(200).json({ success: true, message: "Animal rating saved", data: animal.ratings.find((entry) => entry.hotel.toString() === hotelId.toString()) });
+  } catch (error) {
+    return res.status(500).json({ message: "Animal rating failed", error: error.message });
+  }
+};

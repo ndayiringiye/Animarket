@@ -38,7 +38,6 @@ router.post("/:meetingId/join", validateMeetingId, joinMeetingController);
 router.put("/:meetingId/start", validateMeetingId, startMeetingController);
 router.put("/:meetingId/end", validateMeetingId, endMeetingController);
 router.put("/:meetingId/cancel", validateMeetingId, cancelMeetingController);
-router.put("/:meetingId/cancel", validateMeetingId, cancelMeetingController);
 
 router.put("/:meetingId", validateMeetingId, updateMeetingController);
 router.put("/:meetingId/grant-access", validateMeetingId, grantNegotiationAccessController);

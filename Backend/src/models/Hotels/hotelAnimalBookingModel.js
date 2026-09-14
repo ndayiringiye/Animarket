@@ -32,6 +32,11 @@ const HotelAnimalBookingSchema = new mongoose.Schema(
     },
     
     specialRequests: String,
+
+    deliveryAddress: { address: String, latitude: Number, longitude: Number },
+    deliveryDate: Date,
+    deliveryStatus: { type: String, enum: ["pending", "scheduled", "in_transit", "delivered", "cancelled"], default: "pending" },
+    deliveryRequestedAt: Date,
     
     qrCode: {
       qrCodeData: String,

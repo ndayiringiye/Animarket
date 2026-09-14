@@ -10,6 +10,12 @@ router.put(
   deliveryController.requestDelivery
 );
 
+router.put(
+  "/hotel-request/:bookingId",
+  verifyToken,
+  deliveryController.requestHotelDelivery
+);
+
 router.get(
   "/status/:bookingId",
   verifyToken,

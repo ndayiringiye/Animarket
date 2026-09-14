@@ -13,6 +13,7 @@ type Animal = {
   name?: string;
   type?: string;
   breed?: string;
+  gender?: string;
   age?: number | string;
   weight?: number | string;
   status?: string;
@@ -21,6 +22,32 @@ type Animal = {
   amount?: number | string;
   currency?: string;
   birthDate?: string;
+  health?: {
+    vaccinated?: boolean;
+    healthStatus?: string;
+    lastCheckupDate?: string;
+    diseasesHistory?: string[];
+  };
+  ratings?: Array<{ hotel?: string; rating: number; comment?: string }>;
+  location?: {
+    country?: string;
+    province?: string;
+    district?: string;
+    sector?: string;
+    cell?: string;
+    village?: string;
+    latitude?: number;
+    longitude?: number;
+  };
+  isVerified?: boolean;
+  verificationLevel?: string;
+  isAvailable?: boolean;
+  previousOwnerName?: string;
+  previousOwnerPhone?: string;
+  previousOwnerAgreementPhoto?: string;
+  previousOwnerIdPhoto?: string;
+  previousOwnerIdType?: string;
+  previousOwnerIdNumber?: string;
 };
 
 type IconProps = {
@@ -87,6 +114,12 @@ type AnimalDetailModalProps = {
   onSignAgreement: () => void;
   showAgreementPanel: boolean;
   onToggleAgreementPanel: () => void;
+  onScheduleZoom: (details: { title: string; date: string; time: string }) => Promise<void>;
+  zoomLoading: boolean;
+  zoomMessage: string;
+  zoomError: string;
+  hotel: { _id?: string; hotelName?: string; email?: string; phone?: string; profileImage?: string; logo?: string } | null;
+  token: string | null;
 };
 
 const Icon = ({ d, size = 16, className = "", viewBox = "0 0 24 24", stroke = true }: IconProps) => (
@@ -362,14 +395,12 @@ const Sidebar = ({ active, setActive }: SidebarProps) => {
       { id: "schedule-zoom", label: "Schedule Zoom", icon: icons.schedule },
       { id: "cancel-zoom", label: "Cancel Zoom", icon: icons.cancel },
       { id: "add-zoom", label: "Add Zoom", icon: icons.add },
-      { id: "updated-zoom", label: "Updated Zoom", icon: icons.update }
+      { id: "updated-zoom", label: "Update Zoom", icon: icons.update }
     ],
     agreement: [
       { id: "sign-agreement", label: "Sign Agreement", icon: icons.sign },
-      { id: "create-agreement", label: "Create Agreement", icon: icons.create },
       { id: "read-agreement", label: "Read Agreement", icon: icons.read },
       { id: "update-agreement", label: "Update Agreement", icon: icons.updateAlt },
-      { id: "delete-agreement", label: "Delete Agreement", icon: icons.delete }
     ]
   };
 
@@ -442,7 +473,7 @@ const Sidebar = ({ active, setActive }: SidebarProps) => {
       </div>
 
       <div className="px-3 mb-6">
-        <button className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-sm font-medium rounded-xl py-3 px-4 transition-all duration-300 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40">
+        <button onClick={() => setActive("register-hotel")} className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-sm font-medium rounded-xl py-3 px-4 transition-all duration-300 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40">
           <Icon d={icons.plus} size={16} />
           Add New Hotel
         </button>
@@ -541,9 +572,13 @@ const LivestockDashboard = () => {
   const [error, setError] = useState(null);
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const { hotel, token } = useHotelAuth();
+  const [bookedAnimalCount, setBookedAnimalCount] = useState(0);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingMessage, setBookingMessage] = useState("");
   const [bookingError, setBookingError] = useState("");
+  const [zoomLoading, setZoomLoading] = useState(false);
+  const [zoomMessage, setZoomMessage] = useState("");
+  const [zoomError, setZoomError] = useState("");
 
   const handleHotelBooking = async () => {
     if (!hotel?._id) {
@@ -598,6 +633,40 @@ const LivestockDashboard = () => {
       setBookingLoading(false);
     }
   };
+
+  const handleScheduleZoom = async ({ title, date, time }: { title: string; date: string; time: string }) => {
+    if (!selectedAnimal?._id) throw new Error("No animal selected.");
+    setZoomLoading(true);
+    setZoomMessage("");
+    setZoomError("");
+    try {
+      const response = await fetch("http://localhost:4000/api/meeting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          animalId: selectedAnimal._id,
+          title: title.trim(),
+          description: `Zoom discussion for ${selectedAnimal.name || "selected animal"}`,
+          meetingDate: new Date(`${date}T${time}`).toISOString(),
+          durationMinutes: 60,
+          timezone: "Africa/Kigali",
+          provider: "zoom",
+          meetingType: "transaction_discussion",
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        const message = Array.isArray(data?.errors) ? data.errors.join(", ") : data?.message || "Failed to schedule Zoom meeting.";
+        throw new Error(message);
+      }
+      setZoomMessage("Zoom meeting scheduled successfully.");
+    } catch (error: any) {
+      setZoomError(error?.message || "Unable to schedule Zoom meeting.");
+      throw error;
+    } finally {
+      setZoomLoading(false);
+    }
+  };
   const [agreement, setAgreement] = useState<any>(null);
   const [agreementLoading, setAgreementLoading] = useState(false);
   const [agreementError, setAgreementError] = useState("");
@@ -614,7 +683,7 @@ const LivestockDashboard = () => {
     try {
       // Use hotel-specific agreement lookup: animal + hotel party
       const response = await fetch(
-        `http://localhost:4000/api/agreements/hotel-animal/${aid}/${hid}`,
+        `http://localhost:4000/api/agreements/agreements/hotel-animal/${aid}/${hid}`,
         {
           method: "GET",
           headers: {
@@ -707,12 +776,25 @@ const LivestockDashboard = () => {
     fetchAnimals();
   }, []);
 
+  useEffect(() => {
+    if (!hotel?._id || !token) return;
+    fetch(`http://localhost:4000/api/hotels/${hotel._id}/bookings?limit=1000`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        const bookings = Array.isArray(data?.data) ? data.data : [];
+        setBookedAnimalCount(bookings.filter((booking: any) => booking.status !== "cancelled").length);
+      })
+      .catch(() => setBookedAnimalCount(0));
+  }, [hotel?._id, token]);
+
   return (
     <div className="p-6 flex flex-col gap-6 overflow-y-auto bg-gray-50 dark:bg-[#0c0e12]">
       <div className="grid grid-cols-4 gap-5">
         <StatCard 
           label="animal" 
-          value="0" 
+          value={bookedAnimalCount} 
           positive 
           icon={icons.creditCard} 
           color="green" 
@@ -826,6 +908,12 @@ const LivestockDashboard = () => {
                   bookingLoading={bookingLoading}
                   bookingMessage={bookingMessage}
                   bookingError={bookingError}
+                  onScheduleZoom={handleScheduleZoom}
+                  zoomLoading={zoomLoading}
+                  zoomMessage={zoomMessage}
+                  zoomError={zoomError}
+                  hotel={hotel}
+                  token={token}
                   agreement={agreement}
                   agreementLoading={agreementLoading}
                   agreementError={agreementError}
@@ -848,7 +936,146 @@ const LivestockDashboard = () => {
   );
 };
 
-const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMessage, bookingError, agreement, agreementLoading, agreementError, agreementSignature, setAgreementSignature, agreementSigning, onSignAgreement, showAgreementPanel, onToggleAgreementPanel }: AnimalDetailModalProps) => {
+const HotelAgreementDocument = ({ animal, agreement }: { animal: Animal; agreement: any }) => {
+  const farmer = agreement.parties?.farmer;
+  const hotelParty = agreement.parties?.hotel;
+  const hotelName = hotelParty?.hotelName || hotelParty?.name || "—";
+  const price = Number(agreement.price || animal.price || animal.amount || 0);
+  const date = agreement.createdAt ? new Date(agreement.createdAt) : new Date();
+  const animalId = agreement.animal?.animalId || animal._id || animal.id;
+  const location = animal.location ? [animal.location.village, animal.location.cell, animal.location.sector, animal.location.district, animal.location.province, animal.location.country].filter(Boolean).join(', ') : '';
+  const healthStatus = animal.health?.healthStatus || agreement.animal?.healthStatus || '—';
+  const paymentMethod = String(agreement.paymentMethod || '—').replace(/_/g, ' ');
+
+  return (
+    <div id="hotel-agreement-print" className="bg-white text-gray-900 rounded-2xl border border-gray-200 shadow-sm font-serif overflow-hidden" style={{ fontFamily: 'Georgia, serif' }}>
+      <div className="text-center py-6 px-8 border-b-2 border-gray-800">
+        <h1 className="text-2xl font-black tracking-widest uppercase text-gray-900">Farm Purchase Agreement</h1>
+        <div className="flex justify-between items-center mt-3 text-xs text-gray-500">
+          <span>State: <span className="border-b border-gray-400 min-w-[80px] inline-block text-gray-800">Rwanda</span></span>
+          <span>Rev: <span className="border-b border-gray-400 min-w-[40px] inline-block text-gray-800">1.0</span></span>
+          <span>Date: <span className="border-b border-gray-400 min-w-[100px] inline-block text-gray-800">{date.toLocaleDateString('en-GB')}</span></span>
+        </div>
+        {agreement.transactionId && <p className="mt-3 text-[10px] uppercase tracking-wider text-gray-400">Transaction: {agreement.transactionId}</p>}
+      </div>
+
+      <div className="px-8 py-6 space-y-6">
+      <div>
+        <div className="bg-gray-900 text-white text-center py-1.5 px-3 text-sm font-bold tracking-wide mb-3">SELLER (FARMER)</div>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="flex gap-2"><span className="text-gray-600 min-w-[60px]">Name:</span><span className="border-b border-gray-400 flex-1 font-medium">{farmer?.name || '—'}</span></div>
+          <div className="flex gap-2"><span className="text-gray-600 min-w-[60px]">Phone:</span><span className="border-b border-gray-400 flex-1">{farmer?.phone || '—'}</span></div>
+          <div className="flex gap-2 col-span-2"><span className="text-gray-600 min-w-[60px]">Email:</span><span className="border-b border-gray-400 flex-1">{farmer?.email || '—'}</span></div>
+          <div className="flex items-center gap-4 col-span-2 text-xs mt-1">
+            <span className="text-gray-600">Entity:</span>
+            {['Individual', 'Corporation', 'Partnership', 'LLC'].map(type => (
+              <label key={type} className="flex items-center gap-1"><input type="checkbox" readOnly defaultChecked={type === 'Individual'} className="w-3 h-3" />{type}</label>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div className="bg-gray-900 text-white text-center py-1.5 px-3 text-sm font-bold tracking-wide mb-3">BUYER (HOTEL)</div>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="flex gap-2"><span className="text-gray-600 min-w-[60px]">Name:</span><span className="border-b border-gray-400 flex-1 font-medium">{hotelName}</span></div>
+          <div className="flex gap-2"><span className="text-gray-600 min-w-[60px]">Phone:</span><span className="border-b border-gray-400 flex-1">{hotelParty?.phone || '—'}</span></div>
+          <div className="flex gap-2 col-span-2"><span className="text-gray-600 min-w-[60px]">Email:</span><span className="border-b border-gray-400 flex-1">{hotelParty?.email || '—'}</span></div>
+          <div className="flex items-center gap-4 col-span-2 text-xs mt-1">
+            <span className="text-gray-600">Entity:</span>
+            {['Individual', 'Corporation', 'Partnership', 'LLC'].map(type => (
+              <label key={type} className="flex items-center gap-1"><input type="checkbox" readOnly defaultChecked={type === 'Individual'} className="w-3 h-3" />{type}</label>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 text-sm">
+        <div>
+          <p className="font-bold text-gray-900">1. Property Description</p>
+          <p className="text-gray-600 mt-1 leading-relaxed">The Seller agrees to sell the following livestock to the Buyer: <strong>{animal.name || agreement.animal?.name || '—'}</strong>, a {animal.gender || '—'} {animal.type || agreement.animal?.type || '—'} of breed <strong>{animal.breed || agreement.animal?.breed || '—'}</strong>, aged approximately <strong>{animal.age || agreement.animal?.age || '—'}</strong>, weighing <strong>{animal.weight || agreement.animal?.weight || '—'} kg</strong>. The animal is identified with a unique record in the AniMarket Platform (ID: {animalId ? String(animalId).slice(-8) : '—'}).</p>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 border-t border-gray-100 pt-3 text-xs text-gray-600">
+            <span>Health status: <strong className="capitalize text-gray-900">{healthStatus}</strong></span>
+            <span>Vaccinated: <strong className="text-gray-900">{animal.health?.vaccinated ? 'Yes' : 'Not recorded'}</strong></span>
+            <span>Verification: <strong className="capitalize text-gray-900">{animal.verificationLevel || (animal.isVerified ? 'verified' : 'not verified')}</strong></span>
+            <span>Availability: <strong className="text-gray-900">{animal.isAvailable === false ? 'Unavailable' : 'Available'}</strong></span>
+            {animal.health?.lastCheckupDate && <span>Last checkup: <strong className="text-gray-900">{new Date(animal.health.lastCheckupDate).toLocaleDateString('en-GB')}</strong></span>}
+            {location && <span className="col-span-2">Origin/location: <strong className="text-gray-900">{location}</strong></span>}
+          </div>
+        </div>
+        <div>
+          <p className="font-bold text-gray-900">2. Purchase Price</p>
+          <p className="text-gray-600 mt-1">The total purchase price for the above-described property shall be: <strong className="text-emerald-700 text-base">{agreement.currency || animal.currency || 'RWF'} {price.toLocaleString()}</strong>. Payment method: <strong className="capitalize text-gray-900">{paymentMethod}</strong>. Payment status: <strong className="capitalize text-gray-900">{agreement.paymentStatus || 'pending'}</strong>.</p>
+        </div>
+        <div>
+          <p className="font-bold text-gray-900">3. Earnest Money Deposit</p>
+          <p className="text-gray-600 mt-1">Buyer shall deposit an earnest money amount as mutually agreed through AniMarket escrow service. Said amount shall be applied toward the purchase price at closing.</p>
+        </div>
+        <div>
+          <p className="font-bold text-gray-900">4. Closing</p>
+          <p className="text-gray-600 mt-1">The closing of this sale shall occur on {agreement.deliveryDate ? new Date(agreement.deliveryDate).toLocaleDateString('en-GB') : 'a date mutually agreed upon by both parties'}, facilitated by AniMarket Platform. Both parties shall execute all documents necessary to complete the transfer.</p>
+        </div>
+        {agreement.location && <div><p className="font-bold text-gray-900">5. Delivery / Agreement Location</p><p className="text-gray-600 mt-1">{agreement.location}</p></div>}
+        {agreement.terms && <div><p className="font-bold text-gray-900">6. Additional Terms</p><p className="text-gray-600 mt-1 leading-relaxed">{agreement.terms}</p></div>}
+        {animal.health?.diseasesHistory?.length ? <div><p className="font-bold text-gray-900">7. Health History</p><p className="text-gray-600 mt-1">{animal.health.diseasesHistory.join(', ')}</p></div> : null}
+      </div>
+
+      <div className="mt-8 pt-6 border-t-2 border-gray-300 grid grid-cols-2 gap-8">
+        <div><div className="border-b border-gray-400 h-12 mb-1 flex items-end pb-1">{agreement.signatures?.farmer && <span className="text-base italic text-gray-800 font-semibold">{agreement.signatures.farmer}</span>}</div><p className="text-xs text-gray-500">Seller Signature / Date</p><p className="text-xs font-medium mt-1">{farmer?.name || '—'}</p></div>
+        <div><div className="border-b border-gray-400 h-12 mb-1 flex items-end pb-1">{agreement.signatures?.hotel && <span className="text-base italic text-emerald-700 font-semibold">{agreement.signatures.hotel}</span>}</div><p className="text-xs text-gray-500">Buyer Signature / Date</p><p className="text-xs font-medium mt-1">{hotelName}</p></div>
+      </div>
+      <div className="mt-4 text-center text-[10px] text-gray-400">Generated via AniMarket Platform · {date.getFullYear()} · This is a binding document upon signatures of both parties.</div>
+      </div>
+    </div>
+  );
+};
+
+const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMessage, bookingError, agreement, agreementLoading, agreementError, agreementSignature, setAgreementSignature, agreementSigning, onSignAgreement, showAgreementPanel, onToggleAgreementPanel, onScheduleZoom, zoomLoading, zoomMessage, zoomError, hotel, token }: AnimalDetailModalProps) => {
+  const [activePanel, setActivePanel] = useState<"ownership" | "zoom" | "payment" | "agreement" | "contact" | "health" | "rating" | null>(null);
+  const [zoomTitle, setZoomTitle] = useState("Animal purchase discussion");
+  const [zoomDate, setZoomDate] = useState("");
+  const [zoomTime, setZoomTime] = useState("");
+  const [animalRating, setAnimalRating] = useState(0);
+  const [animalRatingComment, setAnimalRatingComment] = useState("");
+  const [ratingSaving, setRatingSaving] = useState(false);
+  const [ratingMessage, setRatingMessage] = useState("");
+  const animalLocation = animal.location;
+  const locationLabel = [animalLocation?.village, animalLocation?.cell, animalLocation?.sector, animalLocation?.district, animalLocation?.province, animalLocation?.country].filter(Boolean).join(", ") || "Location not recorded";
+
+  const handleZoomSubmit = async () => {
+    if (!zoomDate || !zoomTime) return;
+    await onScheduleZoom({ title: zoomTitle, date: zoomDate, time: zoomTime });
+  };
+
+  const handleViewLocation = () => {
+    const location = animal.location;
+    const hasCoordinates = typeof location?.latitude === "number" && typeof location?.longitude === "number";
+    const query = hasCoordinates
+      ? `${location.latitude},${location.longitude}`
+      : [location?.village, location?.cell, location?.sector, location?.district, location?.province, location?.country]
+          .filter(Boolean)
+          .join(", ");
+    if (query) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, "_blank", "noopener,noreferrer");
+  };
+
+  const handleRateAnimal = async () => {
+    if (!animal?._id || !token || !animalRating) return;
+    setRatingSaving(true); setRatingMessage("");
+    try {
+      const response = await fetch(`http://localhost:4000/api/animal/animals/${animal._id}/rating`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ rating: animalRating, comment: animalRatingComment }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.message || "Unable to save animal rating.");
+      setRatingMessage("Rating saved successfully.");
+    } catch (error: any) { setRatingMessage(error.message || "Unable to save animal rating."); }
+    finally { setRatingSaving(false); }
+  };
+
+  useEffect(() => {
+    const existingRating = animal.ratings?.find((entry) => entry.hotel === hotel?._id);
+    setAnimalRating(existingRating?.rating || 0);
+    setAnimalRatingComment(existingRating?.comment || "");
+  }, [animal._id, animal.ratings, hotel?._id]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border bg-white dark:bg-[#16191f] border-gray-200 dark:border-white/[0.07] shadow-2xl">
@@ -887,32 +1114,115 @@ const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMes
             <div>
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Overview</h3>
               <div className="grid grid-cols-2 gap-2">
-                <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
-                  Vaccination
-                </button>
-                <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
+                <button onClick={() => setActivePanel("health")} className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">Vaccination</button>
+                <button onClick={() => setActivePanel("health")} className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">Health Record</button>
+                <button onClick={() => setActivePanel("ownership")} className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
                   Ownership
                 </button>
-                <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
+                <button onClick={handleViewLocation} className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
                   Location
                 </button>
-                <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
+                <button onClick={() => setActivePanel("contact")} className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
                   Contact
                 </button>
                 <button
-                  onClick={onToggleAgreementPanel}
+                  onClick={() => { setActivePanel("agreement"); onToggleAgreementPanel(); }}
                   className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
                   Agreement
                 </button>
-                <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
-                  Chat
+                <button onClick={() => setActivePanel("zoom")} className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
+                  Zoom
                 </button>
-                 <button className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
+                 <button onClick={() => setActivePanel("payment")} className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
+                  Payment
+                </button>
+                <button onClick={() => setActivePanel("rating")} className="text-left px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">Rate Animal</button>
+                 <button onClick={onBook} disabled={bookingLoading} className="text-left px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-sm text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
                   Booking
                 </button>
               </div>
             </div>
           </div>
+
+            {activePanel === "contact" && (
+              <div className="bg-gray-50 dark:bg-[#0c0e12] rounded-lg p-4 space-y-4">
+                <h4 className="text-xs font-semibold text-gray-500 dark:text-[#94a3b8] uppercase tracking-wider">Contact</h4>
+                <div className="flex items-center gap-3 rounded-lg bg-white dark:bg-[#16191f] p-3 border border-gray-200 dark:border-white/[0.07]">
+                  {hotel?.profileImage || hotel?.logo ? <img src={hotel.profileImage || hotel.logo} alt={hotel.hotelName || "Hotel"} className="w-12 h-12 rounded-xl object-cover" /> : <div className="w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center font-bold">{(hotel?.hotelName || "H").charAt(0).toUpperCase()}</div>}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{hotel?.hotelName || "Hotel"}</p>
+                    <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Logged-in hotel</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300">{hotel?.email || "—"} · {hotel?.phone || "—"}</p>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-sky-200 dark:border-sky-500/20 bg-sky-50 dark:bg-sky-500/10 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300">AniMarket Admin</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">Contact platform administration for account, agreement, or booking support.</p>
+                </div>
+              </div>
+            )}
+
+            {activePanel === "ownership" && (
+              <div className="bg-gray-50 dark:bg-[#0c0e12] rounded-lg p-4 space-y-3">
+                <h4 className="text-xs font-semibold text-gray-500 dark:text-[#94a3b8] uppercase tracking-wider">Ownership Documents</h4>
+                <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                  <p>Previous owner: <strong>{animal.previousOwnerName || "Not recorded"}</strong></p>
+                  {animal.previousOwnerPhone && <p>Phone: {animal.previousOwnerPhone}</p>}
+                  {animal.previousOwnerIdType && <p>ID type: {animal.previousOwnerIdType}{animal.previousOwnerIdNumber ? ` · ${animal.previousOwnerIdNumber}` : ""}</p>}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {animal.previousOwnerAgreementPhoto && <a href={animal.previousOwnerAgreementPhoto} target="_blank" rel="noreferrer" className="rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-600">View ownership agreement</a>}
+                  {animal.previousOwnerIdPhoto && <a href={animal.previousOwnerIdPhoto} target="_blank" rel="noreferrer" className="rounded-lg border border-gray-200 dark:border-white/[0.1] px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-white/[0.05]">View owner ID</a>}
+                  {!animal.previousOwnerAgreementPhoto && !animal.previousOwnerIdPhoto && <p className="text-xs text-gray-500 dark:text-[#94a3b8]">No ownership documents uploaded for this animal.</p>}
+                </div>
+              </div>
+            )}
+
+            {activePanel === "zoom" && (
+              <div className="bg-sky-50 dark:bg-sky-500/10 rounded-lg p-4 space-y-3 border border-sky-200 dark:border-sky-500/20">
+                <h4 className="text-xs font-semibold text-sky-700 dark:text-sky-300 uppercase tracking-wider flex items-center gap-2"><Icon d={icons.video} size={13} /> Schedule Zoom Call</h4>
+                <input value={zoomTitle} onChange={(event) => setZoomTitle(event.target.value)} className="w-full rounded-lg border border-sky-200 dark:border-sky-500/20 bg-white dark:bg-[#16191f] px-3 py-2 text-sm text-gray-900 dark:text-white" placeholder="Meeting title" />
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="date" value={zoomDate} onChange={(event) => setZoomDate(event.target.value)} className="rounded-lg border border-sky-200 dark:border-sky-500/20 bg-white dark:bg-[#16191f] px-3 py-2 text-sm text-gray-900 dark:text-white" />
+                  <input type="time" value={zoomTime} onChange={(event) => setZoomTime(event.target.value)} className="rounded-lg border border-sky-200 dark:border-sky-500/20 bg-white dark:bg-[#16191f] px-3 py-2 text-sm text-gray-900 dark:text-white" />
+                </div>
+                {zoomError && <p className="text-xs text-red-500">{zoomError}</p>}
+                {zoomMessage && <p className="text-xs text-emerald-600 dark:text-emerald-400">{zoomMessage}</p>}
+                <button onClick={handleZoomSubmit} disabled={zoomLoading || !zoomDate || !zoomTime} className="w-full rounded-lg bg-sky-500 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-600 disabled:opacity-50">{zoomLoading ? "Scheduling..." : "Schedule Zoom Meeting"}</button>
+              </div>
+            )}
+
+            {activePanel === "payment" && (
+              <div className="bg-amber-50 dark:bg-amber-500/10 rounded-lg p-4 space-y-2 border border-amber-200 dark:border-amber-500/20">
+                <h4 className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider">Payment</h4>
+                <p className="text-sm text-gray-700 dark:text-gray-300">Payment is separate from booking.</p>
+                <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400"><span>Amount</span><strong className="text-gray-900 dark:text-white">{agreement ? `${agreement.currency || "RWF"} ${Number(agreement.price || animal.price || 0).toLocaleString()}` : "Available after agreement"}</strong></div>
+                <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400"><span>Status</span><strong className="capitalize text-gray-900 dark:text-white">{agreement?.paymentStatus || "Pending"}</strong></div>
+                <p className="text-xs text-amber-700/80 dark:text-amber-300/80">Book the animal first. Payment becomes available from the created booking/agreement.</p>
+              </div>
+            )}
+
+            {activePanel === "health" && (
+              <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-lg p-4 space-y-3 border border-emerald-200 dark:border-emerald-500/20">
+                <h4 className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">Health Record</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm text-gray-700 dark:text-gray-300">
+                  <p>Health: <strong className="capitalize">{animal.health?.healthStatus || "Not recorded"}</strong></p>
+                  <p>Vaccinated: <strong>{animal.health?.vaccinated ? "Yes" : "No"}</strong></p>
+                  <p className="col-span-2">Last checkup: <strong>{animal.health?.lastCheckupDate ? new Date(animal.health.lastCheckupDate).toLocaleDateString() : "Not recorded"}</strong></p>
+                  <p className="col-span-2">Disease history: <strong>{animal.health?.diseasesHistory?.length ? animal.health.diseasesHistory.join(", ") : "None recorded"}</strong></p>
+                </div>
+              </div>
+            )}
+
+            {activePanel === "rating" && (
+              <div className="bg-amber-50 dark:bg-amber-500/10 rounded-lg p-4 space-y-3 border border-amber-200 dark:border-amber-500/20">
+                <h4 className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider">Rate Animal</h4>
+                <div className="flex gap-2">{[1, 2, 3, 4, 5].map((value) => <button key={value} type="button" onClick={() => setAnimalRating(value)} className={`text-2xl ${value <= animalRating ? "text-amber-500" : "text-gray-300 dark:text-gray-600"}`}>★</button>)}</div>
+                <textarea value={animalRatingComment} onChange={(event) => setAnimalRatingComment(event.target.value)} placeholder="Comment (optional)" rows={3} className="w-full rounded-lg border border-amber-200 dark:border-amber-500/20 bg-white dark:bg-[#16191f] px-3 py-2 text-sm text-gray-900 dark:text-white resize-none" />
+                {ratingMessage && <p className="text-sm text-amber-700 dark:text-amber-300">{ratingMessage}</p>}
+                <button onClick={handleRateAnimal} disabled={ratingSaving || !animalRating} className="w-full rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-50">{ratingSaving ? "Saving..." : "Save Rating"}</button>
+              </div>
+            )}
 
             {showAgreementPanel && (
               <div className="bg-gray-50 dark:bg-[#0c0e12] rounded-lg p-4 space-y-3">
@@ -949,21 +1259,13 @@ const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMes
                     : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20';
                   return (
                     <div className="space-y-3">
+                      <HotelAgreementDocument animal={animal} agreement={agreement} />
+
                       {/* Status badge */}
                       <div className="flex items-center justify-between">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${statusColor}`}>
                           {statusLabel}
                         </span>
-                        {agreement.pdfUrl && (
-                          <a
-                            href={agreement.pdfUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
-                          >
-                            <Icon d={icons.read} size={12} /> View Agreement
-                          </a>
-                        )}
                       </div>
 
                       {/* Agreement details */}
@@ -1021,16 +1323,6 @@ const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMes
                       )}
 
                       {/* Fully signed: view link */}
-                      {fullySigned && agreement.pdfUrl && (
-                        <a
-                          href={agreement.pdfUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block w-full py-2 text-center bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 rounded-lg text-sm font-semibold transition-colors border border-sky-500/20"
-                        >
-                          View Signed Agreement
-                        </a>
-                      )}
                     </div>
                   );
                 })()}
@@ -1076,7 +1368,7 @@ const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMes
               
               <div className="flex items-center gap-3">
                 <Icon d={icons.mapPin} size={16} className="text-gray-400" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Nairobi, Kenya</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">{locationLabel}</span>
               </div>
               
               <div className="flex items-center gap-3">
@@ -1090,15 +1382,15 @@ const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMes
               </div>
 
               {/* Google Map */}
-              <div className="mt-2 rounded-lg overflow-hidden h-32 bg-gray-200 dark:bg-[#0c0e12] border border-gray-200 dark:border-white/[0.06]">
+              <button type="button" onClick={handleViewLocation} className="mt-2 w-full rounded-lg overflow-hidden h-32 bg-gray-200 dark:bg-[#0c0e12] border border-gray-200 dark:border-white/[0.06] hover:border-emerald-500/50 transition-colors">
                 <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-[#94a3b8] text-sm">
                   <div className="text-center">
                     <Icon d={icons.mapPin} size={24} className="mx-auto mb-1 text-emerald-500" />
-                    <p>Google Map Location</p>
-                    <p className="text-xs">-1.2921° S, 36.8219° E</p>
+                    <p>Open in Google Maps</p>
+                    <p className="text-xs">{typeof animalLocation?.latitude === "number" && typeof animalLocation?.longitude === "number" ? `${animalLocation.latitude}, ${animalLocation.longitude}` : locationLabel}</p>
                   </div>
                 </div>
-              </div>
+              </button>
             </div>
           </div>
         </div>
@@ -1129,6 +1421,10 @@ const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMes
                     : 'Sign Agreement')
                 : 'View Agreement'}
             </button>
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setActivePanel("health")} className="flex-1 py-2 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-semibold hover:bg-emerald-500/10">Open Health Record</button>
+              <button type="button" onClick={() => setActivePanel("rating")} className="flex-1 py-2 border border-amber-500/30 text-amber-600 dark:text-amber-400 rounded-lg text-xs font-semibold hover:bg-amber-500/10">Rate Animal</button>
+            </div>
             <button
               onClick={onBook}
               disabled={bookingLoading}
@@ -1508,14 +1804,15 @@ const HotelAgreementPage = () => {
             )}
 
             {/* View signed PDF */}
-            {fullySigned && agreement.pdfUrl && (
+            {agreement.pdfUrl && (
               <a
                 href={agreement.pdfUrl}
                 target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 text-sm font-semibold transition-colors"
+                rel="noreferrer"
+                download
+                className="inline-flex rounded-xl bg-[#10b981] px-4 py-2 text-sm font-semibold text-white hover:bg-[#059669]"
               >
-                <Icon d={icons.download} size={16} /> Download / View Signed Agreement
+                Download signed agreement PDF
               </a>
             )}
           </div>
@@ -1535,13 +1832,242 @@ const PlaceholderPage = ({ title }) => (
   </div>
 );
 
-const ScheduleZoomPage = () => {
+const HotelRegistrationPage = () => {
+  const { hotel, token } = useHotelAuth();
+  const [form, setForm] = useState({ hotelName: "", email: "", phone: "", password: "", confirmPassword: "", registrationNumber: "", hotelType: "mid-range", country: "Rwanda", city: "", address: "", zipCode: "", contactPersonName: "", contactPersonPhone: "", contactPersonEmail: "", website: "" });
+  const [files, setFiles] = useState<{ logo?: File; coverImage?: File; profileImage?: File }>({});
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  const updateField = (field: string, value: string) => setForm((previous) => ({ ...previous, [field]: value }));
+  const inputClass = "w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#0c0e12] text-sm text-gray-900 dark:text-white outline-none focus:border-emerald-500/50";
+
+  const submit = async () => {
+    if (!hotel?.canRegisterOtherHotels) {
+      setError("This hotel is not authorized to register another hotel.");
+      return;
+    }
+    setSaving(true); setError(""); setMessage("");
+    try {
+      const body = new FormData();
+      Object.entries({ ...form, accountType: "individual_hotel", parentHotelId: hotel._id }).forEach(([key, value]) => body.append(key, value));
+      Object.entries(files).forEach(([key, file]) => { if (file) body.append(key, file); });
+      const response = await fetch("http://localhost:4000/api/hotels/register", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.message || "Hotel registration failed.");
+      setMessage(data?.message || "Hotel registered successfully.");
+      setForm((previous) => ({ ...previous, hotelName: "", email: "", phone: "", password: "", confirmPassword: "", registrationNumber: "", city: "", address: "", zipCode: "", contactPersonName: "", contactPersonPhone: "", contactPersonEmail: "", website: "" }));
+      setFiles({});
+    } catch (submitError: any) { setError(submitError.message || "Hotel registration failed."); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col gap-6 p-8 overflow-y-auto bg-gray-50 dark:bg-[#0c0e12] min-h-screen">
+      <div><h2 className="text-xl font-bold text-gray-900 dark:text-white font-['Sora']">Register Other Hotel</h2><p className="text-xs text-gray-500 dark:text-[#94a3b8]">Register a hotel under {hotel?.hotelName || "this hotel"}.</p></div>
+      {!hotel?.canRegisterOtherHotels ? <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-400">This hotel is not authorized to register other hotels.</div> : <div className="max-w-3xl rounded-2xl border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#16191f] p-6 space-y-4">
+        <div className="grid grid-cols-2 gap-3">{[["hotelName","Hotel name"],["email","Email"],["phone","Phone"],["registrationNumber","Registration number"],["city","City"],["address","Address"],["zipCode","ZIP code"],["contactPersonName","Contact person"]].map(([field, label]) => <input key={field} value={(form as any)[field]} onChange={(event) => updateField(field, event.target.value)} placeholder={label} className={inputClass} />)}</div>
+        <div className="grid grid-cols-2 gap-3"><input type="password" value={form.password} onChange={(event) => updateField("password", event.target.value)} placeholder="Password" className={inputClass} /><input type="password" value={form.confirmPassword} onChange={(event) => updateField("confirmPassword", event.target.value)} placeholder="Confirm password" className={inputClass} /></div>
+        <select value={form.hotelType} onChange={(event) => updateField("hotelType", event.target.value)} className={inputClass}>{["boutique","luxury","budget","mid-range","resort","hostel","other"].map((type) => <option key={type}>{type}</option>)}</select>
+        <div className="grid grid-cols-3 gap-3 text-xs text-gray-500 dark:text-[#94a3b8]">{[["logo","Logo"],["coverImage","Cover image"],["profileImage","Profile image"]].map(([field, label]) => <label key={field} className="space-y-1"><span className="block">{label}</span><input type="file" accept="image/*" onChange={(event) => setFiles((previous) => ({ ...previous, [field]: event.target.files?.[0] }))} /></label>)}</div>
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}{message && <p className="text-sm text-emerald-600 dark:text-emerald-400">{message}</p>}
+        <button onClick={submit} disabled={saving} className="w-full h-11 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-sm">{saving ? "Registering..." : "Register Hotel"}</button>
+      </div>}
+    </div>
+  );
+};
+
+const HotelDeliveryPage = () => {
+  const { hotel, token } = useHotelAuth();
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookingId, setBookingId] = useState("");
+  const [address, setAddress] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [notes, setNotes] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const inputClass = "w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#0c0e12] text-sm text-gray-900 dark:text-white outline-none focus:border-emerald-500/50";
+
+  useEffect(() => {
+    if (!hotel?._id || !token) return;
+    fetch(`http://localhost:4000/api/hotels/${hotel._id}/bookings`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(async (response) => { const data = await response.json(); if (!response.ok) throw new Error(data?.message || "Unable to load hotel bookings."); return data; })
+      .then((data) => {
+        const available = (Array.isArray(data?.data) ? data.data : []).filter((booking: any) => booking.status !== "cancelled");
+        setBookings(available);
+        if (available[0]) {
+          setBookingId(String(available[0]._id));
+          setAddress(available[0].deliveryAddress?.address || "");
+          setDeliveryDate(available[0].deliveryDate ? new Date(available[0].deliveryDate).toISOString().slice(0, 10) : "");
+          setNotes(available[0].notes || "");
+        }
+      })
+      .catch((loadError: any) => setError(loadError.message || "Unable to load hotel bookings."))
+      .finally(() => setLoading(false));
+  }, [hotel?._id, token]);
+
+  const selectBooking = (booking: any) => {
+    setBookingId(String(booking._id));
+    setAddress(booking.deliveryAddress?.address || "");
+    setDeliveryDate(booking.deliveryDate ? new Date(booking.deliveryDate).toISOString().slice(0, 10) : "");
+    setNotes(booking.notes || "");
+    setError("");
+    setMessage("");
+  };
+
+  const submit = async () => {
+    if (!bookingId || !address.trim() || !deliveryDate) { setError("Select a booking and provide the delivery address and date."); return; }
+    setSaving(true); setError(""); setMessage("");
+    try {
+      const response = await fetch(`http://localhost:4000/api/delivery/hotel-request/${bookingId}`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ address: address.trim(), deliveryDate, notes: notes.trim() }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.message || "Unable to request delivery.");
+      setBookings((previous) => previous.map((booking) => booking._id === bookingId ? data.data : booking));
+      setMessage("Delivery requested successfully.");
+    } catch (submitError: any) { setError(submitError.message || "Unable to request delivery."); }
+    finally { setSaving(false); }
+  };
+
+  const selectedBooking = bookings.find((booking) => String(booking._id) === bookingId);
+
+  return <div className="flex-1 flex flex-col gap-6 p-8 overflow-y-auto bg-gray-50 dark:bg-[#0c0e12] min-h-screen">
+    <div><h2 className="text-xl font-bold text-gray-900 dark:text-white font-['Sora']">Request Delivery</h2><p className="text-xs text-gray-500 dark:text-[#94a3b8]">Create or update delivery details for a hotel booking.</p></div>
+    {loading ? <p className="text-sm text-gray-500 dark:text-[#94a3b8]">Loading bookings...</p> : bookings.length === 0 ? <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-400">No hotel bookings available for delivery.</div> : <div className="grid grid-cols-5 gap-6">
+      <div className="col-span-2 space-y-3">
+        <div className="flex items-center justify-between"><h3 className="text-sm font-semibold text-gray-900 dark:text-white">Hotel bookings</h3><span className="text-xs text-gray-500 dark:text-[#94a3b8]">{bookings.length}</span></div>
+        {bookings.map((booking) => <button key={booking._id} type="button" onClick={() => selectBooking(booking)} className={`w-full text-left rounded-xl border p-4 transition-colors ${bookingId === String(booking._id) ? "border-emerald-500 ring-1 ring-emerald-500/30 bg-emerald-500/5" : "border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#16191f] hover:border-emerald-500/40"}`}>
+          <div className="flex items-start justify-between gap-3"><span className="text-sm font-semibold text-gray-900 dark:text-white">{booking.animalId?.name || "Animal booking"}</span><span className={`text-[10px] rounded-full px-2 py-1 ${booking.deliveryStatus === "scheduled" ? "bg-emerald-500/15 text-emerald-600" : "bg-gray-500/15 text-gray-500"}`}>{booking.deliveryStatus || "not requested"}</span></div>
+          <p className="mt-2 text-xs text-gray-500 dark:text-[#94a3b8]">Booking status: {booking.status}</p>
+          {booking.deliveryDate && <p className="mt-1 text-xs text-gray-500 dark:text-[#94a3b8]">Delivery: {new Date(booking.deliveryDate).toLocaleDateString()}</p>}
+        </button>)}
+      </div>
+      <div className="col-span-3 rounded-2xl border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#16191f] p-6 space-y-4">
+        <div><h3 className="text-sm font-semibold text-gray-900 dark:text-white">{selectedBooking?.deliveryStatus === "scheduled" ? "Update delivery" : "New delivery request"}</h3><p className="text-xs text-gray-500 dark:text-[#94a3b8] mt-1">{selectedBooking?.animalId?.name || "Selected booking"}</p></div>
+        <input value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Delivery address" className={inputClass} />
+        <input type="date" value={deliveryDate} onChange={(event) => setDeliveryDate(event.target.value)} className={inputClass} />
+        <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Delivery notes" rows={4} className={inputClass + " resize-none"} />
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}{message && <p className="text-sm text-emerald-600 dark:text-emerald-400">{message}</p>}
+        <button onClick={submit} disabled={saving} className="w-full h-11 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-sm">{saving ? "Saving..." : selectedBooking?.deliveryStatus === "scheduled" ? "Update Delivery" : "Request Delivery"}</button>
+      </div>
+    </div>}
+  </div>;
+};
+
+const HotelAgreementUpdatePage = () => {
+  const { hotel, token } = useHotelAuth();
+  const [agreements, setAgreements] = useState<any[]>([]);
+  const [agreementId, setAgreementId] = useState("");
+  const [form, setForm] = useState({ title: "", description: "", type: "partnership", startDate: "", endDate: "" });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    if (!hotel?._id || !token) return;
+    fetch(`http://localhost:4000/api/hotels/${hotel._id}/agreements`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data?.message || "Unable to load hotel agreements.");
+        return data;
+      })
+      .then((data) => {
+        const available = (Array.isArray(data?.data) ? data.data : []).filter((agreement: any) => !["terminated", "completed"].includes(agreement.status));
+        setAgreements(available);
+        if (available[0]) selectAgreement(available[0]);
+      })
+      .catch((loadError: any) => setError(loadError.message || "Unable to load hotel agreements."))
+      .finally(() => setLoading(false));
+  }, [hotel?._id, token]);
+
+  const selectAgreement = (agreement: any) => {
+    setAgreementId(String(agreement._id));
+    setForm({
+      title: agreement.title || "",
+      description: agreement.description || "",
+      type: agreement.type || "partnership",
+      startDate: agreement.startDate ? new Date(agreement.startDate).toISOString().slice(0, 10) : "",
+      endDate: agreement.endDate ? new Date(agreement.endDate).toISOString().slice(0, 10) : "",
+    });
+    setError("");
+    setSuccess("");
+  };
+
+  const updateField = (field: string, value: string) => setForm((previous) => ({ ...previous, [field]: value }));
+
+  const saveAgreement = async () => {
+    if (!agreementId || !form.title.trim() || !form.startDate) {
+      setError("Select an agreement and provide its title and start date.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      const response = await fetch(`http://localhost:4000/api/hotels/agreements/${agreementId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ...form, title: form.title.trim(), description: form.description.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.message || "Unable to update agreement.");
+      setAgreements((previous) => previous.map((agreement) => agreement._id === agreementId ? data.data : agreement));
+      setSuccess("Hotel agreement updated successfully.");
+    } catch (saveError: any) {
+      setError(saveError.message || "Unable to update agreement.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputClass = "w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#0c0e12] text-sm text-gray-900 dark:text-white outline-none focus:border-emerald-500/50";
+
+  return (
+    <div className="flex-1 flex flex-col gap-6 p-8 overflow-y-auto bg-gray-50 dark:bg-[#0c0e12] min-h-screen">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white font-['Sora']">Update Agreement</h2>
+        <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Edit a draft hotel agreement.</p>
+      </div>
+      {loading ? <div className="text-sm text-gray-500 dark:text-[#94a3b8]">Loading agreements...</div> : agreements.length === 0 ? (
+        <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-400">No hotel agreements available for update.</div>
+      ) : (
+        <div className="max-w-2xl rounded-2xl border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#16191f] p-6 space-y-4">
+          <select value={agreementId} onChange={(event) => { const agreement = agreements.find((item) => item._id === event.target.value); if (agreement) selectAgreement(agreement); }} className={inputClass}>
+            {agreements.map((agreement) => <option key={agreement._id} value={agreement._id}>{agreement.title} ({agreement.status})</option>)}
+          </select>
+          <input value={form.title} onChange={(event) => updateField("title", event.target.value)} placeholder="Agreement title" className={inputClass} />
+          <textarea value={form.description} onChange={(event) => updateField("description", event.target.value)} placeholder="Description" rows={4} className={inputClass + " resize-none"} />
+          <select value={form.type} onChange={(event) => updateField("type", event.target.value)} className={inputClass}>
+            {["partnership", "referral", "service_provision", "resource_sharing", "group_booking", "franchise", "supply", "other"].map((type) => <option key={type} value={type}>{type.replace(/_/g, " ")}</option>)}
+          </select>
+          <div className="grid grid-cols-2 gap-3">
+            <input type="date" value={form.startDate} onChange={(event) => updateField("startDate", event.target.value)} className={inputClass} />
+            <input type="date" value={form.endDate} onChange={(event) => updateField("endDate", event.target.value)} className={inputClass} />
+          </div>
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {success && <p className="text-sm text-emerald-600 dark:text-emerald-400">{success}</p>}
+          <button onClick={saveAgreement} disabled={saving} className="w-full h-11 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-sm">{saving ? "Saving..." : "Update Agreement"}</button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+type ZoomPageMode = "schedule" | "cancel" | "update";
+
+const ScheduleZoomPage = ({ mode = "schedule" }: { mode?: ZoomPageMode }) => {
   const { hotel, token } = useHotelAuth();
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [animalsLoading, setAnimalsLoading] = useState(true);
   const [form, setForm] = useState({
     animalId: "",
     title: "",
+    room: "Meeting Room 1",
     date: "",
     time: "",
     duration: "60",
@@ -1553,28 +2079,10 @@ const ScheduleZoomPage = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
-  const [scheduledMeetings, setScheduledMeetings] = useState<any[]>([
-    {
-      id: "zm-001",
-      title: "Animal Sourcing Discussion",
-      date: "2026-09-15",
-      time: "10:00",
-      duration: 45,
-      participants: "farmer@greenvalley.com",
-      animalName: "Selected animal",
-      status: "upcoming",
-    },
-    {
-      id: "zm-002",
-      title: "Livestock Health Briefing",
-      date: "2026-09-18",
-      time: "14:30",
-      duration: 30,
-      participants: "vet@animarkt.rw",
-      animalName: "Selected animal",
-      status: "upcoming",
-    },
-  ]);
+  const [scheduledMeetings, setScheduledMeetings] = useState<any[]>([]);
+  const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null);
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
+  const [cancellingMeetingId, setCancellingMeetingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAnimals = async () => {
@@ -1600,13 +2108,36 @@ const ScheduleZoomPage = () => {
     fetchAnimals();
   }, []);
 
+  useEffect(() => {
+    if (!token || !hotel?._id) return;
+    fetch(`http://localhost:4000/api/hotels/${hotel?._id}/meetings`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data?.message || "Unable to load scheduled Zoom meetings.");
+        return data;
+      })
+      .then((data) => {
+        const meetings = Array.isArray(data?.data) ? data.data : [];
+        setScheduledMeetings(meetings.filter((meeting) => meeting.videoCall?.provider === "zoom").map((meeting) => ({
+          ...meeting,
+          id: meeting._id,
+          date: meeting.meetingDate ? new Date(meeting.meetingDate).toISOString().slice(0, 10) : "",
+          time: meeting.meetingDate ? new Date(meeting.meetingDate).toISOString().slice(11, 16) : "",
+          duration: meeting.durationMinutes,
+          animalName: meeting.animal?.name || "Animal",
+          joinUrl: meeting.videoCall?.meetingLink,
+        })));
+      })
+      .catch(() => setError("Unable to load scheduled Zoom meetings."));
+  }, [token, hotel?._id]);
+
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSchedule = async () => {
-    if (!form.animalId || !form.title.trim() || !form.date || !form.time) {
-      setError("Please select an animal and fill in the meeting title, date, and time.");
+    if ((!editingMeetingId && !form.animalId) || !form.title.trim() || !form.date || !form.time) {
+      setError(`${editingMeetingId ? "" : "Please select an animal and "}fill in the meeting title, date, and time.`);
       return;
     }
     setLoading(true);
@@ -1614,7 +2145,7 @@ const ScheduleZoomPage = () => {
     setSuccess("");
     try {
       const payload = {
-        animalId: form.animalId,
+        ...(editingMeetingId ? {} : { animalId: form.animalId }),
         title: form.title.trim(),
         description: form.agenda.trim() || undefined,
         meetingDate: new Date(`${form.date}T${form.time}`).toISOString(),
@@ -1624,8 +2155,8 @@ const ScheduleZoomPage = () => {
         meetingType: "general",
       };
 
-      const res = await fetch("http://localhost:4000/api/meeting", {
-        method: "POST",
+      const res = await fetch(editingMeetingId ? `http://localhost:4000/api/hotels/${hotel?._id}/meetings/${editingMeetingId}` : "http://localhost:4000/api/meeting", {
+        method: editingMeetingId ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -1638,28 +2169,61 @@ const ScheduleZoomPage = () => {
         throw new Error(msg);
       }
 
-      setScheduledMeetings((prev) => [
-        {
-          id: data?.data?._id || data?.data?.id || `zm-${Date.now()}`,
-          title: form.title,
-          date: form.date,
-          time: form.time,
-          duration: parseInt(form.duration) || 60,
-          participants: form.participants,
-          animalName: animals.find((animal) => String(animal._id || animal.id) === form.animalId)?.name || "Selected animal",
-          status: "upcoming",
-          joinUrl: data?.data?.meetingLink || data?.data?.joinUrl,
-        },
-        ...prev,
-      ]);
-      setSuccess("Zoom meeting scheduled successfully!");
-      setForm({ animalId: "", title: "", date: "", time: "", duration: "60", timezone: "Africa/Kigali", participants: "", agenda: "", password: "" });
+      const meeting = data?.data;
+      const normalized = { ...meeting, id: meeting?._id, date: form.date, time: form.time, duration: parseInt(form.duration) || 60, animalName: animals.find((animal) => String(animal._id || animal.id) === form.animalId)?.name || "Selected animal", joinUrl: meeting?.videoCall?.meetingLink };
+      setScheduledMeetings((prev) => editingMeetingId ? prev.map((item) => item.id === editingMeetingId ? { ...item, ...normalized } : item) : [normalized, ...prev]);
+      setSuccess(editingMeetingId ? "Zoom meeting updated successfully!" : "Zoom meeting scheduled successfully!");
+      setEditingMeetingId(null);
+      setForm({ animalId: "", title: "", room: "Meeting Room 1", date: "", time: "", duration: "60", timezone: "Africa/Kigali", participants: "", agenda: "", password: "" });
     } catch (e: any) {
       setError(e.message || "Something went wrong while scheduling the meeting.");
     } finally {
       setLoading(false);
     }
   };
+
+  const editMeeting = (meeting: any) => {
+    const meetingId = meeting._id || meeting.id;
+    setEditingMeetingId(meetingId ? String(meetingId) : null);
+    setForm((prev) => ({ ...prev, animalId: String(meeting.animal?._id || meeting.animal || ""), title: meeting.title || "", date: meeting.date || "", time: meeting.time || "", duration: String(meeting.duration || 60) }));
+    setSuccess("");
+    setError("");
+  };
+
+  const cancelMeeting = async (meeting: any) => {
+    const meetingId = String(meeting._id || meeting.id || "");
+    if (!meetingId || !window.confirm("Cancel this Zoom meeting?")) return;
+    setCancellingMeetingId(meetingId);
+    setError("");
+    setSuccess("");
+    try {
+      const response = await fetch(`http://localhost:4000/api/hotels/${hotel?._id}/meetings/${meetingId}/cancel`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.message || "Failed to cancel meeting.");
+      setScheduledMeetings((previous) => previous.map((item) => item.id === meetingId ? { ...item, status: "cancelled" } : item));
+      if (editingMeetingId === meetingId) setEditingMeetingId(null);
+      if (selectedMeetingId === meetingId) setSelectedMeetingId(null);
+      setSuccess("Zoom meeting cancelled successfully.");
+    } catch (e: any) {
+      setError(e.message || "Unable to cancel Zoom meeting.");
+    } finally {
+      setCancellingMeetingId(null);
+    }
+  };
+
+  const handleModeAction = () => {
+    if (mode === "cancel") {
+      const meeting = scheduledMeetings.find((item) => item.id === selectedMeetingId);
+      if (meeting) void cancelMeeting(meeting);
+      return;
+    }
+    void handleSchedule();
+  };
+
+  const timeSlots = ["08:00", "09:00", "10:00", "13:00", "14:00", "15:00"];
 
   const timezones = [
     "Africa/Kigali",
@@ -1693,8 +2257,12 @@ const ScheduleZoomPage = () => {
           <Icon d={icons.video} size={20} />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white font-['Sora']">Schedule Zoom Call</h2>
-          <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Set up a Zoom meeting with farmers, agents, or vets</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white font-['Sora']">
+            {mode === "cancel" ? "Cancel Zoom Meeting" : mode === "update" ? "Update Zoom Meeting" : "Schedule Zoom Call"}
+          </h2>
+          <p className="text-xs text-gray-500 dark:text-[#94a3b8]">
+            {mode === "cancel" ? "Choose a scheduled meeting to cancel" : mode === "update" ? "Choose a scheduled meeting to update" : "Set up a Zoom meeting with farmers, agents, or vets"}
+          </p>
         </div>
       </div>
 
@@ -1703,7 +2271,7 @@ const ScheduleZoomPage = () => {
         <div className="col-span-3 rounded-2xl border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#16191f] p-6 space-y-5 shadow-sm">
           <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2 text-sm">
             <Icon d={icons.calendar} size={15} className="text-emerald-500" />
-            Meeting Details
+            {editingMeetingId ? "Update Zoom Meeting" : "Schedule a Zoom Meeting"}
           </h3>
 
           <div className="rounded-xl border border-sky-200 dark:border-sky-500/20 bg-sky-50 dark:bg-sky-500/10 p-4">
@@ -1730,7 +2298,6 @@ const ScheduleZoomPage = () => {
             </select>
           </div>
 
-          {/* Title */}
           <div>
             <label className={labelClass}>Meeting Title *</label>
             <input
@@ -1742,25 +2309,24 @@ const ScheduleZoomPage = () => {
             />
           </div>
 
-          {/* Date & Time row */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>Date *</label>
-              <input
-                type="date"
-                value={form.date}
-                onChange={(e) => handleChange("date", e.target.value)}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Time *</label>
-              <input
-                type="time"
-                value={form.time}
-                onChange={(e) => handleChange("time", e.target.value)}
-                className={inputClass}
-              />
+          <div>
+            <label className={labelClass}>Meeting Room</label>
+            <select value={form.room} onChange={(e) => handleChange("room", e.target.value)} className={inputClass}>
+              <option>Meeting Room 1</option>
+              <option>Meeting Room 2</option>
+              <option>Meeting Room 3</option>
+            </select>
+          </div>
+
+          <div>
+            <label className={labelClass}>Meeting Date *</label>
+            <input type="date" value={form.date} onChange={(e) => handleChange("date", e.target.value)} className={inputClass} />
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {timeSlots.map((slot) => (
+                <button key={slot} type="button" onClick={() => handleChange("time", slot)} className={`rounded-lg border px-2 py-2 text-xs font-semibold transition-colors ${form.time === slot ? "border-sky-500 bg-sky-500 text-white" : "border-sky-200 dark:border-sky-500/20 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-500/10"}`}>
+                  {slot}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -1843,15 +2409,15 @@ const ScheduleZoomPage = () => {
 
           {/* Submit */}
           <button
-            onClick={handleSchedule}
-            disabled={loading}
-            className="w-full h-11 bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 hover:shadow-sky-500/35"
-          >
-            {loading ? (
-              <><span className="animate-spin inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full" /> Scheduling…</>
-            ) : (
-              <><Icon d={icons.video} size={16} /> Schedule Zoom Meeting</>
-            )}
+              onClick={handleModeAction}
+              disabled={loading || cancellingMeetingId !== null || (mode === "update" && !editingMeetingId) || (mode === "cancel" && !selectedMeetingId)}
+              className="w-full h-11 bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 hover:shadow-sky-500/35"
+            >
+              {loading || cancellingMeetingId !== null ? (
+                <><span className="animate-spin inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full" /> {mode === "cancel" ? "Cancelling..." : "Saving…"}</>
+              ) : (
+                <><Icon d={mode === "cancel" ? icons.cancel : icons.video} size={16} /> {mode === "cancel" ? "Cancel Meeting" : mode === "update" ? "Update Meeting" : "Schedule Zoom Meeting"}</>
+              )}
           </button>
         </div>
 
@@ -1888,7 +2454,7 @@ const ScheduleZoomPage = () => {
                 {scheduledMeetings.map((m) => (
                   <div
                     key={m.id}
-                    className="rounded-xl border border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-[#0c0e12] p-3 hover:border-emerald-500/20 transition-colors"
+                    className={`rounded-xl border ${selectedMeetingId === m.id ? "border-sky-500 ring-1 ring-sky-500/30" : "border-gray-100 dark:border-white/[0.05]"} bg-gray-50 dark:bg-[#0c0e12] p-3 hover:border-emerald-500/20 transition-colors`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">{m.title}</p>
@@ -1910,12 +2476,25 @@ const ScheduleZoomPage = () => {
                         <Icon d={icons.clock} size={11} /> {m.duration} min
                       </span>
                     </div>
+                    {m.status !== "cancelled" && (
+                      <button type="button" onClick={() => { setSelectedMeetingId(m.id); editMeeting(m); }} className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                        Update Zoom meeting
+                      </button>
+                    )}
+                    {m.status !== "cancelled" && (
+                      <button type="button" onClick={() => setSelectedMeetingId(m.id)} disabled={cancellingMeetingId === m.id} className="mt-2 ml-4 text-xs font-semibold text-red-600 dark:text-red-400 hover:underline disabled:opacity-50">
+                        {selectedMeetingId === m.id ? "Selected for cancellation" : "Select to cancel"}
+                      </button>
+                    )}
+                    {m.status === "cancelled" && (
+                      <span className="mt-2 inline-block text-xs font-semibold text-red-600 dark:text-red-400">Cancelled</span>
+                    )}
                     {m.participants && (
                       <p className="mt-1.5 text-[11px] text-gray-400 dark:text-[#94a3b8] truncate">
-                        {m.participants}
+                        {typeof m.participants === "string" ? m.participants : "Participants assigned"}
                       </p>
                     )}
-                    {m.joinUrl && (
+                    {m.joinUrl && m.status !== "cancelled" && (
                       <a
                         href={m.joinUrl}
                         target="_blank"
@@ -1943,12 +2522,13 @@ const pageMeta = {
   "schedule-zoom": { title: "Schedule Zoom" },
   "cancel-zoom": { title: "Cancel Zoom" },
   "add-zoom": { title: "Add Zoom" },
-  "updated-zoom": { title: "Updated Zoom" },
+  "updated-zoom": { title: "Update Zoom" },
   "sign-agreement": { title: "Sign Agreement" },
   "create-agreement": { title: "Create Agreement" },
   "read-agreement": { title: "Read Agreement" },
   "update-agreement": { title: "Update Agreement" },
   "delete-agreement": { title: "Delete Agreement" },
+  "register-hotel": { title: "Register Hotel" },
   health: { title: "Health Records" },
   delivery: { title: "Request Delivery" },
   booking: { title: "Booking" },
@@ -1960,8 +2540,13 @@ const HotelDashboard = () => {
 
   const renderPage = () => {
     if (active === "dashboard") return <LivestockDashboard />;
+    if (active === "delivery") return <HotelDeliveryPage />;
+    if (active === "register-hotel") return <HotelRegistrationPage />;
     if (active === "sign-agreement" || active === "read-agreement") return <HotelAgreementPage />;
-    if (active === "schedule-zoom") return <ScheduleZoomPage />;
+    if (active === "update-agreement") return <HotelAgreementUpdatePage />;
+    if (active === "cancel-zoom") return <ScheduleZoomPage key={active} mode="cancel" />;
+    if (active === "updated-zoom") return <ScheduleZoomPage key={active} mode="update" />;
+    if (active === "schedule-zoom" || active === "add-zoom") return <ScheduleZoomPage key={active} />;
     return <PlaceholderPage title={pageMeta[active]?.title || active} />;
   };
 

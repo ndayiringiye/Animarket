@@ -1,5 +1,18 @@
 import * as deliveryService from "../../services/Delivery/deliveryService.js";
 
+export const requestHotelDelivery = async (req, res) => {
+  try {
+    const booking = await deliveryService.requestHotelDeliveryService(
+      req.params.bookingId,
+      req.user._id || req.user.id,
+      req.body
+    );
+    return res.status(200).json({ success: true, message: "Delivery requested successfully", data: booking });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 export const requestDelivery = async (req, res) => {
   try {
     const { bookingId } = req.params;
