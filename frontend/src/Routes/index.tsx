@@ -13,7 +13,7 @@ import HotelDashboard from "../Pages/Dashboards/HotelDashboard"
 import VeterinaryRequests from "../Pages/Dashboards/VeterinaryRequests";
 import FarmerDashboard from "../Pages/Dashboards/Farmer/FarmerDashboard";
 import AgentDashboard from "../Pages/Dashboards/AgentDashboard";
-import AdminDashboard from "../Pages/Dashboards/AdminDashboard";
+import AdminDashboard from "../Pages/Dashboards/Admin/AdminDashboard";
 
 const AppRoutes = () => {
   return (

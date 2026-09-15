@@ -216,7 +216,7 @@ const Navbar = () => {
       <SlidingBanner />
 
       {/* Utility Bar */}
-      <div className="bg-[var(--surface)] px-6 py-2 flex justify-end items-center gap-6 text-xs border-b border-[var(--border)]">
+      <div className="bg-[#f8fafc] px-6 py-2 flex justify-end items-center gap-6 text-xs border-b border-[var(--border)]">
         {utilityLinks.map((text) => {
           return (
             <a
@@ -310,7 +310,7 @@ const Navbar = () => {
             )}
           </button>
 
-          <select className="bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] rounded-xl px-2.5 py-2.5 text-sm font-medium focus:outline-none cursor-pointer">
+          <select className="bg-[#f8fafc] text-[var(--text)] border border-[var(--border)] rounded-xl px-2.5 py-2.5 text-sm font-medium focus:outline-none cursor-pointer">
             <option value="en">EN</option>
             <option value="es">ES</option>
             <option value="fr">FR</option>
@@ -324,7 +324,7 @@ const Navbar = () => {
                 ? `${likeCount} saved item${likeCount > 1 ? 's' : ''}`
                 : 'Wishlist'
             }
-            className="relative p-2.5 text-[var(--text-secondary)] hover:text-red-400 hover:bg-[var(--surface)] rounded-xl transition-all"
+            className="relative p-2.5 text-[var(--text-secondary)] hover:text-red-400 hover:bg-[#f8fafc] rounded-xl transition-all"
           >
             <Heart size={22} />
 
@@ -351,7 +351,7 @@ const Navbar = () => {
                   } total`
                 : 'Cart is empty'
             }
-            className="relative p-2.5 text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--surface)] rounded-xl transition-all flex flex-col items-center"
+            className="relative p-2.5 text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[#f8fafc] rounded-xl transition-all flex flex-col items-center"
           >
             <ShoppingCart size={22} />
 
@@ -367,7 +367,7 @@ const Navbar = () => {
       </div>
 
       {/* Bottom Nav */}
-      <div className="bg-[var(--surface)] border-t border-[var(--border)] px-6 flex items-center overflow-x-auto scrollbar-none">
+      <div className="bg-[#f8fafc] border-t border-[var(--border)] px-6 flex items-center overflow-x-auto scrollbar-none">
         <NavLink
           to="/"
           end

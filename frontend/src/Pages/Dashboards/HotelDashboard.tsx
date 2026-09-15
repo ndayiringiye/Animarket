@@ -1,4 +1,8 @@
 'use client';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
 
 import { useState, useEffect, type KeyboardEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
@@ -129,6 +133,13 @@ const Icon = ({ d, size = 16, className = "", viewBox = "0 0 24 24", stroke = tr
     {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
   </svg>
 );
+// Fix default marker icons broken by Vite bundling
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
 
 const icons = {
   dashboard: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
@@ -291,10 +302,6 @@ const AnimalCard = ({ animal, onSelect }: AnimalCardProps) => {
 
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-        <div className={`absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm ring-1 ${status.ring}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-          <span className={`text-[11px] font-medium capitalize ${status.text}`}>{animal.status || "Unknown"}</span>
-        </div>
 
         {animal.price ? (
           <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-sm">
@@ -306,7 +313,7 @@ const AnimalCard = ({ animal, onSelect }: AnimalCardProps) => {
 
         <div className="absolute inset-x-0 bottom-0 p-4">
           <h4 className="font-semibold text-white text-base leading-tight">{animal.name || animal.type || "Unknown"}</h4>
-          <span className="text-xs text-white/70">ID: {animal.id || animal._id || "N/A"}</span>
+
         </div>
       </div>
 
@@ -579,7 +586,7 @@ const LivestockDashboard = () => {
   const [zoomLoading, setZoomLoading] = useState(false);
   const [zoomMessage, setZoomMessage] = useState("");
   const [zoomError, setZoomError] = useState("");
-
+const [isLoaded, setIsLoaded] = useState(false);
   const handleHotelBooking = async () => {
     if (!hotel?._id) {
       setBookingError("Please log in as a hotel to book an animal.");
@@ -833,11 +840,26 @@ const LivestockDashboard = () => {
             </div>
           </div>
           <p className="text-xs text-gray-500 dark:text-[#94a3b8] mb-4">Real-time animal population heatmaps by district.</p>
-          <div className="bg-gray-100 dark:bg-[#0c0e12] rounded-xl h-48 flex items-center justify-center text-gray-400 dark:text-[#94a3b8] text-sm transition-all hover:bg-gray-200 dark:hover:bg-[#1a1d24]">
-            <div className="flex flex-col items-center gap-2">
-              <Icon d={icons.heatmap} size={40} className="opacity-50" />
-              <span>Heatmap visualization</span>
+                   <div className="bg-gray-100 dark:bg-[#0c0e12] rounded-xl h-48 flex items-center justify-center text-gray-400 dark:text-[#94a3b8] text-sm transition-all hover:bg-gray-200 dark:hover:bg-[#1a1d24]">
+          {isLoaded && hotel.latitude && hotel.longitude ? (
+            <div className="rounded-xl overflow-hidden h-48">
+              <GoogleMap
+                mapContainerStyle={{ width: '100%', height: '100%' }}
+                center={{ lat: hotel.latitude, lng: hotel.longitude }}
+                zoom={15}
+                options={{ disableDefaultUI: true, zoomControl: true }}
+              >
+                <Marker position={{ lat: hotel.latitude, lng: hotel.longitude }} />
+              </GoogleMap>
             </div>
+          ) : (
+            <div className="bg-gray-100 dark:bg-[#0c0e12] rounded-xl h-48 flex items-center justify-center text-gray-400 dark:text-[#94a3b8] text-sm">
+              <div className="flex flex-col items-center gap-2">
+                <Icon d={icons.heatmap} size={40} className="opacity-50" />
+                <span>Loading map...</span>
+              </div>
+            </div>
+          )}
           </div>
         </div>
 
@@ -1822,15 +1844,254 @@ const HotelAgreementPage = () => {
   );
 };
 
-const PlaceholderPage = ({ title }) => (
-  <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center p-16 bg-gray-50 dark:bg-[#0c0e12]">
-    <div className="w-20 h-20 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 animate-pulse">
-      <Icon d={icons.inventory} size={32} />
+const PlaceholderPage = ({ title = "Joyalukkas Exchange" }) => {
+  // State for tracking the selected method and the current view step
+  const [selectedMethod, setSelectedMethod] = useState(null);
+  const [currentStep, setCurrentStep] = useState('selection'); // 'selection', 'card', 'momo'
+
+  const mobileMoneyOptions = [
+    {
+      id: 'mtn',
+      name: 'MTN MoMo',
+      description: 'Pay securely with your MTN Mobile Money account.',
+      logo: (
+        <div className="w-12 h-12 bg-[#FFCC00] rounded-2xl flex items-center justify-center shadow-md">
+          <span className="text-[12px] font-black text-black leading-none text-center tracking-tighter">MTN</span>
+        </div>
+      )
+    },
+    {
+      id: 'airtel',
+      name: 'Airtel Money',
+      description: 'Fast and reliable payments via Airtel Money.',
+      logo: (
+        <div className="w-12 h-12 bg-[#E40000] rounded-2xl flex items-center justify-center shadow-md">
+           <span className="text-white font-bold italic text-2xl leading-none">a</span>
+        </div>
+      )
+    }
+  ];
+
+  // Handlers for step transitions
+  const handleAddCardClick = () => {
+    setCurrentStep('card');
+  };
+
+  const handleMomoSelect = (id) => {
+    setSelectedMethod(id);
+    setCurrentStep('momo');
+  };
+
+  const handleBackToSelection = () => {
+    setCurrentStep('selection');
+    setSelectedMethod(null);
+  };
+
+  return (
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#0a4a3a] via-[#0d5c48] to-[#083b2e] flex items-center justify-center p-4 sm:p-8 font-sans antialiased overflow-hidden">
+      
+      <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+        
+        {/* Left Column: Marketing & Branding */}
+        <div className="flex flex-col justify-center space-y-8 lg:pr-8">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-[#0a4a3a] font-black text-2xl">J</span>
+            </div>
+            <div>
+              <h1 className="text-white text-xl font-bold tracking-wide">{title}</h1>
+              <p className="text-green-200/80 text-sm">Secure Global Payments</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-white text-5xl sm:text-6xl font-black leading-[1.1] tracking-tight uppercase">Exciting</h2>
+            <h3 className="text-amber-400 text-6xl sm:text-7xl font-black leading-[1.1] tracking-tight uppercase drop-shadow-md">Free</h3>
+            <h4 className="text-white text-4xl sm:text-5xl font-black leading-[1.1] tracking-tight uppercase">Payments for</h4>
+            <h5 className="text-amber-400 text-4xl sm:text-5xl font-black leading-[1.1] tracking-tight uppercase">Animals at Animarket</h5>
+          </div>
+
+          <p className="text-green-100/90 text-lg max-w-md leading-relaxed">
+            Experience seamless, zero-fee transactions when you pay for your livestock and animal supplies using our advanced mobile money integrations.
+          </p>
+
+          <div className="inline-flex flex-col sm:flex-row items-center gap-4 bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl shadow-xl max-w-md">
+            <div className="text-center sm:text-left">
+              <p className="text-green-200 text-xs font-semibold uppercase tracking-wider mb-1">Use code at checkout</p>
+              <p className="text-amber-400 text-2xl font-black tracking-wider">WRZERO</p>
+            </div>
+            <div className="hidden sm:block w-px h-12 bg-white/20"></div>
+            <p className="text-green-100 text-sm text-center sm:text-left flex-1">
+              Enjoy zero transaction fees on your first 5 payments.
+            </p>
+          </div>
+        </div>
+
+        {/* Right Column: Payment Interface */}
+        <div className="w-full flex justify-center lg:justify-end">
+          <div className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-10 border border-white/40 shadow-2xl transition-all duration-300 relative overflow-hidden">
+            
+            {/* STEP 1: SELECTION VIEW */}
+            {currentStep === 'selection' && (
+              <div className="animate-in fade-in duration-300">
+                <div className="mb-8">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                    Choose payment method
+                  </h2>
+                  <p className="text-gray-500 text-sm mt-2">Select how you would like to complete your purchase.</p>
+                </div>
+
+                {/* Credit Card Section */}
+                <div className="relative overflow-hidden border border-gray-100 rounded-[2rem] p-6 sm:p-8 bg-white shadow-sm mb-8 group hover:border-blue-100 transition-colors duration-300">
+                  <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-50 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+                  <div className="flex items-center justify-center gap-3 mb-6 h-14 relative z-10">
+                    <div className="flex -space-x-3 drop-shadow-sm">
+                      <div className="w-12 h-12 rounded-full bg-[#EB001B]"></div>
+                      <div className="w-12 h-12 rounded-full bg-[#F79E1B] mix-blend-multiply"></div>
+                    </div>
+                    <span className="text-[42px] font-black text-[#1434CB] italic tracking-tighter ml-3 drop-shadow-sm">
+                      VISA
+                    </span>
+                  </div>
+
+                  <p className="text-center text-gray-500 text-sm mb-6 leading-relaxed px-4 relative z-10">
+                    Add your credit card for seamless payment processing of your account.
+                  </p>
+
+                  <button 
+                    onClick={handleAddCardClick}
+                    className="relative z-10 w-full bg-[#3B82F6] hover:bg-[#2563EB] active:scale-[0.98] text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-500/30 transition-all duration-200 ease-in-out flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add New Card
+                  </button>
+                </div>
+
+                {/* Mobile Money Section */}
+                <div>
+                  <h3 className="text-gray-400 text-xs font-bold tracking-widest uppercase mb-4 ml-1">Mobile Money</h3>
+                  <div className="flex flex-col gap-4">
+                    {mobileMoneyOptions.map((option) => (
+                      <button 
+                        key={option.id}
+                        onClick={() => handleMomoSelect(option.id)}
+                        className="flex items-center justify-between w-full p-5 border border-gray-100 bg-white rounded-2xl hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm transition-all duration-200 ease-in-out group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="transform group-hover:scale-105 transition-transform duration-200">
+                            {option.logo}
+                          </div>
+                          <div className="text-left">
+                            <span className="block font-bold text-[15px] text-gray-800">
+                              {option.name}
+                            </span>
+                            <span className="text-gray-500 text-xs mt-0.5 block">{option.description}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-center shrink-0">
+                          <div className="w-6 h-6 rounded-full border-2 border-gray-200 group-hover:border-gray-400 transition-colors"></div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2: ADD CARD FORM */}
+            {currentStep === 'card' && (
+              <div className="animate-in slide-in-from-right-4 fade-in duration-300">
+                <button onClick={handleBackToSelection} className="flex items-center text-gray-500 hover:text-gray-800 mb-6 text-sm font-medium transition-colors">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                  Back to methods
+                </button>
+                <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight mb-2">Add Credit Card</h2>
+                <p className="text-gray-500 text-sm mb-8">Enter your card details securely below.</p>
+
+                <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Cardholder Name</label>
+                    <input type="text" placeholder="John Doe" className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-gray-50 focus:bg-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Card Number</label>
+                    <div className="relative">
+                      <input type="text" placeholder="0000 0000 0000 0000" className="w-full pl-4 pr-12 py-3.5 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-gray-50 focus:bg-white" />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex -space-x-2">
+                         <div className="w-5 h-5 rounded-full bg-[#EB001B]/80"></div>
+                         <div className="w-5 h-5 rounded-full bg-[#F79E1B]/80 mix-blend-multiply"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Expiry Date</label>
+                      <input type="text" placeholder="MM/YY" className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-gray-50 focus:bg-white" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">CVV</label>
+                      <input type="text" placeholder="123" className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-gray-50 focus:bg-white" />
+                    </div>
+                  </div>
+                  <button className="w-full bg-[#3B82F6] hover:bg-[#2563EB] active:scale-[0.98] text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-500/30 transition-all duration-200 mt-4">
+                    Save Card & Pay
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* STEP 3: MOMO / AIRTEL FORM */}
+            {currentStep === 'momo' && (
+              <div className="animate-in slide-in-from-right-4 fade-in duration-300">
+                <button onClick={handleBackToSelection} className="flex items-center text-gray-500 hover:text-gray-800 mb-6 text-sm font-medium transition-colors">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                  Back to methods
+                </button>
+                
+                <div className="flex items-center gap-4 mb-6">
+                  {selectedMethod === 'mtn' ? mobileMoneyOptions[0].logo : mobileMoneyOptions[1].logo}
+                  <div>
+                    <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight leading-none">
+                      {selectedMethod === 'mtn' ? 'MTN MoMo' : 'Airtel Money'}
+                    </h2>
+                    <p className="text-gray-500 text-sm mt-1">Enter your mobile money details.</p>
+                  </div>
+                </div>
+
+                <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Phone Number</label>
+                    <div className="flex">
+                      <span className="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-gray-200 bg-gray-100 text-gray-600 text-sm font-medium">
+                        +250
+                      </span>
+                      <input type="tel" placeholder="788 123 456" className="flex-1 px-4 py-3.5 rounded-r-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all text-sm bg-gray-50 focus:bg-white" />
+                    </div>
+                  </div>
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex gap-3">
+                    <svg className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <p className="text-emerald-800 text-xs leading-relaxed">
+                      You will receive a prompt on your phone to authorize this payment. Please ensure you have sufficient funds.
+                    </p>
+                  </div>
+                  <button className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-500/30 transition-all duration-200 mt-4">
+                    Confirm & Pay
+                  </button>
+                </form>
+              </div>
+            )}
+
+          </div>
+        </div>
+      </div>
     </div>
-    <h2 className="text-2xl font-bold text-gray-900 dark:text-white font-['Sora']">{title}</h2>
-    <p className="text-gray-500 dark:text-[#94a3b8] text-sm max-w-xs">This section is under construction.</p>
-  </div>
-);
+  );
+};
+
+
 
 const HotelRegistrationPage = () => {
   const { hotel, token } = useHotelAuth();
