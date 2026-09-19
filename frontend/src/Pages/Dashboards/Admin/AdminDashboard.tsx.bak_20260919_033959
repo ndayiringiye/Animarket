@@ -639,7 +639,6 @@ const AdminDashboard = () => {
   const [animalDetailsError, setAnimalDetailsError] = useState<string | null>(null);
   const [ownerDetails, setOwnerDetails] = useState<any>(null);
   const [ownerLoading, setOwnerLoading] = useState(false);
-  const [ownersMap, setOwnersMap] = useState<Record<string, any>>({});
 
   // Both fetchers hit the SAME endpoint (/api/users) and only differ
   // in which role they keep after fetching � that's the integration point.
@@ -801,18 +800,6 @@ const AdminDashboard = () => {
         ? res.data
         : res.data.animals || res.data.data || [];
       setAnimals(allAnimals);
-      const uniqueOwnerIds = Array.from(new Set(allAnimals.map((a: any) => (typeof a.owner === "string" ? a.owner : a.owner?._id)).filter(Boolean)));
-      const ownerEntries = await Promise.all(uniqueOwnerIds.map(async (oid: string) => {
-        try {
-          const r = await axios.get(`http://localhost:4000/api/users/${oid}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          });
-          return [oid, r.data?.data || r.data];
-        } catch {
-          return [oid, null];
-        }
-      }));
-      setOwnersMap(Object.fromEntries(ownerEntries.filter(([, v]) => v)));
     } catch (err: any) {
       setAnimalsError(err?.response?.data?.message || 'Failed to load animals');
     } finally {
@@ -1413,25 +1400,8 @@ const AdminDashboard = () => {
                           <td className="px-5 py-3.5 text-slate-700 font-medium text-xs">{animal.name || '-'}</td>
                           <td className="px-5 py-3.5 text-slate-500 text-xs capitalize">{animal.type || '-'}</td>
                           <td className="px-5 py-3.5 text-slate-500 text-xs">{animal.breed || '-'}</td>
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center gap-2">
-                              {(() => {
-                                const oid = typeof animal.owner === "string" ? animal.owner : animal.owner?._id;
-                                const ownerInfo = oid ? ownersMap[oid] : null;
-                                const label = ownerInfo?.name || (typeof animal.owner === "string" ? `${animal.owner.slice(0, 8)}...` : (animal.owner?.name || "-"));
-                                const initial = (ownerInfo?.name || "?").trim().charAt(0).toUpperCase();
-                                return (
-                                  <>
-                                    {ownerInfo?.profile_img ? (
-                                      <img src={ownerInfo.profile_img} alt={ownerInfo.name || "Owner"} className="w-7 h-7 rounded-full object-cover border border-slate-200 flex-shrink-0" />
-                                    ) : (
-                                      <div className="w-7 h-7 rounded-full bg-slate-600 text-white flex items-center justify-center text-[10px] font-semibold flex-shrink-0">{initial}</div>
-                                    )}
-                                    <span className="text-slate-500 text-xs truncate max-w-[110px]">{label}</span>
-                                  </>
-                                );
-                              })()}
-                            </div>
+                          <td className="px-5 py-3.5 text-slate-500 text-xs">
+                            {typeof animal.owner === 'string' ? `${animal.owner.slice(0, 8)}...` : (animal.owner?.name || '-')}
                           </td>
                           <td className="px-5 py-3.5">
                             <Badge variant={animal.isAvailable ? 'success' : 'warning'}>

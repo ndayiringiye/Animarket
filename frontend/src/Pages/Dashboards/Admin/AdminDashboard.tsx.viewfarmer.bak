@@ -214,7 +214,6 @@ const FarmersView = ({
   onRetry,
   onDelete,
   onUpdateRole,
-  onView,
   title = 'Manage Farmers',
   subtitle = 'All registered farmers on the platform'
 }: {
@@ -224,7 +223,6 @@ const FarmersView = ({
   onRetry: () => void;
   onDelete?: (id: string) => void;
   onUpdateRole?: (id: string, role: string) => void;
-  onView?: (id: string) => void;
   title?: string;
   subtitle?: string;
 }) => (
@@ -304,7 +302,7 @@ const FarmersView = ({
                 </td>
                 <td className="px-5 py-3.5 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <button onClick={() => onView && onView(farmer._id)} className="text-[11px] font-medium bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
+                    <button className="text-[11px] font-medium bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
                       View
                     </button>
                     {onDelete && (
@@ -634,12 +632,6 @@ const AdminDashboard = () => {
   const [animals, setAnimals] = useState<any[]>([]);
   const [animalsLoading, setAnimalsLoading] = useState(false);
   const [animalsError, setAnimalsError] = useState<string | null>(null);
-  const [selectedAnimal, setSelectedAnimal] = useState<any>(null);
-  const [animalDetailsLoading, setAnimalDetailsLoading] = useState(false);
-  const [animalDetailsError, setAnimalDetailsError] = useState<string | null>(null);
-  const [ownerDetails, setOwnerDetails] = useState<any>(null);
-  const [ownerLoading, setOwnerLoading] = useState(false);
-  const [ownersMap, setOwnersMap] = useState<Record<string, any>>({});
 
   // Both fetchers hit the SAME endpoint (/api/users) and only differ
   // in which role they keep after fetching ï¿½ that's the integration point.
@@ -648,29 +640,6 @@ const AdminDashboard = () => {
   const HOTELS_ENDPOINT = 'http://localhost:4000/api/hotels/all';
   const ANIMALS_ENDPOINT = 'http://localhost:4000/api/animal/admin/animals';
   const AGREEMENT_ENDPOINT = "http://localhost:4000/api/agreements/pdf-proxy";
-
-  const [showFarmerModal, setShowFarmerModal] = useState(false);
-  const [selectedFarmer, setSelectedFarmer] = useState<any>(null);
-  const [farmerDetailLoading, setFarmerDetailLoading] = useState(false);
-  const [farmerDetailError, setFarmerDetailError] = useState<string | null>(null);
-
-  const viewFarmer = async (id: string) => {
-    setShowFarmerModal(true);
-    setFarmerDetailLoading(true);
-    setFarmerDetailError(null);
-    setSelectedFarmer(null);
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${USERS_ENDPOINT}/${id}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      setSelectedFarmer(res.data?.data || null);
-    } catch (err: any) {
-      setFarmerDetailError(err?.response?.data?.message || 'Failed to load farmer');
-    } finally {
-      setFarmerDetailLoading(false);
-    }
-  };
 
   const fetchFarmers = async () => {
     setFarmersLoading(true);
@@ -801,62 +770,11 @@ const AdminDashboard = () => {
         ? res.data
         : res.data.animals || res.data.data || [];
       setAnimals(allAnimals);
-      const uniqueOwnerIds = Array.from(new Set(allAnimals.map((a: any) => (typeof a.owner === "string" ? a.owner : a.owner?._id)).filter(Boolean)));
-      const ownerEntries = await Promise.all(uniqueOwnerIds.map(async (oid: string) => {
-        try {
-          const r = await axios.get(`http://localhost:4000/api/users/${oid}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          });
-          return [oid, r.data?.data || r.data];
-        } catch {
-          return [oid, null];
-        }
-      }));
-      setOwnersMap(Object.fromEntries(ownerEntries.filter(([, v]) => v)));
     } catch (err: any) {
       setAnimalsError(err?.response?.data?.message || 'Failed to load animals');
     } finally {
       setAnimalsLoading(false);
     }
-  };
-
-  const ANIMAL_DETAILS_ENDPOINT = 'http://localhost:4000/api/animal/animals';
-
-  const viewAnimal = async (id: string) => {
-    setSelectedAnimal({});
-    setAnimalDetailsLoading(true);
-    setAnimalDetailsError(null);
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${ANIMAL_DETAILS_ENDPOINT}/${id}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      const animal = res.data?.data || res.data;
-      setSelectedAnimal(animal);
-      if (animal?.owner) {
-        setOwnerLoading(true);
-        try {
-          const ownerRes = await axios.get(`http://localhost:4000/api/users/${animal.owner}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          });
-          setOwnerDetails(ownerRes.data?.data || ownerRes.data);
-        } catch {
-          setOwnerDetails(null);
-        } finally {
-          setOwnerLoading(false);
-        }
-      }
-    } catch (err: any) {
-      setAnimalDetailsError(err?.response?.data?.message || 'Failed to load animal details');
-    } finally {
-      setAnimalDetailsLoading(false);
-    }
-  };
-
-  const closeAnimalDetails = () => {
-    setSelectedAnimal(null);
-    setAnimalDetailsError(null);
-    setOwnerDetails(null);
   };
 
   const approveHotel = async (id: string, approvalStatus: 'approved' | 'rejected') => {
@@ -1123,214 +1041,6 @@ const AdminDashboard = () => {
         {/* Dashboard Content */}
         <div className="flex-1 overflow-y-auto p-4 lg:p-6 bg-slate-50">
 
-          {/* FARMER_MODAL_V2 */}
-          {showFarmerModal && (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
-              onClick={() => setShowFarmerModal(false)}
-            >
-              <div
-                className="relative bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  onClick={() => setShowFarmerModal(false)}
-                  aria-label="Close"
-                  className="absolute top-3 right-3 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <path d="M18 6L6 18M6 6l12 12" />
-                  </svg>
-                </button>
-
-                <div className="overflow-y-auto">
-                  <div className="h-28 bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-500" />
-
-                  {farmerDetailLoading && (
-                    <div className="px-6 pb-6 -mt-12 animate-pulse">
-                      <div className="h-24 w-24 rounded-full bg-slate-200 ring-4 ring-white" />
-                      <div className="mt-4 h-5 w-48 rounded bg-slate-200" />
-                      <div className="mt-2 h-3 w-64 rounded bg-slate-100" />
-                      <div className="mt-6 grid grid-cols-2 gap-4">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                          <div key={i} className="h-10 rounded bg-slate-100" />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {farmerDetailError && !farmerDetailLoading && (
-                    <div className="p-6">
-                      <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-                        {farmerDetailError}
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedFarmer && !farmerDetailLoading && (() => {
-                    const f = selectedFarmer;
-                    const fmt = (d?: string) =>
-                      d ? new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '-';
-                    const fmtTime = (d?: string) =>
-                      d
-                        ? new Date(d).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-                        : '-';
-                    const initials = String(f.name || '?')
-                      .split(' ')
-                      .filter(Boolean)
-                      .map((s: string) => s[0])
-                      .slice(0, 2)
-                      .join('')
-                      .toUpperCase();
-                    const statusStyle =
-                      f.status === 'active'
-                        ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-                        : f.status === 'pending'
-                        ? 'bg-amber-50 text-amber-700 ring-amber-200'
-                        : 'bg-slate-100 text-slate-600 ring-slate-200';
-
-                    const sections: { title: string; logo?: string; items: any[][] }[] = [
-                      {
-                        title: 'Personal information',
-                        items: [
-                          ['Full name', f.name],
-                          ['Gender', f.gender, true],
-                          ['Email', f.email],
-                          ['Phone', f.phone],
-                          ['National ID number', f.id_Number],
-                        ],
-                      },
-                      {
-                        title: 'Shop information',
-                        logo: f.shopLogo,
-                        items: [
-                          ['Shop name', f.shopName],
-                          ['Category', f.category, true],
-                          ['Address', f.shopAddress],
-                        ],
-                      },
-                      {
-                        title: 'Account',
-                        items: [
-                          ['Role', f.role, true],
-                          ['Profile type', f.profile, true],
-                          ['Verified', f.isVerified ? 'Yes' : 'No'],
-                          ['Member since', fmt(f.createdAt)],
-                          ['Last updated', fmt(f.updatedAt)],
-                          ['Last seen', fmtTime(f.lastSeen)],
-                        ],
-                      },
-                    ];
-
-                    return (
-                      <div className="px-6 pb-6">
-                        <div className="-mt-12 flex items-end gap-4">
-                          <div className="relative h-24 w-24 shrink-0 rounded-full ring-4 ring-white bg-emerald-100 shadow-md overflow-hidden flex items-center justify-center text-2xl font-semibold text-emerald-700">
-                            {initials}
-                            {f.profile_img && (
-                              <img
-                                src={f.profile_img}
-                                alt={f.name || 'Farmer'}
-                                className="absolute inset-0 h-full w-full object-cover"
-                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                              />
-                            )}
-                          </div>
-                          <div className="pb-1 min-w-0">
-                            <h2 className="text-lg font-semibold text-slate-900 truncate">{f.name || 'Unnamed'}</h2>
-                            <p className="text-xs text-slate-500 truncate">{f.email || '-'}</p>
-                          </div>
-                        </div>
-
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium capitalize text-emerald-700 ring-1 ring-inset ring-emerald-200">
-                            {f.role || 'user'}
-                          </span>
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium capitalize ring-1 ring-inset ${statusStyle}`}>
-                            {f.status || 'unknown'}
-                          </span>
-                          <span
-                            className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${
-                              f.isVerified
-                                ? 'bg-sky-50 text-sky-700 ring-sky-200'
-                                : 'bg-slate-100 text-slate-600 ring-slate-200'
-                            }`}
-                          >
-                            {f.isVerified ? 'Verified' : 'Not verified'}
-                          </span>
-                        </div>
-
-                        <div className="mt-6 space-y-4">
-                          {sections.filter((section) => section.title !== 'Shop information' || f.role === 'farmer').map((section) => (
-                            <div key={section.title} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-                              <div className="mb-3 flex items-center gap-2">
-                                {section.logo && (
-                                  <img
-                                    src={section.logo}
-                                    alt=""
-                                    className="h-8 w-8 rounded-lg border border-slate-200 bg-white object-cover"
-                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                  />
-                                )}
-                                <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                  {section.title}
-                                </h4>
-                              </div>
-                              <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                                {section.items.map(([label, value, cap]) => (
-                                  <div key={label} className="min-w-0">
-                                    <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-400">{label}</dt>
-                                    <dd className={`mt-0.5 text-sm font-medium text-slate-800 break-words ${cap ? 'capitalize' : ''}`}>
-                                      {value === undefined || value === null || value === '' ? '-' : String(value)}
-                                    </dd>
-                                  </div>
-                                ))}
-                              </dl>
-                            </div>
-                          ))}
-
-                          {f.id_proof_img && (
-                            <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-                              <div className="mb-3 flex items-center justify-between">
-                                <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                  ID document
-                                </h4>
-                                
-                                  <a href={f.id_proof_img}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700"
-                                >
-                                  Open full size
-                                </a>
-                              </div>
-                              <a href={f.id_proof_img} target="_blank" rel="noreferrer">
-                                <img
-                                  src={f.id_proof_img}
-                                  alt="ID document"
-                                  className="w-full max-h-60 rounded-lg border border-slate-200 bg-white object-contain"
-                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                />
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                <div className="flex justify-end border-t border-slate-100 bg-white px-6 py-3">
-                  <button
-                    onClick={() => setShowFarmerModal(false)}
-                    className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800 transition-colors"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
           {activeView === 'farmers' ? (
             <FarmersView
               farmers={farmers}
@@ -1339,7 +1049,6 @@ const AdminDashboard = () => {
               onRetry={fetchFarmers}
               onDelete={deleteFarmer}
               onUpdateRole={updateFarmerRole}
-              onView={viewFarmer}
             />
           ) : activeView === 'customers' ? (
             <FarmersView
@@ -1348,12 +1057,11 @@ const AdminDashboard = () => {
               error={customersError}
               onRetry={fetchCustomers}
               onDelete={deleteCustomer}
-              onUpdateRole={updateCustomerRole} onView={viewFarmer}
+              onUpdateRole={updateCustomerRole}
               title="Manage Customers"
               subtitle="All registered customers on the platform"
             />
           ) : activeView === 'animals' ? (
-            <>
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <div>
@@ -1413,25 +1121,8 @@ const AdminDashboard = () => {
                           <td className="px-5 py-3.5 text-slate-700 font-medium text-xs">{animal.name || '-'}</td>
                           <td className="px-5 py-3.5 text-slate-500 text-xs capitalize">{animal.type || '-'}</td>
                           <td className="px-5 py-3.5 text-slate-500 text-xs">{animal.breed || '-'}</td>
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center gap-2">
-                              {(() => {
-                                const oid = typeof animal.owner === "string" ? animal.owner : animal.owner?._id;
-                                const ownerInfo = oid ? ownersMap[oid] : null;
-                                const label = ownerInfo?.name || (typeof animal.owner === "string" ? `${animal.owner.slice(0, 8)}...` : (animal.owner?.name || "-"));
-                                const initial = (ownerInfo?.name || "?").trim().charAt(0).toUpperCase();
-                                return (
-                                  <>
-                                    {ownerInfo?.profile_img ? (
-                                      <img src={ownerInfo.profile_img} alt={ownerInfo.name || "Owner"} className="w-7 h-7 rounded-full object-cover border border-slate-200 flex-shrink-0" />
-                                    ) : (
-                                      <div className="w-7 h-7 rounded-full bg-slate-600 text-white flex items-center justify-center text-[10px] font-semibold flex-shrink-0">{initial}</div>
-                                    )}
-                                    <span className="text-slate-500 text-xs truncate max-w-[110px]">{label}</span>
-                                  </>
-                                );
-                              })()}
-                            </div>
+                          <td className="px-5 py-3.5 text-slate-500 text-xs">
+                            {typeof animal.owner === 'string' ? `${animal.owner.slice(0, 8)}...` : (animal.owner?.name || '-')}
                           </td>
                           <td className="px-5 py-3.5">
                             <Badge variant={animal.isAvailable ? 'success' : 'warning'}>
@@ -1439,7 +1130,7 @@ const AdminDashboard = () => {
                             </Badge>
                           </td>
                           <td className="px-5 py-3.5 text-right">
-                            <button onClick={() => viewAnimal(animal._id)} className="text-[11px] font-medium bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
+                            <button className="text-[11px] font-medium bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
                               View
                             </button>
                           </td>
@@ -1450,132 +1141,6 @@ const AdminDashboard = () => {
                 </div>
               )}
             </div>
-              {selectedAnimal && (
-                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeAnimalDetails}>
-                  <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[88vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                    {animalDetailsLoading && (
-                      <div className="p-8 space-y-4">
-                        <div className="h-48 bg-slate-100 rounded-xl animate-pulse"></div>
-                        <div className="h-4 bg-slate-100 rounded w-1/3 animate-pulse"></div>
-                        <div className="h-4 bg-slate-100 rounded w-1/2 animate-pulse"></div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="h-12 bg-slate-100 rounded-lg animate-pulse"></div>
-                          <div className="h-12 bg-slate-100 rounded-lg animate-pulse"></div>
-                          <div className="h-12 bg-slate-100 rounded-lg animate-pulse"></div>
-                          <div className="h-12 bg-slate-100 rounded-lg animate-pulse"></div>
-                        </div>
-                      </div>
-                    )}
-
-                    {!animalDetailsLoading && animalDetailsError && (
-                      <div className="p-8">
-                        <div className="bg-red-50 border border-red-100 rounded-xl p-5 text-center">
-                          <p className="text-sm font-medium text-red-600">{animalDetailsError}</p>
-                        </div>
-                        <button onClick={closeAnimalDetails} className="mt-4 w-full text-xs font-medium text-slate-600 border border-slate-200 rounded-lg py-2 hover:bg-slate-50 transition-colors">Close</button>
-                      </div>
-                    )}
-
-                    {!animalDetailsLoading && !animalDetailsError && selectedAnimal.name && (
-                      <>
-                        <div className="relative h-56 bg-gradient-to-br from-slate-800 to-slate-600">
-                          {selectedAnimal.images && selectedAnimal.images.length > 0 ? (
-                            <img src={selectedAnimal.images[0]} alt={selectedAnimal.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-300 text-xs font-medium">No image available</div>
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
-                          <button onClick={closeAnimalDetails} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-slate-700 text-sm font-bold flex items-center justify-center shadow-sm transition-colors">?</button>
-                          <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between">
-                            <div>
-                              <h2 className="text-xl font-bold text-white capitalize">{selectedAnimal.name}</h2>
-                              <p className="text-xs text-white/80 capitalize mt-0.5">{selectedAnimal.type} • {selectedAnimal.breed}</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Badge variant={selectedAnimal.isAvailable ? "success" : "warning"}>{selectedAnimal.isAvailable ? "available" : "listed"}</Badge>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="p-6 space-y-6">
-                          <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-4">
-                            <div>
-                              <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide">Listed Price</p>
-                              <p className="text-lg font-bold text-emerald-700">{selectedAnimal.price} {selectedAnimal.currency}</p>
-                            </div>
-                            <Badge variant={selectedAnimal.verificationLevel === "verified" ? "success" : "warning"}>{selectedAnimal.verificationLevel}</Badge>
-                          </div>
-
-                          <div>
-                            <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Overview</h3>
-                            <div className="grid grid-cols-2 gap-2.5">
-                              <div className="bg-slate-50 rounded-lg px-3.5 py-2.5"><p className="text-[10px] text-slate-400">Gender</p><p className="text-xs font-medium text-slate-700 capitalize">{selectedAnimal.gender || "-"}</p></div>
-                              <div className="bg-slate-50 rounded-lg px-3.5 py-2.5"><p className="text-[10px] text-slate-400">Age</p><p className="text-xs font-medium text-slate-700">{selectedAnimal.age} yrs</p></div>
-                              <div className="bg-slate-50 rounded-lg px-3.5 py-2.5"><p className="text-[10px] text-slate-400">Weight</p><p className="text-xs font-medium text-slate-700">{selectedAnimal.weight} kg</p></div>
-                              <div className="bg-slate-50 rounded-lg px-3.5 py-2.5"><p className="text-[10px] text-slate-400">Breed</p><p className="text-xs font-medium text-slate-700 capitalize">{selectedAnimal.breed || "-"}</p></div>
-                            </div>
-                          </div>
-
-                          <div>
-                            <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Health</h3>
-                            <div className="grid grid-cols-2 gap-2.5">
-                              <div className="bg-slate-50 rounded-lg px-3.5 py-2.5"><p className="text-[10px] text-slate-400">Status</p><p className="text-xs font-medium text-slate-700 capitalize">{selectedAnimal.health?.healthStatus || "-"}</p></div>
-                              <div className="bg-slate-50 rounded-lg px-3.5 py-2.5"><p className="text-[10px] text-slate-400">Vaccinated</p><p className="text-xs font-medium text-slate-700">{selectedAnimal.health?.vaccinated ? "Yes" : "No"}</p></div>
-                            </div>
-                          </div>
-
-                          <div>
-                            <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Location</h3>
-                            <div className="bg-slate-50 rounded-lg px-3.5 py-2.5">
-                              <p className="text-xs font-medium text-slate-700 capitalize">{selectedAnimal.location?.village}, {selectedAnimal.location?.district}, {selectedAnimal.location?.country}</p>
-                            </div>
-                          </div>
-
-                          <div>
-                            <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Owner</h3>
-                            <div className="flex items-center gap-3 bg-slate-50 rounded-lg px-3.5 py-3 border border-slate-100">
-                              {ownerLoading ? (
-                                <div className="w-11 h-11 rounded-full bg-slate-200 animate-pulse flex-shrink-0"></div>
-                              ) : ownerDetails?.profile_img ? (
-                                <img src={ownerDetails.profile_img} alt={ownerDetails.name || "Owner"} className="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-slate-200" />
-                              ) : (
-                                <div className="w-11 h-11 rounded-full bg-slate-700 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
-                                  {(ownerDetails?.name || "?").trim().charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                              <div className="min-w-0">
-                                <p className="text-xs font-semibold text-slate-700 truncate">{ownerLoading ? "Loading..." : (ownerDetails?.name || "Unknown owner")}</p>
-                                <p className="text-[10px] text-slate-400 truncate">{ownerDetails?.shopName ? `${ownerDetails.shopName} • ` : ""}{ownerDetails?.profile || ownerDetails?.role || ""}</p>
-                                {ownerDetails?.phone && <p className="text-[10px] text-slate-400 truncate">{ownerDetails.phone}</p>}
-                              </div>
-                            </div>
-                          </div>
-
-                          {selectedAnimal.ratings && selectedAnimal.ratings.length > 0 && (
-                            <div>
-                              <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Ratings</h3>
-                              <div className="space-y-2">
-                                {selectedAnimal.ratings.map((rt: any) => (
-                                  <div key={rt._id} className="bg-slate-50 rounded-lg px-3.5 py-2.5 border border-slate-100">
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="text-amber-500 text-xs tracking-wider">{Array.from({ length: 5 }, (_, i) => (i < rt.rating ? "?" : "?")).join("")}</span>
-                                      <span className="text-[10px] text-slate-400">{new Date(rt.createdAt).toLocaleDateString()}</span>
-                                    </div>
-                                    <p className="text-xs text-slate-600">{rt.comment}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          <button onClick={closeAnimalDetails} className="w-full text-xs font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg py-2.5 transition-colors">Close</button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-              </>
           ) : activeView === 'hotels' ? (
             <HotelsView
               hotels={hotels}
