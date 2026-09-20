@@ -637,6 +637,10 @@ const AdminDashboard = () => {
   const [selectedAnimal, setSelectedAnimal] = useState<any>(null);
   const [animalDetailsLoading, setAnimalDetailsLoading] = useState(false);
   const [animalDetailsError, setAnimalDetailsError] = useState<string | null>(null);
+  const [animalEdit, setAnimalEdit] = useState<any>(null);
+  const [animalEditForm, setAnimalEditForm] = useState<any>({});
+  const [animalEditSaving, setAnimalEditSaving] = useState(false);
+  const [animalEditError, setAnimalEditError] = useState<string | null>(null);
   const [ownerDetails, setOwnerDetails] = useState<any>(null);
   const [ownerLoading, setOwnerLoading] = useState(false);
   const [ownersMap, setOwnersMap] = useState<Record<string, any>>({});
@@ -704,6 +708,21 @@ const AdminDashboard = () => {
       }
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Failed to delete farmer');
+    }
+  };
+
+  const deleteAnimal = async (id: string) => {
+    if (!window.confirm('Delete this animal? This cannot be undone.')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.delete(`http://localhost:4000/api/animal/animals/${id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.status === 200) {
+        setAnimals((prev) => prev.filter((a) => a._id !== id));
+      }
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Failed to delete animal');
     }
   };
 
@@ -821,6 +840,64 @@ const AdminDashboard = () => {
   };
 
   const ANIMAL_DETAILS_ENDPOINT = 'http://localhost:4000/api/animal/animals';
+
+  const openAnimalEdit = (animal: any) => {
+    setAnimalEdit(animal);
+    setAnimalEditError(null);
+    setAnimalEditForm({
+      name: animal.name ?? '',
+      type: animal.type ?? '',
+      breed: animal.breed ?? '',
+      gender: animal.gender ?? '',
+      age: animal.age ?? '',
+      weight: animal.weight ?? '',
+      price: animal.price ?? '',
+      currency: animal.currency ?? '',
+      isAvailable: !!animal.isAvailable,
+    });
+  };
+
+  const closeAnimalEdit = () => {
+    setAnimalEdit(null);
+    setAnimalEditError(null);
+  };
+
+  const saveAnimalEdit = async () => {
+    if (!animalEdit) return;
+    const numeric = ['age', 'weight', 'price'];
+    const changes: any = {};
+    Object.keys(animalEditForm).forEach((key) => {
+      let value = animalEditForm[key];
+      if (typeof value === 'string') value = value.trim();
+      if (value === '' || value === null || value === undefined) return;
+      if (numeric.includes(key)) {
+        value = Number(value);
+        if (Number.isNaN(value)) return;
+      }
+      const original = key === 'isAvailable' ? !!animalEdit[key] : animalEdit[key];
+      if (value !== original) changes[key] = value;
+    });
+    if (Object.keys(changes).length === 0) {
+      closeAnimalEdit();
+      return;
+    }
+    setAnimalEditSaving(true);
+    setAnimalEditError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.put(`http://localhost:4000/api/animal/animals/${animalEdit._id}`, changes, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.status === 200) {
+        setAnimals((prev) => prev.map((a) => (a._id === animalEdit._id ? { ...a, ...changes } : a)));
+        closeAnimalEdit();
+      }
+    } catch (err: any) {
+      setAnimalEditError(err?.response?.data?.message || 'Failed to update animal');
+    } finally {
+      setAnimalEditSaving(false);
+    }
+  };
 
   const viewAnimal = async (id: string) => {
     setSelectedAnimal({});
@@ -1442,6 +1519,12 @@ const AdminDashboard = () => {
                             <button onClick={() => viewAnimal(animal._id)} className="text-[11px] font-medium bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
                               View
                             </button>
+                            <button onClick={() => openAnimalEdit(animal)} className="ml-2 text-[11px] font-medium bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                              Edit
+                            </button>
+                            <button onClick={() => deleteAnimal(animal._id)} className="ml-2 text-[11px] font-medium bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                              Delete
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -1450,6 +1533,51 @@ const AdminDashboard = () => {
                 </div>
               )}
             </div>
+      {animalEdit && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeAnimalEdit}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-base font-bold text-slate-800">Edit animal</h2>
+            <p className="text-xs text-slate-400 mt-0.5 mb-4">Update the details of {animalEdit.name || 'this animal'}</p>
+            {animalEditError && (
+              <div className="mb-3 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{animalEditError}</div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                ['name', 'Name', 'text'],
+                ['type', 'Species', 'text'],
+                ['breed', 'Breed', 'text'],
+                ['gender', 'Gender', 'text'],
+                ['age', 'Age (yrs)', 'number'],
+                ['weight', 'Weight (kg)', 'number'],
+                ['price', 'Price', 'number'],
+                ['currency', 'Currency', 'text'],
+              ] as [string, string, string][]).map(([key, label, inputType]) => (
+                <label key={key} className="block">
+                  <span className="text-[11px] font-medium text-slate-500">{label}</span>
+                  <input
+                    type={inputType}
+                    value={animalEditForm[key] ?? ''}
+                    onChange={(e) => setAnimalEditForm((prev: any) => ({ ...prev, [key]: e.target.value }))}
+                    className="mt-1 w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                  />
+                </label>
+              ))}
+            </div>
+            <label className="flex items-center gap-2 mt-3 text-xs text-slate-600">
+              <input
+                type="checkbox"
+                checked={!!animalEditForm.isAvailable}
+                onChange={(e) => setAnimalEditForm((prev: any) => ({ ...prev, isAvailable: e.target.checked }))}
+              />
+              Mark as available
+            </label>
+            <div className="flex gap-2 mt-5">
+              <button onClick={closeAnimalEdit} className="flex-1 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg py-2.5 hover:bg-slate-50 transition-colors">Cancel</button>
+              <button onClick={saveAnimalEdit} disabled={animalEditSaving} className="flex-1 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 rounded-lg py-2.5 transition-colors">{animalEditSaving ? 'Saving...' : 'Save changes'}</button>
+            </div>
+          </div>
+        </div>
+      )}
               {selectedAnimal && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeAnimalDetails}>
                   <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[88vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -1489,7 +1617,7 @@ const AdminDashboard = () => {
                           <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between">
                             <div>
                               <h2 className="text-xl font-bold text-white capitalize">{selectedAnimal.name}</h2>
-                              <p className="text-xs text-white/80 capitalize mt-0.5">{selectedAnimal.type} • {selectedAnimal.breed}</p>
+                              <p className="text-xs text-white/80 capitalize mt-0.5">{selectedAnimal.type} ï¿½ {selectedAnimal.breed}</p>
                             </div>
                             <div className="flex gap-2">
                               <Badge variant={selectedAnimal.isAvailable ? "success" : "warning"}>{selectedAnimal.isAvailable ? "available" : "listed"}</Badge>
@@ -1545,7 +1673,7 @@ const AdminDashboard = () => {
                               )}
                               <div className="min-w-0">
                                 <p className="text-xs font-semibold text-slate-700 truncate">{ownerLoading ? "Loading..." : (ownerDetails?.name || "Unknown owner")}</p>
-                                <p className="text-[10px] text-slate-400 truncate">{ownerDetails?.shopName ? `${ownerDetails.shopName} • ` : ""}{ownerDetails?.profile || ownerDetails?.role || ""}</p>
+                                <p className="text-[10px] text-slate-400 truncate">{ownerDetails?.shopName ? `${ownerDetails.shopName} ï¿½ ` : ""}{ownerDetails?.profile || ownerDetails?.role || ""}</p>
                                 {ownerDetails?.phone && <p className="text-[10px] text-slate-400 truncate">{ownerDetails.phone}</p>}
                               </div>
                             </div>
