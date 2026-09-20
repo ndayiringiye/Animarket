@@ -641,6 +641,7 @@ const AdminDashboard = () => {
   const [animalEditForm, setAnimalEditForm] = useState<any>({});
   const [animalEditSaving, setAnimalEditSaving] = useState(false);
   const [animalEditError, setAnimalEditError] = useState<string | null>(null);
+  const [animalEditFiles, setAnimalEditFiles] = useState<any>({});
   const [ownerDetails, setOwnerDetails] = useState<any>(null);
   const [ownerLoading, setOwnerLoading] = useState(false);
   const [ownersMap, setOwnersMap] = useState<Record<string, any>>({});
@@ -843,6 +844,7 @@ const AdminDashboard = () => {
 
   const openAnimalEdit = (animal: any) => {
     setAnimalEdit(animal);
+    setAnimalEditFiles({});
     setAnimalEditError(null);
     setAnimalEditForm({
       name: animal.name ?? '',
@@ -859,6 +861,7 @@ const AdminDashboard = () => {
 
   const closeAnimalEdit = () => {
     setAnimalEdit(null);
+    setAnimalEditFiles({});
     setAnimalEditError(null);
   };
 
@@ -877,7 +880,8 @@ const AdminDashboard = () => {
       const original = key === 'isAvailable' ? !!animalEdit[key] : animalEdit[key];
       if (value !== original) changes[key] = value;
     });
-    if (Object.keys(changes).length === 0) {
+    const fileKeys = Object.keys(animalEditFiles).filter((k) => animalEditFiles[k] && animalEditFiles[k].length > 0);
+    if (Object.keys(changes).length === 0 && fileKeys.length === 0) {
       closeAnimalEdit();
       return;
     }
@@ -885,15 +889,36 @@ const AdminDashboard = () => {
     setAnimalEditError(null);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.put(`http://localhost:4000/api/animal/animals/${animalEdit._id}`, changes, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
+      const url = `http://localhost:4000/api/animal/animals/${animalEdit._id}`;
+      let res: any;
+      if (fileKeys.length === 0) {
+        res = await axios.put(url, changes, { headers });
+      } else {
+        const formData = new FormData();
+        Object.keys(changes).forEach((key) => formData.append(key, String(changes[key])));
+        if (fileKeys.includes('vaccinationProofs')) {
+          const detailsRes = await axios.get(`${ANIMAL_DETAILS_ENDPOINT}/${animalEdit._id}`, { headers });
+          const fresh = detailsRes.data?.data || detailsRes.data;
+          const records = fresh?.health?.vaccinationRecords;
+          if (!records || records.length === 0) {
+            throw new Error('This animal has no vaccination records to attach proofs to.');
+          }
+          formData.append('health', JSON.stringify(fresh.health));
+        }
+        fileKeys.forEach((key) => {
+          animalEditFiles[key].forEach((file: File) => formData.append(key, file));
+        });
+        res = await axios.put(url, formData, { headers });
+      }
       if (res.status === 200) {
-        setAnimals((prev) => prev.map((a) => (a._id === animalEdit._id ? { ...a, ...changes } : a)));
+        const updated = res.data?.data || {};
+        setAnimals((prev) => prev.map((a) => (a._id === animalEdit._id ? { ...a, ...changes, ...(updated.images ? { images: updated.images } : {}), ...(updated.videos ? { videos: updated.videos } : {}) } : a)));
         closeAnimalEdit();
       }
     } catch (err: any) {
-      setAnimalEditError(err?.response?.data?.message || 'Failed to update animal');
+      const data = err?.response?.data;
+      setAnimalEditError((data && [data.message, data.error].filter(Boolean).join(': ')) || err?.message || 'Failed to update animal');
     } finally {
       setAnimalEditSaving(false);
     }
@@ -1571,6 +1596,35 @@ const AdminDashboard = () => {
               />
               Mark as available
             </label>
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <p className="text-[11px] font-semibold text-slate-500 mb-2">Add or replace files</p>
+              <div className="space-y-3">
+                {([
+                  ['image', 'Images (added to existing, max 10)', 'image/*', true, 10],
+                  ['video', 'Videos (added to existing, max 5)', 'video/*', true, 5],
+                  ['previousOwnerAgreement', 'Previous owner agreement (replaces current)', 'image/*', false, 1],
+                  ['previousOwnerIdPhoto', 'Previous owner ID photo (replaces current)', 'image/*', false, 1],
+                  ['vaccinationProofs', 'Vaccination proofs (matched to vaccination records in order, max 10)', 'image/*,application/pdf', true, 10],
+                ] as [string, string, string, boolean, number][]).map(([key, label, accept, multiple, max]) => (
+                  <label key={key} className="block">
+                    <span className="text-[11px] font-medium text-slate-500">{label}</span>
+                    <input
+                      type="file"
+                      accept={accept}
+                      multiple={multiple}
+                      onChange={(e) => {
+                        const picked = Array.from(e.target.files || []).slice(0, max);
+                        setAnimalEditFiles((prev: any) => ({ ...prev, [key]: picked }));
+                      }}
+                      className="mt-1 block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-600 hover:file:bg-slate-200"
+                    />
+                    {animalEditFiles[key] && animalEditFiles[key].length > 0 && (
+                      <span className="text-[10px] text-emerald-600">{animalEditFiles[key].length} file(s) selected</span>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </div>
             <div className="flex gap-2 mt-5">
               <button onClick={closeAnimalEdit} className="flex-1 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg py-2.5 hover:bg-slate-50 transition-colors">Cancel</button>
               <button onClick={saveAnimalEdit} disabled={animalEditSaving} className="flex-1 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 rounded-lg py-2.5 transition-colors">{animalEditSaving ? 'Saving...' : 'Save changes'}</button>
