@@ -1559,75 +1559,142 @@ const AdminDashboard = () => {
               )}
             </div>
       {animalEdit && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeAnimalEdit}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-base font-bold text-slate-800">Edit animal</h2>
-            <p className="text-xs text-slate-400 mt-0.5 mb-4">Update the details of {animalEdit.name || 'this animal'}</p>
-            {animalEditError && (
-              <div className="mb-3 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{animalEditError}</div>
-            )}
-            <div className="grid grid-cols-2 gap-3">
-              {([
-                ['name', 'Name', 'text'],
-                ['type', 'Species', 'text'],
-                ['breed', 'Breed', 'text'],
-                ['gender', 'Gender', 'text'],
-                ['age', 'Age (yrs)', 'number'],
-                ['weight', 'Weight (kg)', 'number'],
-                ['price', 'Price', 'number'],
-                ['currency', 'Currency', 'text'],
-              ] as [string, string, string][]).map(([key, label, inputType]) => (
-                <label key={key} className="block">
-                  <span className="text-[11px] font-medium text-slate-500">{label}</span>
-                  <input
-                    type={inputType}
-                    value={animalEditForm[key] ?? ''}
-                    onChange={(e) => setAnimalEditForm((prev: any) => ({ ...prev, [key]: e.target.value }))}
-                    className="mt-1 w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-                  />
-                </label>
-              ))}
-            </div>
-            <label className="flex items-center gap-2 mt-3 text-xs text-slate-600">
-              <input
-                type="checkbox"
-                checked={!!animalEditForm.isAvailable}
-                onChange={(e) => setAnimalEditForm((prev: any) => ({ ...prev, isAvailable: e.target.checked }))}
-              />
-              Mark as available
-            </label>
-            <div className="mt-4 pt-4 border-t border-slate-100">
-              <p className="text-[11px] font-semibold text-slate-500 mb-2">Add or replace files</p>
-              <div className="space-y-3">
-                {([
-                  ['image', 'Images (added to existing, max 10)', 'image/*', true, 10],
-                  ['video', 'Videos (added to existing, max 5)', 'video/*', true, 5],
-                  ['previousOwnerAgreement', 'Previous owner agreement (replaces current)', 'image/*', false, 1],
-                  ['previousOwnerIdPhoto', 'Previous owner ID photo (replaces current)', 'image/*', false, 1],
-                  ['vaccinationProofs', 'Vaccination proofs (matched to vaccination records in order, max 10)', 'image/*,application/pdf', true, 10],
-                ] as [string, string, string, boolean, number][]).map(([key, label, accept, multiple, max]) => (
-                  <label key={key} className="block">
-                    <span className="text-[11px] font-medium text-slate-500">{label}</span>
-                    <input
-                      type="file"
-                      accept={accept}
-                      multiple={multiple}
-                      onChange={(e) => {
-                        const picked = Array.from(e.target.files || []).slice(0, max);
-                        setAnimalEditFiles((prev: any) => ({ ...prev, [key]: picked }));
-                      }}
-                      className="mt-1 block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-600 hover:file:bg-slate-200"
-                    />
-                    {animalEditFiles[key] && animalEditFiles[key].length > 0 && (
-                      <span className="text-[10px] text-emerald-600">{animalEditFiles[key].length} file(s) selected</span>
-                    )}
-                  </label>
-                ))}
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeAnimalEdit}>
+          <div className="bg-white rounded-2xl shadow-2xl ring-1 ring-slate-200 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* animal-edit-modal-v2 */}
+            <div className="shrink-0 flex items-center gap-4 px-6 py-4 bg-gradient-to-r from-emerald-50 to-white border-b border-slate-100">
+              {animalEdit.images && animalEdit.images.length > 0 ? (
+                <img src={animalEdit.images[0]} alt={animalEdit.name || 'animal'} className="w-12 h-12 rounded-xl object-cover border border-white shadow-sm" />
+              ) : (
+                <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg font-bold shadow-sm">
+                  {(animalEdit.name || 'A').trim().charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <h2 className="text-base font-bold text-slate-800">Edit animal</h2>
+                <p className="text-xs text-slate-500 truncate">Update the details of <span className="font-medium text-slate-700">{animalEdit.name || 'this animal'}</span></p>
               </div>
+              <button onClick={closeAnimalEdit} aria-label="Close" className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors">
+                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+              </button>
             </div>
-            <div className="flex gap-2 mt-5">
-              <button onClick={closeAnimalEdit} className="flex-1 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg py-2.5 hover:bg-slate-50 transition-colors">Cancel</button>
-              <button onClick={saveAnimalEdit} disabled={animalEditSaving} className="flex-1 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 rounded-lg py-2.5 transition-colors">{animalEditSaving ? 'Saving...' : 'Save changes'}</button>
+
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+              {animalEditError && (
+                <div className="flex items-start gap-2.5 text-xs text-red-700 bg-red-50 border border-red-100 rounded-xl px-3.5 py-3">
+                  <svg className="w-4 h-4 mt-px shrink-0 text-red-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+                  <span>{animalEditError}</span>
+                </div>
+              )}
+
+              {([
+                { title: 'Basic information', fields: [['name', 'Name', 'text'], ['type', 'Species', 'text'], ['breed', 'Breed', 'text'], ['gender', 'Gender', 'text']] },
+                { title: 'Measurements', fields: [['age', 'Age (yrs)', 'number'], ['weight', 'Weight (kg)', 'number']] },
+                { title: 'Pricing', fields: [['price', 'Price', 'number'], ['currency', 'Currency', 'text']] },
+              ] as { title: string; fields: [string, string, string][] }[]).map((section) => (
+                <section key={section.title}>
+                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-3">{section.title}</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {section.fields.map(([key, label, inputType]) => (
+                      <label key={key} className="block">
+                        <span className="text-[11px] font-medium text-slate-600">{label}</span>
+                        <input
+                          type={inputType}
+                          value={animalEditForm[key] ?? ''}
+                          onChange={(e) => setAnimalEditForm((prev: any) => ({ ...prev, [key]: e.target.value }))}
+                          className="mt-1 w-full text-sm text-slate-700 bg-slate-50/60 border border-slate-200 rounded-xl px-3.5 py-2.5 hover:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </section>
+              ))}
+
+              <section>
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-3">Availability</h3>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={!!animalEditForm.isAvailable}
+                  onClick={() => setAnimalEditForm((prev: any) => ({ ...prev, isAvailable: !prev.isAvailable }))}
+                  className="w-full flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-left hover:border-slate-300 transition-colors"
+                >
+                  <span>
+                    <span className="block text-xs font-semibold text-slate-700">Available</span>
+                    <span className="block text-[11px] text-slate-400 mt-0.5">When off, the animal shows as listed</span>
+                  </span>
+                  <span className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${animalEditForm.isAvailable ? 'bg-emerald-600' : 'bg-slate-300'}`}>
+                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${animalEditForm.isAvailable ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  </span>
+                </button>
+              </section>
+
+              <section>
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Files</h3>
+                <p className="text-[11px] text-slate-400 mb-3">Optional. Images and videos are added to the existing ones. The agreement and ID photo replace the current file.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {([
+                    ['image', 'Images', 'Added to existing, max 10', 'image/*', true, 10],
+                    ['video', 'Videos', 'Added to existing, max 5', 'video/*', true, 5],
+                    ['previousOwnerAgreement', 'Previous owner agreement', 'Replaces the current file', 'image/*', false, 1],
+                    ['previousOwnerIdPhoto', 'Previous owner ID photo', 'Replaces the current file', 'image/*', false, 1],
+                    ['vaccinationProofs', 'Vaccination proofs', 'Matched to vaccination records in order, max 10', 'image/*,application/pdf', true, 10],
+                  ] as [string, string, string, string, boolean, number][]).map(([key, label, hint, accept, multiple, max]) => {
+                    const picked: File[] = animalEditFiles[key] || [];
+                    return (
+                      <div key={key} className={`rounded-xl border p-3.5 transition-colors ${key === 'vaccinationProofs' ? 'sm:col-span-2 ' : ''}${picked.length > 0 ? 'border-emerald-300 bg-emerald-50/40' : 'border-dashed border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-slate-700">{label}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{hint}</p>
+                          </div>
+                          <label className="shrink-0 cursor-pointer text-[11px] font-medium text-emerald-700 bg-white border border-emerald-200 hover:bg-emerald-50 px-2.5 py-1 rounded-lg transition-colors">
+                            {picked.length > 0 ? 'Change' : 'Choose'}
+                            <input
+                              type="file"
+                              accept={accept}
+                              multiple={multiple}
+                              className="hidden"
+                              onChange={(e) => {
+                                const chosen = Array.from(e.target.files || []).slice(0, max);
+                                e.target.value = '';
+                                setAnimalEditFiles((prev: any) => ({ ...prev, [key]: chosen }));
+                              }}
+                            />
+                          </label>
+                        </div>
+                        {picked.length > 0 && (
+                          <ul className="mt-2.5 space-y-1">
+                            {picked.map((file, idx) => (
+                              <li key={`${file.name}-${idx}`} className="flex items-center justify-between gap-2 bg-white border border-slate-100 rounded-lg px-2.5 py-1.5">
+                                <span className="text-[11px] text-slate-600 truncate">{file.name}</span>
+                                <button
+                                  type="button"
+                                  aria-label={`Remove ${file.name}`}
+                                  onClick={() => setAnimalEditFiles((prev: any) => ({ ...prev, [key]: (prev[key] || []).filter((_: File, i: number) => i !== idx) }))}
+                                  className="shrink-0 text-slate-300 hover:text-red-500 transition-colors"
+                                >
+                                  <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
+
+            <div className="shrink-0 flex items-center justify-end gap-2 px-6 py-4 bg-slate-50/70 border-t border-slate-100">
+              <button onClick={closeAnimalEdit} className="text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-xl px-5 py-2.5 hover:bg-slate-50 transition-colors">Cancel</button>
+              <button onClick={saveAnimalEdit} disabled={animalEditSaving} className="inline-flex items-center gap-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl px-5 py-2.5 shadow-sm transition-colors">
+                {animalEditSaving && (
+                  <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" /></svg>
+                )}
+                {animalEditSaving ? 'Saving...' : 'Save changes'}
+              </button>
             </div>
           </div>
         </div>
