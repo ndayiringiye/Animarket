@@ -337,6 +337,7 @@ export const deleteAnimal = async (id) => {
   }
 
   await Animal.findByIdAndDelete(id);
+  return true;
 };
 
 // ─── DELETE SPECIFIC MEDIA ────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+import PublicAnimalPassport from '../Pages/Public/PublicAnimalPassport';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import Home from "../Components/Home/HeroSection";
@@ -25,6 +26,7 @@ const AppRoutes = () => {
           <Route path="home" element={<Home />} />
           <Route path="about" element={<About />} />
           <Route path="contact" element={<Contact />} />
+        <Route path="passport/:animalId" element={<PublicAnimalPassport />} />
           <Route path="login" element={<LoginPages />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />

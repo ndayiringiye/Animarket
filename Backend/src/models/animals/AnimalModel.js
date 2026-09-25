@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 
 const AnimalSchema = new mongoose.Schema({
     name: { type: String, required: true },
@@ -106,6 +106,7 @@ const AnimalSchema = new mongoose.Schema({
     },
     isAvailable: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
+    ownershipDocStatus: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
 
     verificationLevel: {
         type: String,

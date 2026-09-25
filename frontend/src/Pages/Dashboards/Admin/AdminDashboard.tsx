@@ -1,3 +1,5 @@
+﻿import AnimalPassportsView from './AnimalPassportsView';
+import OwnershipDocsView from './OwnershipDocsView';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
@@ -612,7 +614,7 @@ const HotelDetailModal = ({
 const AdminDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'farmers' | 'customers' | 'hotels' | 'animals'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'farmers' | 'customers' | 'hotels' | 'passports' | 'animals' | 'ownershipDocs'>('dashboard');
 
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [farmersLoading, setFarmersLoading] = useState(false);
@@ -647,7 +649,7 @@ const AdminDashboard = () => {
   const [ownersMap, setOwnersMap] = useState<Record<string, any>>({});
 
   // Both fetchers hit the SAME endpoint (/api/users) and only differ
-  // in which role they keep after fetching � that's the integration point.
+  // in which role they keep after fetching ï¿½ that's the integration point.
   const USERS_ENDPOINT = 'http://localhost:4000/api/users';
   // Hotels are a separate collection/model, so they get their own endpoint.
   const HOTELS_ENDPOINT = 'http://localhost:4000/api/hotels/all';
@@ -1113,8 +1115,8 @@ const AdminDashboard = () => {
             active={activeView === 'animals'}
             onClick={() => setActiveView('animals')}
           />
-          <SidebarItem icon={QrCode} label="Animal Passports" hasSubmenu collapsed={sidebarCollapsed} />
-          <SidebarItem icon={FileText} label="Ownership Docs" badge="12" collapsed={sidebarCollapsed} />
+          <SidebarItem icon={QrCode} label="Animal Passports" hasSubmenu collapsed={sidebarCollapsed} active={activeView === 'passports'} onClick={() => setActiveView('passports')} />
+          <SidebarItem icon={FileText} label="Ownership Docs" badge="12" collapsed={sidebarCollapsed} active={activeView === 'ownershipDocs'} onClick={() => setActiveView('ownershipDocs')} />
           <SidebarItem icon={CheckCircle2} label="Pending Verifications" badge="8" collapsed={sidebarCollapsed} />
 
           <SidebarSection title="Transactions" collapsed={sidebarCollapsed} />
@@ -1162,7 +1164,8 @@ const AdminDashboard = () => {
                   ? 'Manage Customers'
                   : activeView === 'hotels'
                   ? 'Manage Hotels'
-                  : activeView === 'animals'
+                  : activeView === 'passports'
+                  ? 'Animal Passports': activeView === 'animals'
                   ? 'All Livestock'
                   : 'Admin Overview'}
               </h1>
@@ -1173,7 +1176,8 @@ const AdminDashboard = () => {
                   ? 'View and manage registered customers'
                   : activeView === 'hotels'
                   ? 'View and manage registered hotels'
-                  : activeView === 'animals'
+                  : activeView === 'passports'
+                  ? 'Delivery-ready animals with scannable passports': activeView === 'animals'
                   ? 'View and manage all registered livestock'
                   : "Welcome back, here's what's happening"}
               </p>
@@ -1454,6 +1458,10 @@ const AdminDashboard = () => {
               title="Manage Customers"
               subtitle="All registered customers on the platform"
             />
+          ) : activeView === 'passports' ? (
+            <AnimalPassportsView />
+          ) : activeView === 'ownershipDocs' ? (
+            <OwnershipDocsView />
           ) : activeView === 'animals' ? (
             <>
             <div className="space-y-6">
@@ -1738,7 +1746,7 @@ const AdminDashboard = () => {
                           <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between">
                             <div>
                               <h2 className="text-xl font-bold text-white capitalize">{selectedAnimal.name}</h2>
-                              <p className="text-xs text-white/80 capitalize mt-0.5">{selectedAnimal.type} � {selectedAnimal.breed}</p>
+                              <p className="text-xs text-white/80 capitalize mt-0.5">{selectedAnimal.type} ï¿½ {selectedAnimal.breed}</p>
                             </div>
                             <div className="flex gap-2">
                               <Badge variant={selectedAnimal.isAvailable ? "success" : "warning"}>{selectedAnimal.isAvailable ? "available" : "listed"}</Badge>
@@ -1794,7 +1802,7 @@ const AdminDashboard = () => {
                               )}
                               <div className="min-w-0">
                                 <p className="text-xs font-semibold text-slate-700 truncate">{ownerLoading ? "Loading..." : (ownerDetails?.name || "Unknown owner")}</p>
-                                <p className="text-[10px] text-slate-400 truncate">{ownerDetails?.shopName ? `${ownerDetails.shopName} � ` : ""}{ownerDetails?.profile || ownerDetails?.role || ""}</p>
+                                <p className="text-[10px] text-slate-400 truncate">{ownerDetails?.shopName ? `${ownerDetails.shopName} ï¿½ ` : ""}{ownerDetails?.profile || ownerDetails?.role || ""}</p>
                                 {ownerDetails?.phone && <p className="text-[10px] text-slate-400 truncate">{ownerDetails.phone}</p>}
                               </div>
                             </div>
@@ -2246,7 +2254,7 @@ const AdminDashboard = () => {
                     <div className="min-w-0">
                       <p className="text-[11px] text-slate-600 leading-snug">
                         <span className="font-semibold text-slate-800">{alert.title}</span>
-                        {' � '}{alert.desc}
+                        {' ï¿½ '}{alert.desc}
                       </p>
                       <span className="text-[10px] text-slate-400 mt-1 block flex items-center gap-1">
                         <Clock size={10} />
@@ -2282,5 +2290,6 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
 
 

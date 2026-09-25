@@ -1,0 +1,755 @@
+
+===== .\Backend\server.js =====
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import fs from "fs";
+import path from "path";
+import connectDB from "./src/config/db.js";
+import userRoutes from "./src/routes/userRoutes.js";
+import animalRoute from "./src/routes/Animal/animalRoutes.js";
+import agreement from "./src/routes/Agreements/agreementRoutes.js";
+import meetingRoute from "./src/routes/Meeting/meetingRoute.js";
+import hotelRoutes from "./src/routes/Hotels/hotelRoutes.js";
+import veterinaryRoutes from "./src/routes/Veterinary/veterinaryRoutes.js";
+import agreemenRoutes from "./src/routes/Agreements/agreementRoutes.js";
+import HotelsRoutes from "./src/routes/Hotels/hotelRoutes.js";
+import bookingRoute from "./src/routes/Booking/bookingRoute.js";
+import deliveryRoutes from "./src/routes/Delivery/deliveryRoutes.js";
+import interestRoutes from "./src/routes/Interest/interestRoutes.js";
+import chatRoutes from "./src/routes/Chat/chatRoutes.js";
+import trustRoutes from "./src/routes/Trust/trustRoutes.js";
+const app = express();
+dotenv.config();
+
+const uploadsDir = path.resolve("uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
+
+const PORT = process.env.PORT || 4000;
+
+app.get("/", (req , res ) =>{
+    res.send("server defualt is running ");
+});
+
+app.use("/api/users", userRoutes);
+app.use("/api/animal", animalRoute);
+app.use("/api/bookings", bookingRoute);
+app.use("/api/agreements", agreement);
+app.use("/api/meeting", meetingRoute);
+app.use("/api/hotels", hotelRoutes);
+app.use("/api/veterinary", veterinaryRoutes);
+app.use("/api/agreements", agreemenRoutes);   
+app.use("/api/delivery", deliveryRoutes);
+app.use("/api/interest", interestRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/trust", trustRoutes);
+// global error handler to capture unexpected errors
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ message: err?.message || 'Server error', status: 500 });
+});
+const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`server is running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Server startup failed:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
+
+
+
+===== .\Backend\src\routes\Delivery\deliveryRoutes.js =====
+import express from "express";
+import { verifyToken } from "../../Middlewares/Auth/authMiddleware.js";
+import * as deliveryController from "../../controllers/Delivery/deliveryController.js";
+
+const router = express.Router();
+
+router.put(
+  "/request/:bookingId",
+  verifyToken,
+  deliveryController.requestDelivery
+);
+
+router.put(
+  "/hotel-request/:bookingId",
+  verifyToken,
+  deliveryController.requestHotelDelivery
+);
+
+router.get(
+  "/status/:bookingId",
+  verifyToken,
+  deliveryController.getDeliveryStatus
+);
+
+export default router;
+
+
+===== .\Backend\src\controllers\Delivery\deliveryController.js =====
+import * as deliveryService from "../../services/Delivery/deliveryService.js";
+
+export const requestHotelDelivery = async (req, res) => {
+  try {
+    const booking = await deliveryService.requestHotelDeliveryService(
+      req.params.bookingId,
+      req.user._id || req.user.id,
+      req.body
+    );
+    return res.status(200).json({ success: true, message: "Delivery requested successfully", data: booking });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const requestDelivery = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const userId = req.user.id;
+    const data = req.body;
+
+    const booking = await deliveryService.requestDeliveryService(
+      bookingId,
+      userId,
+      data
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Delivery requested successfully",
+      data: booking,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getDeliveryStatus = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const deliveryInfo = await deliveryService.getDeliveryStatusService(
+      bookingId
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: deliveryInfo,
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+===== .\Backend\src\services\Delivery\deliveryService.js =====
+import Booking from "../../models/Bookings/bookingModel.js";
+import HotelAnimalBooking from "../../models/Hotels/hotelAnimalBookingModel.js";
+
+export const requestHotelDeliveryService = async (bookingId, hotelId, data) => {
+  const booking = await HotelAnimalBooking.findOne({ _id: bookingId, hotelId });
+  if (!booking) throw new Error("Hotel booking not found");
+  if (!data.address || !data.deliveryDate) throw new Error("Address and delivery date are required");
+
+  booking.deliveryAddress = { address: data.address };
+  booking.deliveryDate = data.deliveryDate;
+  booking.deliveryStatus = "scheduled";
+  booking.deliveryRequestedAt = new Date();
+  booking.notes = data.notes || booking.notes;
+  await booking.save();
+  return booking;
+};
+
+export const requestDeliveryService = async (bookingId, userId, data) => {
+  const { address, deliveryDate, notes } = data;
+
+  const booking = await Booking.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  // Verify the user is the customer of this booking
+  if (booking.customer?.toString() !== userId) {
+    throw new Error("You are not authorized to request delivery for this booking");
+  }
+
+  booking.deliveryOption = "platform_delivery";
+  booking.deliveryAddress = {
+    address: address || booking.deliveryAddress?.address,
+    latitude: booking.deliveryAddress?.latitude,
+    longitude: booking.deliveryAddress?.longitude,
+  };
+  booking.deliveryDate = deliveryDate || booking.deliveryDate;
+  booking.deliveryStatus = "scheduled";
+  booking.deliveryRequestedAt = new Date();
+
+  booking.trackingHistory.push({
+    status: "scheduled",
+    message: notes || "Delivery requested by customer",
+    updatedBy: userId,
+    timestamp: new Date(),
+  });
+
+  await booking.save();
+  return booking;
+};
+
+export const getDeliveryStatusService = async (bookingId) => {
+  const booking = await Booking.findById(bookingId)
+    .populate("customer", "name email phone")
+    .populate("farmer", "name email phone");
+
+  if (!booking) throw new Error("Booking not found");
+
+  return {
+    bookingId: booking._id,
+    bookingNumber: booking.bookingNumber,
+    deliveryOption: booking.deliveryOption,
+    deliveryAddress: booking.deliveryAddress,
+    deliveryStatus: booking.deliveryStatus,
+    deliveryDate: booking.deliveryDate,
+    deliveryRequestedAt: booking.deliveryRequestedAt,
+    isDelivered: booking.isDelivered,
+    trackingHistory: booking.trackingHistory,
+  };
+};
+
+
+===== .\Backend\src\models\animals\AnimalModel.js =====
+import mongoose from "mongoose";
+
+const AnimalSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    type: {
+        type: String,
+        required: true,
+        enum: [
+            "cow",
+            "goat",
+            "sheep",
+            "pig",
+            "horse",
+            "chicken",
+            "rabbit",
+            "donkey",
+            "turkey",
+            "duck",
+            "dog",
+            "cat",
+            "camel",
+            "buffalo",
+            "other"
+        ]
+    },
+    breed: { type: String, required: true },
+    gender: { type: String, enum: ["male", "female"], required: true },
+    age: { type: Number, required: true },
+
+    price: { type: Number, required: true },
+    currency: { type: String, default: "RWF" },
+    aiEstimatedValue: { type: Number, default: 0 },
+    health: {
+        vaccinated: { type: Boolean, default: false },
+        vaccinationRecords: [
+            {
+                vaccineName: String,
+                date: Date,
+                verifiedByVet: Boolean,
+                vaccinationProof: {
+                    type: String,
+                    enum: ["image", "video", "pdf", "text"],
+                },
+                vaccinationProofUrl: String,
+                vaccinationProofPublicId: String,
+                extention: {
+                    type: String,
+                    enum: ["png", "jpg", "jpeg", "mp4", "pdf", "text"]
+                }
+            }
+        ],
+        diseasesHistory: [String],
+        lastCheckupDate: Date,
+        healthStatus: {
+            type: String,
+            enum: ["excellent", "good", "fair", "poor"],
+            default: "good"
+        }
+    },
+    ratings: [{
+        hotel: { type: mongoose.Schema.Types.ObjectId, ref: "Hotel", required: true },
+        rating: { type: Number, min: 1, max: 5, required: true },
+        comment: String,
+        createdAt: { type: Date, default: Date.now }
+    }],
+    location: {
+        country: String,
+        province: String,
+        district: String,
+        sector: String,
+        cell: String,
+        village: String,
+        latitude: Number,
+        longitude: Number
+    },
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+
+    previousOwners: [
+        {
+            ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+            transferredAt: Date,
+            price: Number
+        }
+    ],
+    previousOwnerName: { type: String, required: false },
+    previousOwnerPhone: { type: String, required: false },
+    previousOwnerAgreementPhoto: { type: String, required: false },
+    previousOwnerAgreementPhotoPublicId: { type: String },
+    previousOwnerIdType: { type: String, required: false },
+    previousOwnerIdNumber: { type: String, required: false },
+    previousOwnerIdPhoto: { type: String, required: false },
+    previousOwnerIdPhotoPublicId: { type: String },
+    previousOwnerGender: { type: String, required: false },
+    previousOwnerAge: { type: Number, required: false },
+    images: [String],
+    imagesPublicIds: [String],
+    videos: [String],
+    videosPublicIds: [String],
+    weight: {
+        type: Number,
+        required: false,
+    },
+    isAvailable: { type: Boolean, default: true },
+    isVerified: { type: Boolean, default: false },
+
+    verificationLevel: {
+        type: String,
+        enum: ["unverified", "basic", "veterinary_verified", "premium_verified"],
+        default: "unverified"
+    },
+
+    marketDemandScore: { type: Number, default: 0 },
+    popularityScore: { type: Number, default: 0 },
+
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
+const Animal = mongoose.model("Animal", AnimalSchema);
+export default Animal;
+
+===== .\Backend\src\models\Bookings\bookingModel.js =====
+import mongoose from "mongoose";
+
+const BookingSchema = new mongoose.Schema({
+
+    bookingNumber: {
+        type: String,
+        unique: true
+    },
+
+    
+
+    customer: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+
+    farmer: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+    animal: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Animal",
+        required: true
+    },
+    meeting: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Meeting"
+    },
+    price: {
+        type: Number,
+        required: true
+    },
+
+    negotiatedPrice: {
+        type: Number
+    },
+
+    currency: {
+        type: String,
+        default: "RWF"
+    },
+
+    paymentMethod: {
+        type: String,
+        enum: ["stripe", "momo", "bank", "cash"],
+        default: "momo"
+    },
+
+    paymentStatus: {
+        type: String,
+        enum: [
+            "pending",
+            "initiated",
+            "held_in_escrow",
+            "paid",
+            "failed",
+            "refunded"
+        ],
+        default: "pending"
+    },
+
+    escrowStatus: {
+        type: String,
+        enum: [
+            "not_applicable",
+            "holding",
+            "released",
+            "disputed"
+        ],
+        default: "not_applicable"
+    },
+
+    transactionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Transaction"
+    },
+    deliveryOption: {
+        type: String,
+        enum: ["pickup", "platform_delivery"],
+        default: "pickup"
+    },
+
+    deliveryAddress: {
+        address: String,
+        latitude: Number,
+        longitude: Number
+    },
+
+    deliveryStatus: {
+        type: String,
+        enum: [
+            "not_scheduled",
+            "scheduled",
+            "in_transit",
+            "delivered",
+            "failed"
+        ],
+        default: "not_scheduled"
+    },
+trackingHistory: [
+    {
+        status: String,
+        message: String,
+        updatedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+        },
+        timestamp: {
+            type: Date,
+            default: Date.now
+        }
+    }
+],
+
+    deliveryDate: Date,
+    status: {
+        type: String,
+        enum: [
+            "pending",           
+            "confirmed",        
+            "rejected",
+            "cancelled",
+            "in_progress",       
+            "completed",         
+            "disputed"
+        ],
+        default: "pending"
+    },
+    feedback: {
+        buyerRating: Number,
+        sellerRating: Number,
+        comment: String
+    },
+    isNegotiated: {
+        type: Boolean,
+        default: false
+    },
+commissionAmount: {
+        type: Number,
+        default: 0
+    },
+
+    farmerPayoutAmount: {
+        type: Number,
+        default: 0
+    },
+
+    deliveryRequestedAt: Date,
+
+    refundRequestedAt: Date,
+
+    refundStatus: {
+        type: String,
+        enum: ["not_requested", "requested", "approved", "rejected"],
+        default: "not_requested"
+    },
+    isPaid: {
+        type: Boolean,
+        default: false
+    },
+
+    isDelivered: {
+        type: Boolean,
+        default: false
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    }
+
+});
+
+BookingSchema.pre("save", function () {
+    if (!this.bookingNumber) {
+        this.bookingNumber = "BOOK-" + Date.now();
+    }
+});
+
+
+const Booking = mongoose.model("Booking", BookingSchema);
+
+export default Booking;
+
+===== .\Backend\src\models\Hotels\hotelAnimalBookingModel.js =====
+// models/Hotels/hotelAnimalBookingModel.js
+import mongoose from "mongoose";
+
+const HotelAnimalBookingSchema = new mongoose.Schema(
+  {
+    hotelId: { type: mongoose.Schema.Types.ObjectId, ref: "Hotel", required: true },
+    animalId: { type: mongoose.Schema.Types.ObjectId, ref: "Animal", required: true },
+    ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    
+    serviceType: { type: String, required: true },
+    checkInDate: { type: Date, required: true },
+    checkOutDate: { type: Date, required: true },
+    duration: { type: Number, required: true },
+    
+    price: { type: Number, required: true },
+    currency: { type: String, default: "RWF" },
+    
+    paymentMethod: {
+      type: String,
+      enum: ["cash", "card", "bank_transfer", "mobile_money"],
+      default: "mobile_money",
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid", "failed", "refunded"],
+      default: "pending",
+    },
+    status: {
+      type: String,
+      enum: ["pending", "confirmed", "in_progress", "completed", "cancelled"],
+      default: "pending",
+    },
+    
+    specialRequests: String,
+
+    deliveryAddress: { address: String, latitude: Number, longitude: Number },
+    deliveryDate: Date,
+    deliveryStatus: { type: String, enum: ["pending", "scheduled", "in_transit", "delivered", "cancelled"], default: "pending" },
+    deliveryRequestedAt: Date,
+    
+    qrCode: {
+      qrCodeData: String,
+      qrCodeUrl: String,
+      qrCodeGeneratedAt: Date,
+    },
+    
+    notes: String,
+  },
+  { timestamps: true }
+);
+
+HotelAnimalBookingSchema.index({ hotelId: 1, status: 1 });
+HotelAnimalBookingSchema.index({ animalId: 1 });
+HotelAnimalBookingSchema.index({ checkInDate: 1, checkOutDate: 1 });
+
+const HotelAnimalBooking = mongoose.model("HotelAnimalBooking", HotelAnimalBookingSchema);
+export default HotelAnimalBooking;
+
+===== .\Backend\src\models\Veterinary\qrCodeTrackingModel.js =====
+import mongoose from "mongoose";
+
+const QRCodeTrackingSchema = new mongoose.Schema(
+  {
+    qrCodeData: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
+    qrCodeUrl: String,
+    qrCodeImage: String,
+    qrCodePublicId: String,
+
+    veterinaryAgreement: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "VeterinaryAgreement",
+      required: true,
+    },
+
+    serviceJob: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "VeterinaryServiceJob",
+    },
+
+    serviceType: String,
+    serviceName: String,
+    serviceDate: Date,
+
+    veterinarian: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
+    veterinarianName: String,
+    veterinarianEmail: String,
+    veterinarianLicense: String,
+
+    client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
+    clientName: String,
+    clientRole: String,
+
+    animal: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Animal",
+      required: true,
+    },
+
+    animalName: String,
+    animalType: String,
+    breed: String,
+
+    serviceProof: {
+      vaccinationDetails: {
+        vaccineName: String,
+        vaccinationDate: Date,
+        nextVaccinationDate: Date,
+      },
+
+      healthStatus: String,
+      treatmentDetails: String,
+
+      medications: [String],
+    },
+
+    scanCount: {
+      type: Number,
+      default: 0,
+    },
+
+    lastScannedAt: Date,
+
+    scanHistory: [
+      {
+        scannedAt: Date,
+
+        scannedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+
+        ipAddress: String,
+        deviceInfo: String,
+      },
+    ],
+
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+
+    expiryDate: Date,
+
+    revokedAt: Date,
+
+    revocationReason: String,
+  },
+  {
+    timestamps: true,
+  }
+);
+
+QRCodeTrackingSchema.index({ veterinaryAgreement: 1 });
+QRCodeTrackingSchema.index({ veterinarian: 1 });
+QRCodeTrackingSchema.index({ animal: 1 });
+QRCodeTrackingSchema.index({ isActive: 1 });
+
+const QRCodeTracking = mongoose.model(
+  "QRCodeTracking",
+  QRCodeTrackingSchema
+);
+
+export default QRCodeTracking;
+
+===== .\Backend\src\Middlewares\Admin\amindMiddleware.js =====
+export const isAdmin = (req, res, next) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                message: "Unauthorized. Please login.",
+                status: 401
+            });
+        }
+
+        if (req.user.role !== "admin") {
+            return res.status(403).json({
+                message: "Forbidden. Admin access only.",
+                status: 403
+            });
+        }
+
+        next();
+    } catch (error) {
+        return res.status(500).json({
+            message: "Server error in admin middleware",
+            error: error.message,
+            status: 500
+        });
+    }
+};

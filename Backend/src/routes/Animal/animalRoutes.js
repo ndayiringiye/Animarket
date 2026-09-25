@@ -11,7 +11,7 @@ import {
 import { rateAnimalController } from "../../controllers/animals/animalController.js";
 
 import { verifyToken } from "../../Middlewares/Auth/authMiddleware.js";
-import { protectRolePostAnimal } from "../../utils/Roles/userRole.js";
+import { protectRolePostAnimal, protectRoleDeleteAnimal, protectRoleUpdateAnimal } from "../../utils/Roles/userRole.js";
 import { isAdmin } from "../../Middlewares/Admin/amindMiddleware.js";
 
 import upload  from "../../Middlewares/user/uplaodMiddleware.js"; 
@@ -40,7 +40,7 @@ router.post("/animals/:id/rating", verifyToken, rateAnimalController);
 router.put(
   "/animals/:id",
   verifyToken,
-  protectRolePostAnimal,
+  protectRoleUpdateAnimal,
   upload.fields([
     { name: 'image', maxCount: 10 },
     { name: 'video', maxCount: 5 },
@@ -54,7 +54,7 @@ router.put(
 router.delete(
   "/animals/:id",
   verifyToken,
-  protectRolePostAnimal,
+  protectRoleDeleteAnimal,
   deleteAnimalController
 );
 

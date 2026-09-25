@@ -634,6 +634,16 @@ const AdminDashboard = () => {
   const [animals, setAnimals] = useState<any[]>([]);
   const [animalsLoading, setAnimalsLoading] = useState(false);
   const [animalsError, setAnimalsError] = useState<string | null>(null);
+  const [selectedAnimal, setSelectedAnimal] = useState<any>(null);
+  const [animalDetailsLoading, setAnimalDetailsLoading] = useState(false);
+  const [animalDetailsError, setAnimalDetailsError] = useState<string | null>(null);
+  const [animalEdit, setAnimalEdit] = useState<any>(null);
+  const [animalEditForm, setAnimalEditForm] = useState<any>({});
+  const [animalEditSaving, setAnimalEditSaving] = useState(false);
+  const [animalEditError, setAnimalEditError] = useState<string | null>(null);
+  const [ownerDetails, setOwnerDetails] = useState<any>(null);
+  const [ownerLoading, setOwnerLoading] = useState(false);
+  const [ownersMap, setOwnersMap] = useState<Record<string, any>>({});
 
   // Both fetchers hit the SAME endpoint (/api/users) and only differ
   // in which role they keep after fetching � that's the integration point.
@@ -698,6 +708,21 @@ const AdminDashboard = () => {
       }
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Failed to delete farmer');
+    }
+  };
+
+  const deleteAnimal = async (id: string) => {
+    if (!window.confirm('Delete this animal? This cannot be undone.')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.delete(`http://localhost:4000/api/animal/animals/${id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.status === 200) {
+        setAnimals((prev) => prev.filter((a) => a._id !== id));
+      }
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Failed to delete animal');
     }
   };
 
@@ -795,11 +820,120 @@ const AdminDashboard = () => {
         ? res.data
         : res.data.animals || res.data.data || [];
       setAnimals(allAnimals);
+      const uniqueOwnerIds = Array.from(new Set(allAnimals.map((a: any) => (typeof a.owner === "string" ? a.owner : a.owner?._id)).filter(Boolean)));
+      const ownerEntries = await Promise.all(uniqueOwnerIds.map(async (oid: string) => {
+        try {
+          const r = await axios.get(`http://localhost:4000/api/users/${oid}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          return [oid, r.data?.data || r.data];
+        } catch {
+          return [oid, null];
+        }
+      }));
+      setOwnersMap(Object.fromEntries(ownerEntries.filter(([, v]) => v)));
     } catch (err: any) {
       setAnimalsError(err?.response?.data?.message || 'Failed to load animals');
     } finally {
       setAnimalsLoading(false);
     }
+  };
+
+  const ANIMAL_DETAILS_ENDPOINT = 'http://localhost:4000/api/animal/animals';
+
+  const openAnimalEdit = (animal: any) => {
+    setAnimalEdit(animal);
+    setAnimalEditError(null);
+    setAnimalEditForm({
+      name: animal.name ?? '',
+      type: animal.type ?? '',
+      breed: animal.breed ?? '',
+      gender: animal.gender ?? '',
+      age: animal.age ?? '',
+      weight: animal.weight ?? '',
+      price: animal.price ?? '',
+      currency: animal.currency ?? '',
+      isAvailable: !!animal.isAvailable,
+    });
+  };
+
+  const closeAnimalEdit = () => {
+    setAnimalEdit(null);
+    setAnimalEditError(null);
+  };
+
+  const saveAnimalEdit = async () => {
+    if (!animalEdit) return;
+    const numeric = ['age', 'weight', 'price'];
+    const changes: any = {};
+    Object.keys(animalEditForm).forEach((key) => {
+      let value = animalEditForm[key];
+      if (typeof value === 'string') value = value.trim();
+      if (value === '' || value === null || value === undefined) return;
+      if (numeric.includes(key)) {
+        value = Number(value);
+        if (Number.isNaN(value)) return;
+      }
+      const original = key === 'isAvailable' ? !!animalEdit[key] : animalEdit[key];
+      if (value !== original) changes[key] = value;
+    });
+    if (Object.keys(changes).length === 0) {
+      closeAnimalEdit();
+      return;
+    }
+    setAnimalEditSaving(true);
+    setAnimalEditError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.put(`http://localhost:4000/api/animal/animals/${animalEdit._id}`, changes, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.status === 200) {
+        setAnimals((prev) => prev.map((a) => (a._id === animalEdit._id ? { ...a, ...changes } : a)));
+        closeAnimalEdit();
+      }
+    } catch (err: any) {
+      setAnimalEditError(err?.response?.data?.message || 'Failed to update animal');
+    } finally {
+      setAnimalEditSaving(false);
+    }
+  };
+
+  const viewAnimal = async (id: string) => {
+    setSelectedAnimal({});
+    setAnimalDetailsLoading(true);
+    setAnimalDetailsError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${ANIMAL_DETAILS_ENDPOINT}/${id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const animal = res.data?.data || res.data;
+      setSelectedAnimal(animal);
+      if (animal?.owner) {
+        setOwnerLoading(true);
+        try {
+          const ownerRes = await axios.get(`http://localhost:4000/api/users/${animal.owner}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          setOwnerDetails(ownerRes.data?.data || ownerRes.data);
+        } catch {
+          setOwnerDetails(null);
+        } finally {
+          setOwnerLoading(false);
+        }
+      }
+    } catch (err: any) {
+      setAnimalDetailsError(err?.response?.data?.message || 'Failed to load animal details');
+    } finally {
+      setAnimalDetailsLoading(false);
+    }
+  };
+
+  const closeAnimalDetails = () => {
+    setSelectedAnimal(null);
+    setAnimalDetailsError(null);
+    setOwnerDetails(null);
   };
 
   const approveHotel = async (id: string, approvalStatus: 'approved' | 'rejected') => {
@@ -1204,7 +1338,7 @@ const AdminDashboard = () => {
                         </div>
 
                         <div className="mt-6 space-y-4">
-                          {sections.map((section) => (
+                          {sections.filter((section) => section.title !== 'Shop information' || f.role === 'farmer').map((section) => (
                             <div key={section.title} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
                               <div className="mb-3 flex items-center gap-2">
                                 {section.logo && (
@@ -1291,11 +1425,12 @@ const AdminDashboard = () => {
               error={customersError}
               onRetry={fetchCustomers}
               onDelete={deleteCustomer}
-              onUpdateRole={updateCustomerRole}
+              onUpdateRole={updateCustomerRole} onView={viewFarmer}
               title="Manage Customers"
               subtitle="All registered customers on the platform"
             />
           ) : activeView === 'animals' ? (
+            <>
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <div>
@@ -1355,8 +1490,25 @@ const AdminDashboard = () => {
                           <td className="px-5 py-3.5 text-slate-700 font-medium text-xs">{animal.name || '-'}</td>
                           <td className="px-5 py-3.5 text-slate-500 text-xs capitalize">{animal.type || '-'}</td>
                           <td className="px-5 py-3.5 text-slate-500 text-xs">{animal.breed || '-'}</td>
-                          <td className="px-5 py-3.5 text-slate-500 text-xs">
-                            {typeof animal.owner === 'string' ? `${animal.owner.slice(0, 8)}...` : (animal.owner?.name || '-')}
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-2">
+                              {(() => {
+                                const oid = typeof animal.owner === "string" ? animal.owner : animal.owner?._id;
+                                const ownerInfo = oid ? ownersMap[oid] : null;
+                                const label = ownerInfo?.name || (typeof animal.owner === "string" ? `${animal.owner.slice(0, 8)}...` : (animal.owner?.name || "-"));
+                                const initial = (ownerInfo?.name || "?").trim().charAt(0).toUpperCase();
+                                return (
+                                  <>
+                                    {ownerInfo?.profile_img ? (
+                                      <img src={ownerInfo.profile_img} alt={ownerInfo.name || "Owner"} className="w-7 h-7 rounded-full object-cover border border-slate-200 flex-shrink-0" />
+                                    ) : (
+                                      <div className="w-7 h-7 rounded-full bg-slate-600 text-white flex items-center justify-center text-[10px] font-semibold flex-shrink-0">{initial}</div>
+                                    )}
+                                    <span className="text-slate-500 text-xs truncate max-w-[110px]">{label}</span>
+                                  </>
+                                );
+                              })()}
+                            </div>
                           </td>
                           <td className="px-5 py-3.5">
                             <Badge variant={animal.isAvailable ? 'success' : 'warning'}>
@@ -1364,8 +1516,14 @@ const AdminDashboard = () => {
                             </Badge>
                           </td>
                           <td className="px-5 py-3.5 text-right">
-                            <button className="text-[11px] font-medium bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
+                            <button onClick={() => viewAnimal(animal._id)} className="text-[11px] font-medium bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
                               View
+                            </button>
+                            <button onClick={() => openAnimalEdit(animal)} className="ml-2 text-[11px] font-medium bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                              Edit
+                            </button>
+                            <button onClick={() => deleteAnimal(animal._id)} className="ml-2 text-[11px] font-medium bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                              Delete
                             </button>
                           </td>
                         </tr>
@@ -1375,6 +1533,177 @@ const AdminDashboard = () => {
                 </div>
               )}
             </div>
+      {animalEdit && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeAnimalEdit}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-base font-bold text-slate-800">Edit animal</h2>
+            <p className="text-xs text-slate-400 mt-0.5 mb-4">Update the details of {animalEdit.name || 'this animal'}</p>
+            {animalEditError && (
+              <div className="mb-3 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{animalEditError}</div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                ['name', 'Name', 'text'],
+                ['type', 'Species', 'text'],
+                ['breed', 'Breed', 'text'],
+                ['gender', 'Gender', 'text'],
+                ['age', 'Age (yrs)', 'number'],
+                ['weight', 'Weight (kg)', 'number'],
+                ['price', 'Price', 'number'],
+                ['currency', 'Currency', 'text'],
+              ] as [string, string, string][]).map(([key, label, inputType]) => (
+                <label key={key} className="block">
+                  <span className="text-[11px] font-medium text-slate-500">{label}</span>
+                  <input
+                    type={inputType}
+                    value={animalEditForm[key] ?? ''}
+                    onChange={(e) => setAnimalEditForm((prev: any) => ({ ...prev, [key]: e.target.value }))}
+                    className="mt-1 w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                  />
+                </label>
+              ))}
+            </div>
+            <label className="flex items-center gap-2 mt-3 text-xs text-slate-600">
+              <input
+                type="checkbox"
+                checked={!!animalEditForm.isAvailable}
+                onChange={(e) => setAnimalEditForm((prev: any) => ({ ...prev, isAvailable: e.target.checked }))}
+              />
+              Mark as available
+            </label>
+            <div className="flex gap-2 mt-5">
+              <button onClick={closeAnimalEdit} className="flex-1 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg py-2.5 hover:bg-slate-50 transition-colors">Cancel</button>
+              <button onClick={saveAnimalEdit} disabled={animalEditSaving} className="flex-1 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 rounded-lg py-2.5 transition-colors">{animalEditSaving ? 'Saving...' : 'Save changes'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+              {selectedAnimal && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeAnimalDetails}>
+                  <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[88vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                    {animalDetailsLoading && (
+                      <div className="p-8 space-y-4">
+                        <div className="h-48 bg-slate-100 rounded-xl animate-pulse"></div>
+                        <div className="h-4 bg-slate-100 rounded w-1/3 animate-pulse"></div>
+                        <div className="h-4 bg-slate-100 rounded w-1/2 animate-pulse"></div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="h-12 bg-slate-100 rounded-lg animate-pulse"></div>
+                          <div className="h-12 bg-slate-100 rounded-lg animate-pulse"></div>
+                          <div className="h-12 bg-slate-100 rounded-lg animate-pulse"></div>
+                          <div className="h-12 bg-slate-100 rounded-lg animate-pulse"></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {!animalDetailsLoading && animalDetailsError && (
+                      <div className="p-8">
+                        <div className="bg-red-50 border border-red-100 rounded-xl p-5 text-center">
+                          <p className="text-sm font-medium text-red-600">{animalDetailsError}</p>
+                        </div>
+                        <button onClick={closeAnimalDetails} className="mt-4 w-full text-xs font-medium text-slate-600 border border-slate-200 rounded-lg py-2 hover:bg-slate-50 transition-colors">Close</button>
+                      </div>
+                    )}
+
+                    {!animalDetailsLoading && !animalDetailsError && selectedAnimal.name && (
+                      <>
+                        <div className="relative h-56 bg-gradient-to-br from-slate-800 to-slate-600">
+                          {selectedAnimal.images && selectedAnimal.images.length > 0 ? (
+                            <img src={selectedAnimal.images[0]} alt={selectedAnimal.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-300 text-xs font-medium">No image available</div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
+                          <button onClick={closeAnimalDetails} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-slate-700 text-sm font-bold flex items-center justify-center shadow-sm transition-colors">?</button>
+                          <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between">
+                            <div>
+                              <h2 className="text-xl font-bold text-white capitalize">{selectedAnimal.name}</h2>
+                              <p className="text-xs text-white/80 capitalize mt-0.5">{selectedAnimal.type} � {selectedAnimal.breed}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Badge variant={selectedAnimal.isAvailable ? "success" : "warning"}>{selectedAnimal.isAvailable ? "available" : "listed"}</Badge>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                          <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-4">
+                            <div>
+                              <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide">Listed Price</p>
+                              <p className="text-lg font-bold text-emerald-700">{selectedAnimal.price} {selectedAnimal.currency}</p>
+                            </div>
+                            <Badge variant={selectedAnimal.verificationLevel === "verified" ? "success" : "warning"}>{selectedAnimal.verificationLevel}</Badge>
+                          </div>
+
+                          <div>
+                            <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Overview</h3>
+                            <div className="grid grid-cols-2 gap-2.5">
+                              <div className="bg-slate-50 rounded-lg px-3.5 py-2.5"><p className="text-[10px] text-slate-400">Gender</p><p className="text-xs font-medium text-slate-700 capitalize">{selectedAnimal.gender || "-"}</p></div>
+                              <div className="bg-slate-50 rounded-lg px-3.5 py-2.5"><p className="text-[10px] text-slate-400">Age</p><p className="text-xs font-medium text-slate-700">{selectedAnimal.age} yrs</p></div>
+                              <div className="bg-slate-50 rounded-lg px-3.5 py-2.5"><p className="text-[10px] text-slate-400">Weight</p><p className="text-xs font-medium text-slate-700">{selectedAnimal.weight} kg</p></div>
+                              <div className="bg-slate-50 rounded-lg px-3.5 py-2.5"><p className="text-[10px] text-slate-400">Breed</p><p className="text-xs font-medium text-slate-700 capitalize">{selectedAnimal.breed || "-"}</p></div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Health</h3>
+                            <div className="grid grid-cols-2 gap-2.5">
+                              <div className="bg-slate-50 rounded-lg px-3.5 py-2.5"><p className="text-[10px] text-slate-400">Status</p><p className="text-xs font-medium text-slate-700 capitalize">{selectedAnimal.health?.healthStatus || "-"}</p></div>
+                              <div className="bg-slate-50 rounded-lg px-3.5 py-2.5"><p className="text-[10px] text-slate-400">Vaccinated</p><p className="text-xs font-medium text-slate-700">{selectedAnimal.health?.vaccinated ? "Yes" : "No"}</p></div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Location</h3>
+                            <div className="bg-slate-50 rounded-lg px-3.5 py-2.5">
+                              <p className="text-xs font-medium text-slate-700 capitalize">{selectedAnimal.location?.village}, {selectedAnimal.location?.district}, {selectedAnimal.location?.country}</p>
+                            </div>
+                          </div>
+
+                          <div>
+                            <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Owner</h3>
+                            <div className="flex items-center gap-3 bg-slate-50 rounded-lg px-3.5 py-3 border border-slate-100">
+                              {ownerLoading ? (
+                                <div className="w-11 h-11 rounded-full bg-slate-200 animate-pulse flex-shrink-0"></div>
+                              ) : ownerDetails?.profile_img ? (
+                                <img src={ownerDetails.profile_img} alt={ownerDetails.name || "Owner"} className="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-slate-200" />
+                              ) : (
+                                <div className="w-11 h-11 rounded-full bg-slate-700 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                                  {(ownerDetails?.name || "?").trim().charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold text-slate-700 truncate">{ownerLoading ? "Loading..." : (ownerDetails?.name || "Unknown owner")}</p>
+                                <p className="text-[10px] text-slate-400 truncate">{ownerDetails?.shopName ? `${ownerDetails.shopName} � ` : ""}{ownerDetails?.profile || ownerDetails?.role || ""}</p>
+                                {ownerDetails?.phone && <p className="text-[10px] text-slate-400 truncate">{ownerDetails.phone}</p>}
+                              </div>
+                            </div>
+                          </div>
+
+                          {selectedAnimal.ratings && selectedAnimal.ratings.length > 0 && (
+                            <div>
+                              <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Ratings</h3>
+                              <div className="space-y-2">
+                                {selectedAnimal.ratings.map((rt: any) => (
+                                  <div key={rt._id} className="bg-slate-50 rounded-lg px-3.5 py-2.5 border border-slate-100">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-amber-500 text-xs tracking-wider">{Array.from({ length: 5 }, (_, i) => (i < rt.rating ? "?" : "?")).join("")}</span>
+                                      <span className="text-[10px] text-slate-400">{new Date(rt.createdAt).toLocaleDateString()}</span>
+                                    </div>
+                                    <p className="text-xs text-slate-600">{rt.comment}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <button onClick={closeAnimalDetails} className="w-full text-xs font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg py-2.5 transition-colors">Close</button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+              </>
           ) : activeView === 'hotels' ? (
             <HotelsView
               hotels={hotels}

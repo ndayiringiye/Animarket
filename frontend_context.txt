@@ -1,0 +1,244 @@
+﻿=== FIRST 70 LINES ===
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import {
+  LayoutDashboard, BarChart3, Wallet, Users, FileText, Calendar, Settings, LifeBuoy,
+  Search, Bell, Moon, ChevronDown, ArrowUpRight, ArrowDownRight, Filter, Plus, MoreVertical,
+  CheckCircle2, AlertCircle, ShoppingCart, RefreshCw, Laptop, Headphones, Watch, Camera,
+  ShieldCheck, UserCheck, Beef, QrCode, DollarSign, Handshake, Stethoscope, Building2,
+  MessageSquare, AlertTriangle, Lock, SlidersHorizontal, ChevronRight, Menu, X,
+  TrendingUp, TrendingDown, Activity, Clock, ChevronLeft
+} from 'lucide-react';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Cell, PieChart, Pie
+} from 'recharts';
+
+// --- Mock Data (Adapted for AniMarket) ---
+
+const transactionVolumeData = [
+  { name: 'Jan', volume: 4000, escrow: 2400 },
+  { name: 'Feb', volume: 3000, escrow: 1398 },
+  { name: 'Mar', volume: 2000, escrow: 9800 },
+  { name: 'Apr', volume: 2780, escrow: 3908 },
+  { name: 'May', volume: 1890, escrow: 4800 },
+  { name: 'Jun', volume: 2390, escrow: 3800 },
+  { name: 'Jul', volume: 3490, escrow: 4300 },
+];
+
+const platformActivityData = [
+  { name: 'Jan', users: 40, animals: 24 }, { name: 'Feb', users: 30, animals: 13 },
+  { name: 'Mar', users: 60, animals: 98 }, { name: 'Apr', users: 45, animals: 39 },
+  { name: 'May', users: 70, animals: 48 }, { name: 'Jun', users: 50, animals: 38 },
+  { name: 'Jul', users: 80, animals: 43 }, { name: 'Aug', users: 55, animals: 48 },
+  { name: 'Sep', users: 65, animals: 38 }, { name: 'Oct', users: 40, animals: 43 },
+  { name: 'Nov', users: 60, animals: 48 }, { name: 'Dec', users: 75, animals: 55 },
+];
+
+const platformBreakdownData = [
+  { name: 'Farmers', value: 400, color: '#10b981' },
+  { name: 'Customers', value: 300, color: '#059669' },
+  { name: 'Hotels', value: 150, color: '#f59e0b' },
+  { name: 'Vets', value: 80, color: '#ef4444' },
+];
+
+const farmerRegData = [
+  { name: 'Jan', value: 40 }, { name: 'Feb', value: 30 }, { name: 'Mar', value: 60 },
+  { name: 'Apr', value: 45 }, { name: 'May', value: 70 }, { name: 'Jun', value: 50 },
+  { name: 'Jul', value: 80 }, { name: 'Aug', value: 55 }, { name: 'Sep', value: 65 },
+];
+
+const animalListingData = [
+  { name: 'Jan', value: 20 }, { name: 'Feb', value: 40 }, { name: 'Mar', value: 30 },
+  { name: 'Apr', value: 50 }, { name: 'May', value: 40 }, { name: 'Jun', value: 60 },
+  { name: 'Jul', value: 50 }, { name: 'Aug', value: 70 }, { name: 'Sep', value: 60 },
+];
+
+const pendingVerifications = [
+  { id: 1, name: 'Green Valley Farms', type: 'Farmer Account', date: '10:00 AM', status: 'Pending', icon: UserCheck },
+  { id: 2, name: 'Angus Bull #A-102', type: 'Animal Listing', date: '09:30 AM', status: 'Pending', icon: Beef },
+  { id: 3, name: 'Grand Plaza Hotel', type: 'Hotel Account', date: '09:15 AM', status: 'Pending', icon: Building2 },
+  { id: 4, name: 'Dr. Sarah Smith', type: 'Veterinarian', date: '08:45 AM', status: 'Pending', icon: Stethoscope },
+  { id: 5, name: 'Holstein Cow #C-405', type: 'Animal Listing', date: '08:30 AM', status: 'Pending', icon: Beef },
+];
+
+// --- Farmer/Customer type + API fetch ---
+
+interface Farmer {
+  _id: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+=== STATE / API LINES ===
+1: import React, { useState, useEffect } from 'react';
+2: import axios from 'axios';
+613: const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+614: const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+615: const [activeView, setActiveView] = useState<'dashboard' | 'farmers' | 'customers' | 'hotels' | 'animals'>('dashboard');
+617: const [farmers, setFarmers] = useState<Farmer[]>([]);
+618: const [farmersLoading, setFarmersLoading] = useState(false);
+619: const [farmersError, setFarmersError] = useState<string | null>(null);
+621: const [customers, setCustomers] = useState<Farmer[]>([]);
+622: const [customersLoading, setCustomersLoading] = useState(false);
+623: const [customersError, setCustomersError] = useState<string | null>(null);
+625: const [hotels, setHotels] = useState<Hotel[]>([]);
+626: const [hotelsLoading, setHotelsLoading] = useState(false);
+627: const [hotelsError, setHotelsError] = useState<string | null>(null);
+629: const [selectedHotel, setSelectedHotel] = useState<any | null>(null);
+630: const [showHotelModal, setShowHotelModal] = useState(false);
+631: const [hotelDetailLoading, setHotelDetailLoading] = useState(false);
+632: const [hotelDetailError, setHotelDetailError] = useState<string | null>(null);
+634: const [animals, setAnimals] = useState<any[]>([]);
+635: const [animalsLoading, setAnimalsLoading] = useState(false);
+636: const [animalsError, setAnimalsError] = useState<string | null>(null);
+637: const [selectedAnimal, setSelectedAnimal] = useState<any>(null);
+638: const [animalDetailsLoading, setAnimalDetailsLoading] = useState(false);
+639: const [animalDetailsError, setAnimalDetailsError] = useState<string | null>(null);
+640: const [animalEdit, setAnimalEdit] = useState<any>(null);
+641: const [animalEditForm, setAnimalEditForm] = useState<any>({});
+642: const [animalEditSaving, setAnimalEditSaving] = useState(false);
+643: const [animalEditError, setAnimalEditError] = useState<string | null>(null);
+644: const [animalEditFiles, setAnimalEditFiles] = useState<any>({});
+645: const [ownerDetails, setOwnerDetails] = useState<any>(null);
+646: const [ownerLoading, setOwnerLoading] = useState(false);
+647: const [ownersMap, setOwnersMap] = useState<Record<string, any>>({});
+657: const [showFarmerModal, setShowFarmerModal] = useState(false);
+658: const [selectedFarmer, setSelectedFarmer] = useState<any>(null);
+659: const [farmerDetailLoading, setFarmerDetailLoading] = useState(false);
+660: const [farmerDetailError, setFarmerDetailError] = useState<string | null>(null);
+669: const res = await axios.get(`${USERS_ENDPOINT}/${id}`, {
+685: const res = await axios.get(USERS_ENDPOINT, {
+704: const res = await axios.delete(`${USERS_ENDPOINT}/${id}`, {
+719: const res = await axios.delete(`http://localhost:4000/api/animal/animals/${id}`, {
+733: const res = await axios.put(`${USERS_ENDPOINT}/${id}/role`, { role }, {
+749: const res = await axios.get(USERS_ENDPOINT, {
+768: const res = await axios.delete(`${USERS_ENDPOINT}/${id}`, {
+782: const res = await axios.put(`${USERS_ENDPOINT}/${id}/role`, { role }, {
+798: const res = await axios.get(HOTELS_ENDPOINT, {
+817: const res = await axios.get(ANIMALS_ENDPOINT, {
+827: const r = await axios.get(`http://localhost:4000/api/users/${oid}`, {
+896: res = await axios.put(url, changes, { headers });
+901: const detailsRes = await axios.get(`${ANIMAL_DETAILS_ENDPOINT}/${animalEdit._id}`, { headers });
+912: res = await axios.put(url, formData, { headers });
+933: const res = await axios.get(`${ANIMAL_DETAILS_ENDPOINT}/${id}`, {
+941: const ownerRes = await axios.get(`http://localhost:4000/api/users/${animal.owner}`, {
+967: const res = await axios.put(`${HOTELS_ENDPOINT.replace('/all', '')}/${id}/approve`, { approvalStatus }, {
+986: const res = await axios.get(`${HOTELS_ENDPOINT.replace('/all', '')}/${id}/profile`, {
+1012: const res = await axios.get(`${AGREEMENT_ENDPOINT}/${agreementId}`, {
+1028: const res = await axios.get(AGREEMENT_ENDPOINT, {
+=== SIDEBARITEM DEFINITION ===
+const SidebarItem = ({
+  icon: Icon,
+  label,
+  active = false,
+  badge,
+  hasSubmenu = false,
+  collapsed = false,
+  onClick
+}: {
+  icon: any;
+  label: string;
+  active?: boolean;
+  badge?: string;
+  hasSubmenu?: boolean;
+  collapsed?: boolean;
+  onClick?: () => void;
+}) => (
+  <div
+    onClick={onClick}
+    className={`group flex items-center justify-between px-3 py-2.5 mx-2 rounded-lg cursor-pointer transition-all duration-200 ${
+    active
+      ? 'bg-white/15 text-white shadow-sm'
+      : 'text-emerald-50/80 hover:text-white hover:bg-white/10'
+  }`}>
+    <div className="flex items-center gap-3 min-w-0">
+      <Icon size={18} className="shrink-0" />
+      {!collapsed && <span className="text-[13px] font-medium truncate">{label}</span>}
+    </div>
+    {!collapsed && (
+      <div className="flex items-center gap-1.5 shrink-0">
+        {badge && (
+=== HOW CONTENT SWITCHES ===
+998: if (activeView === 'farmers') {
+1000: } else if (activeView === 'customers') {
+1002: } else if (activeView === 'hotels') {
+1004: } else if (activeView === 'animals') {
+1074: active={activeView === 'dashboard'}
+1085: active={activeView === 'farmers'}
+1093: active={activeView === 'customers'}
+1101: active={activeView === 'hotels'}
+1113: active={activeView === 'animals'}
+1159: {activeView === 'farmers'
+1161: : activeView === 'customers'
+1163: : activeView === 'hotels'
+1165: : activeView === 'animals'
+1170: {activeView === 'farmers'
+1172: : activeView === 'customers'
+1174: : activeView === 'hotels'
+1176: : activeView === 'animals'
+1436: {activeView === 'farmers' ? (
+1446: ) : activeView === 'customers' ? (
+1457: ) : activeView === 'animals' ? (
+1828: ) : activeView === 'hotels' ? (
+=== LINES 1090-1150 ===
+            label="Manage Customers"
+            hasSubmenu
+            collapsed={sidebarCollapsed}
+            active={activeView === 'customers'}
+            onClick={() => setActiveView('customers')}
+          />
+          <SidebarItem
+            icon={Building2}
+            label="Manage Hotels"
+            hasSubmenu
+            collapsed={sidebarCollapsed}
+            active={activeView === 'hotels'}
+            onClick={() => setActiveView('hotels')}
+          />
+          <SidebarItem icon={Stethoscope} label="Manage Vets" hasSubmenu collapsed={sidebarCollapsed} />
+          <SidebarItem icon={ShieldCheck} label="Roles & Permissions" collapsed={sidebarCollapsed} />
+
+          <SidebarSection title="Livestock" collapsed={sidebarCollapsed} />
+          <SidebarItem
+            icon={Beef}
+            label="All Livestock"
+            hasSubmenu
+            collapsed={sidebarCollapsed}
+            active={activeView === 'animals'}
+            onClick={() => setActiveView('animals')}
+          />
+          <SidebarItem icon={QrCode} label="Animal Passports" hasSubmenu collapsed={sidebarCollapsed} />
+          <SidebarItem icon={FileText} label="Ownership Docs" badge="12" collapsed={sidebarCollapsed} />
+          <SidebarItem icon={CheckCircle2} label="Pending Verifications" badge="8" collapsed={sidebarCollapsed} />
+
+          <SidebarSection title="Transactions" collapsed={sidebarCollapsed} />
+          <SidebarItem icon={DollarSign} label="All Transactions" collapsed={sidebarCollapsed} />
+          <SidebarItem icon={Handshake} label="Agreements" collapsed={sidebarCollapsed} onClick={fetchAllAgreements} />
+          <SidebarItem icon={AlertTriangle} label="Disputes" badge="3" collapsed={sidebarCollapsed} />
+
+          <SidebarSection title="System" collapsed={sidebarCollapsed} />
+          <SidebarItem icon={Stethoscope} label="Veterinary Records" collapsed={sidebarCollapsed} />
+          <SidebarItem icon={MessageSquare} label="Communication" collapsed={sidebarCollapsed} />
+          <SidebarItem icon={BarChart3} label="Reports & Analytics" collapsed={sidebarCollapsed} />
+          <SidebarItem icon={Lock} label="Security & Logs" collapsed={sidebarCollapsed} />
+          <SidebarItem icon={SlidersHorizontal} label="Platform Settings" collapsed={sidebarCollapsed} />
+        </div>
+
+        {/* Collapse Toggle (Desktop) */}
+        <div className="hidden lg:flex items-center justify-center p-3 border-t border-white/10">
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-emerald-50/70 hover:text-white hover:bg-white/10 transition-colors text-xs font-medium"
+          >
+            {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            {!sidebarCollapsed && <span>Collapse</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        {/* Header */}
+        <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-4 lg:px-6 flex-shrink-0 z-30">
+          <div className="flex items-center gap-3">

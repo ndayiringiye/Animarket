@@ -637,8 +637,14 @@ const AdminDashboard = () => {
   const [selectedAnimal, setSelectedAnimal] = useState<any>(null);
   const [animalDetailsLoading, setAnimalDetailsLoading] = useState(false);
   const [animalDetailsError, setAnimalDetailsError] = useState<string | null>(null);
+  const [animalEdit, setAnimalEdit] = useState<any>(null);
+  const [animalEditForm, setAnimalEditForm] = useState<any>({});
+  const [animalEditSaving, setAnimalEditSaving] = useState(false);
+  const [animalEditError, setAnimalEditError] = useState<string | null>(null);
+  const [animalEditFiles, setAnimalEditFiles] = useState<any>({});
   const [ownerDetails, setOwnerDetails] = useState<any>(null);
   const [ownerLoading, setOwnerLoading] = useState(false);
+  const [ownersMap, setOwnersMap] = useState<Record<string, any>>({});
 
   // Both fetchers hit the SAME endpoint (/api/users) and only differ
   // in which role they keep after fetching ï¿½ that's the integration point.
@@ -703,6 +709,21 @@ const AdminDashboard = () => {
       }
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Failed to delete farmer');
+    }
+  };
+
+  const deleteAnimal = async (id: string) => {
+    if (!window.confirm('Delete this animal? This cannot be undone.')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.delete(`http://localhost:4000/api/animal/animals/${id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.status === 200) {
+        setAnimals((prev) => prev.filter((a) => a._id !== id));
+      }
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Failed to delete animal');
     }
   };
 
@@ -800,6 +821,18 @@ const AdminDashboard = () => {
         ? res.data
         : res.data.animals || res.data.data || [];
       setAnimals(allAnimals);
+      const uniqueOwnerIds = Array.from(new Set(allAnimals.map((a: any) => (typeof a.owner === "string" ? a.owner : a.owner?._id)).filter(Boolean)));
+      const ownerEntries = await Promise.all(uniqueOwnerIds.map(async (oid: string) => {
+        try {
+          const r = await axios.get(`http://localhost:4000/api/users/${oid}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          return [oid, r.data?.data || r.data];
+        } catch {
+          return [oid, null];
+        }
+      }));
+      setOwnersMap(Object.fromEntries(ownerEntries.filter(([, v]) => v)));
     } catch (err: any) {
       setAnimalsError(err?.response?.data?.message || 'Failed to load animals');
     } finally {
@@ -808,6 +841,88 @@ const AdminDashboard = () => {
   };
 
   const ANIMAL_DETAILS_ENDPOINT = 'http://localhost:4000/api/animal/animals';
+
+  const openAnimalEdit = (animal: any) => {
+    setAnimalEdit(animal);
+    setAnimalEditFiles({});
+    setAnimalEditError(null);
+    setAnimalEditForm({
+      name: animal.name ?? '',
+      type: animal.type ?? '',
+      breed: animal.breed ?? '',
+      gender: animal.gender ?? '',
+      age: animal.age ?? '',
+      weight: animal.weight ?? '',
+      price: animal.price ?? '',
+      currency: animal.currency ?? '',
+      isAvailable: !!animal.isAvailable,
+    });
+  };
+
+  const closeAnimalEdit = () => {
+    setAnimalEdit(null);
+    setAnimalEditFiles({});
+    setAnimalEditError(null);
+  };
+
+  const saveAnimalEdit = async () => {
+    if (!animalEdit) return;
+    const numeric = ['age', 'weight', 'price'];
+    const changes: any = {};
+    Object.keys(animalEditForm).forEach((key) => {
+      let value = animalEditForm[key];
+      if (typeof value === 'string') value = value.trim();
+      if (value === '' || value === null || value === undefined) return;
+      if (numeric.includes(key)) {
+        value = Number(value);
+        if (Number.isNaN(value)) return;
+      }
+      const original = key === 'isAvailable' ? !!animalEdit[key] : animalEdit[key];
+      if (value !== original) changes[key] = value;
+    });
+    const fileKeys = Object.keys(animalEditFiles).filter((k) => animalEditFiles[k] && animalEditFiles[k].length > 0);
+    if (Object.keys(changes).length === 0 && fileKeys.length === 0) {
+      closeAnimalEdit();
+      return;
+    }
+    setAnimalEditSaving(true);
+    setAnimalEditError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
+      const url = `http://localhost:4000/api/animal/animals/${animalEdit._id}`;
+      let res: any;
+      if (fileKeys.length === 0) {
+        res = await axios.put(url, changes, { headers });
+      } else {
+        const formData = new FormData();
+        Object.keys(changes).forEach((key) => formData.append(key, String(changes[key])));
+        if (fileKeys.includes('vaccinationProofs')) {
+          const detailsRes = await axios.get(`${ANIMAL_DETAILS_ENDPOINT}/${animalEdit._id}`, { headers });
+          const fresh = detailsRes.data?.data || detailsRes.data;
+          const records = fresh?.health?.vaccinationRecords;
+          if (!records || records.length === 0) {
+            throw new Error('This animal has no vaccination records to attach proofs to.');
+          }
+          formData.append('health', JSON.stringify(fresh.health));
+        }
+        fileKeys.forEach((key) => {
+          animalEditFiles[key].forEach((file: File) => formData.append(key, file));
+        });
+        res = await axios.put(url, formData, { headers });
+      }
+      if (res.status === 200) {
+        const updated = res.data?.data || {};
+        setAnimals((prev) => prev.map((a) => (a._id === animalEdit._id ? { ...a, ...changes, ...(updated.images ? { images: updated.images } : {}), ...(updated.videos ? { videos: updated.videos } : {}) } : a)));
+        closeAnimalEdit();
+      }
+    } catch (err: any) {
+      const data = err?.response?.data;
+      setAnimalEditError((data && [data.message, data.error].filter(Boolean).join(': ')) || err?.message || 'Failed to update animal');
+    } finally {
+      setAnimalEditSaving(false);
+    }
+  };
 
   const viewAnimal = async (id: string) => {
     setSelectedAnimal({});
@@ -1400,8 +1515,25 @@ const AdminDashboard = () => {
                           <td className="px-5 py-3.5 text-slate-700 font-medium text-xs">{animal.name || '-'}</td>
                           <td className="px-5 py-3.5 text-slate-500 text-xs capitalize">{animal.type || '-'}</td>
                           <td className="px-5 py-3.5 text-slate-500 text-xs">{animal.breed || '-'}</td>
-                          <td className="px-5 py-3.5 text-slate-500 text-xs">
-                            {typeof animal.owner === 'string' ? `${animal.owner.slice(0, 8)}...` : (animal.owner?.name || '-')}
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-2">
+                              {(() => {
+                                const oid = typeof animal.owner === "string" ? animal.owner : animal.owner?._id;
+                                const ownerInfo = oid ? ownersMap[oid] : null;
+                                const label = ownerInfo?.name || (typeof animal.owner === "string" ? `${animal.owner.slice(0, 8)}...` : (animal.owner?.name || "-"));
+                                const initial = (ownerInfo?.name || "?").trim().charAt(0).toUpperCase();
+                                return (
+                                  <>
+                                    {ownerInfo?.profile_img ? (
+                                      <img src={ownerInfo.profile_img} alt={ownerInfo.name || "Owner"} className="w-7 h-7 rounded-full object-cover border border-slate-200 flex-shrink-0" />
+                                    ) : (
+                                      <div className="w-7 h-7 rounded-full bg-slate-600 text-white flex items-center justify-center text-[10px] font-semibold flex-shrink-0">{initial}</div>
+                                    )}
+                                    <span className="text-slate-500 text-xs truncate max-w-[110px]">{label}</span>
+                                  </>
+                                );
+                              })()}
+                            </div>
                           </td>
                           <td className="px-5 py-3.5">
                             <Badge variant={animal.isAvailable ? 'success' : 'warning'}>
@@ -1412,6 +1544,12 @@ const AdminDashboard = () => {
                             <button onClick={() => viewAnimal(animal._id)} className="text-[11px] font-medium bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
                               View
                             </button>
+                            <button onClick={() => openAnimalEdit(animal)} className="ml-2 text-[11px] font-medium bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                              Edit
+                            </button>
+                            <button onClick={() => deleteAnimal(animal._id)} className="ml-2 text-[11px] font-medium bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                              Delete
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -1420,6 +1558,147 @@ const AdminDashboard = () => {
                 </div>
               )}
             </div>
+      {animalEdit && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeAnimalEdit}>
+          <div className="bg-white rounded-2xl shadow-2xl ring-1 ring-slate-200 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* animal-edit-modal-v2 */}
+            <div className="shrink-0 flex items-center gap-4 px-6 py-4 bg-gradient-to-r from-emerald-50 to-white border-b border-slate-100">
+              {animalEdit.images && animalEdit.images.length > 0 ? (
+                <img src={animalEdit.images[0]} alt={animalEdit.name || 'animal'} className="w-12 h-12 rounded-xl object-cover border border-white shadow-sm" />
+              ) : (
+                <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg font-bold shadow-sm">
+                  {(animalEdit.name || 'A').trim().charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <h2 className="text-base font-bold text-slate-800">Edit animal</h2>
+                <p className="text-xs text-slate-500 truncate">Update the details of <span className="font-medium text-slate-700">{animalEdit.name || 'this animal'}</span></p>
+              </div>
+              <button onClick={closeAnimalEdit} aria-label="Close" className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors">
+                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+              {animalEditError && (
+                <div className="flex items-start gap-2.5 text-xs text-red-700 bg-red-50 border border-red-100 rounded-xl px-3.5 py-3">
+                  <svg className="w-4 h-4 mt-px shrink-0 text-red-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+                  <span>{animalEditError}</span>
+                </div>
+              )}
+
+              {([
+                { title: 'Basic information', fields: [['name', 'Name', 'text'], ['type', 'Species', 'text'], ['breed', 'Breed', 'text'], ['gender', 'Gender', 'text']] },
+                { title: 'Measurements', fields: [['age', 'Age (yrs)', 'number'], ['weight', 'Weight (kg)', 'number']] },
+                { title: 'Pricing', fields: [['price', 'Price', 'number'], ['currency', 'Currency', 'text']] },
+              ] as { title: string; fields: [string, string, string][] }[]).map((section) => (
+                <section key={section.title}>
+                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-3">{section.title}</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {section.fields.map(([key, label, inputType]) => (
+                      <label key={key} className="block">
+                        <span className="text-[11px] font-medium text-slate-600">{label}</span>
+                        <input
+                          type={inputType}
+                          value={animalEditForm[key] ?? ''}
+                          onChange={(e) => setAnimalEditForm((prev: any) => ({ ...prev, [key]: e.target.value }))}
+                          className="mt-1 w-full text-sm text-slate-700 bg-slate-50/60 border border-slate-200 rounded-xl px-3.5 py-2.5 hover:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </section>
+              ))}
+
+              <section>
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-3">Availability</h3>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={!!animalEditForm.isAvailable}
+                  onClick={() => setAnimalEditForm((prev: any) => ({ ...prev, isAvailable: !prev.isAvailable }))}
+                  className="w-full flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-left hover:border-slate-300 transition-colors"
+                >
+                  <span>
+                    <span className="block text-xs font-semibold text-slate-700">Available</span>
+                    <span className="block text-[11px] text-slate-400 mt-0.5">When off, the animal shows as listed</span>
+                  </span>
+                  <span className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${animalEditForm.isAvailable ? 'bg-emerald-600' : 'bg-slate-300'}`}>
+                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${animalEditForm.isAvailable ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  </span>
+                </button>
+              </section>
+
+              <section>
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Files</h3>
+                <p className="text-[11px] text-slate-400 mb-3">Optional. Images and videos are added to the existing ones. The agreement and ID photo replace the current file.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {([
+                    ['image', 'Images', 'Added to existing, max 10', 'image/*', true, 10],
+                    ['video', 'Videos', 'Added to existing, max 5', 'video/*', true, 5],
+                    ['previousOwnerAgreement', 'Previous owner agreement', 'Replaces the current file', 'image/*', false, 1],
+                    ['previousOwnerIdPhoto', 'Previous owner ID photo', 'Replaces the current file', 'image/*', false, 1],
+                    ['vaccinationProofs', 'Vaccination proofs', 'Matched to vaccination records in order, max 10', 'image/*,application/pdf', true, 10],
+                  ] as [string, string, string, string, boolean, number][]).map(([key, label, hint, accept, multiple, max]) => {
+                    const picked: File[] = animalEditFiles[key] || [];
+                    return (
+                      <div key={key} className={`rounded-xl border p-3.5 transition-colors ${key === 'vaccinationProofs' ? 'sm:col-span-2 ' : ''}${picked.length > 0 ? 'border-emerald-300 bg-emerald-50/40' : 'border-dashed border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-slate-700">{label}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{hint}</p>
+                          </div>
+                          <label className="shrink-0 cursor-pointer text-[11px] font-medium text-emerald-700 bg-white border border-emerald-200 hover:bg-emerald-50 px-2.5 py-1 rounded-lg transition-colors">
+                            {picked.length > 0 ? 'Change' : 'Choose'}
+                            <input
+                              type="file"
+                              accept={accept}
+                              multiple={multiple}
+                              className="hidden"
+                              onChange={(e) => {
+                                const chosen = Array.from(e.target.files || []).slice(0, max);
+                                e.target.value = '';
+                                setAnimalEditFiles((prev: any) => ({ ...prev, [key]: chosen }));
+                              }}
+                            />
+                          </label>
+                        </div>
+                        {picked.length > 0 && (
+                          <ul className="mt-2.5 space-y-1">
+                            {picked.map((file, idx) => (
+                              <li key={`${file.name}-${idx}`} className="flex items-center justify-between gap-2 bg-white border border-slate-100 rounded-lg px-2.5 py-1.5">
+                                <span className="text-[11px] text-slate-600 truncate">{file.name}</span>
+                                <button
+                                  type="button"
+                                  aria-label={`Remove ${file.name}`}
+                                  onClick={() => setAnimalEditFiles((prev: any) => ({ ...prev, [key]: (prev[key] || []).filter((_: File, i: number) => i !== idx) }))}
+                                  className="shrink-0 text-slate-300 hover:text-red-500 transition-colors"
+                                >
+                                  <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
+
+            <div className="shrink-0 flex items-center justify-end gap-2 px-6 py-4 bg-slate-50/70 border-t border-slate-100">
+              <button onClick={closeAnimalEdit} className="text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-xl px-5 py-2.5 hover:bg-slate-50 transition-colors">Cancel</button>
+              <button onClick={saveAnimalEdit} disabled={animalEditSaving} className="inline-flex items-center gap-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl px-5 py-2.5 shadow-sm transition-colors">
+                {animalEditSaving && (
+                  <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" /></svg>
+                )}
+                {animalEditSaving ? 'Saving...' : 'Save changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
               {selectedAnimal && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeAnimalDetails}>
                   <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[88vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -1459,7 +1738,7 @@ const AdminDashboard = () => {
                           <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between">
                             <div>
                               <h2 className="text-xl font-bold text-white capitalize">{selectedAnimal.name}</h2>
-                              <p className="text-xs text-white/80 capitalize mt-0.5">{selectedAnimal.type} • {selectedAnimal.breed}</p>
+                              <p className="text-xs text-white/80 capitalize mt-0.5">{selectedAnimal.type} ï¿½ {selectedAnimal.breed}</p>
                             </div>
                             <div className="flex gap-2">
                               <Badge variant={selectedAnimal.isAvailable ? "success" : "warning"}>{selectedAnimal.isAvailable ? "available" : "listed"}</Badge>
@@ -1515,7 +1794,7 @@ const AdminDashboard = () => {
                               )}
                               <div className="min-w-0">
                                 <p className="text-xs font-semibold text-slate-700 truncate">{ownerLoading ? "Loading..." : (ownerDetails?.name || "Unknown owner")}</p>
-                                <p className="text-[10px] text-slate-400 truncate">{ownerDetails?.shopName ? `${ownerDetails.shopName} • ` : ""}{ownerDetails?.profile || ownerDetails?.role || ""}</p>
+                                <p className="text-[10px] text-slate-400 truncate">{ownerDetails?.shopName ? `${ownerDetails.shopName} ï¿½ ` : ""}{ownerDetails?.profile || ownerDetails?.role || ""}</p>
                                 {ownerDetails?.phone && <p className="text-[10px] text-slate-400 truncate">{ownerDetails.phone}</p>}
                               </div>
                             </div>

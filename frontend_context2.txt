@@ -1,0 +1,111 @@
+﻿=== ENDPOINT CONSTANTS + TOKEN ===
+651: const USERS_ENDPOINT = 'http://localhost:4000/api/users';
+653: const HOTELS_ENDPOINT = 'http://localhost:4000/api/hotels/all';
+654: const ANIMALS_ENDPOINT = 'http://localhost:4000/api/animal/admin/animals';
+655: const AGREEMENT_ENDPOINT = "http://localhost:4000/api/agreements/pdf-proxy";
+668: const token = localStorage.getItem('token');
+670: headers: token ? { Authorization: `Bearer ${token}` } : {},
+684: const token = localStorage.getItem('token');
+686: headers: token ? { Authorization: `Bearer ${token}` } : {},
+703: const token = localStorage.getItem('token');
+705: headers: token ? { Authorization: `Bearer ${token}` } : {},
+718: const token = localStorage.getItem('token');
+720: headers: token ? { Authorization: `Bearer ${token}` } : {},
+732: const token = localStorage.getItem('token');
+734: headers: token ? { Authorization: `Bearer ${token}` } : {},
+748: const token = localStorage.getItem('token');
+750: headers: token ? { Authorization: `Bearer ${token}` } : {},
+767: const token = localStorage.getItem('token');
+769: headers: token ? { Authorization: `Bearer ${token}` } : {},
+781: const token = localStorage.getItem('token');
+783: headers: token ? { Authorization: `Bearer ${token}` } : {},
+797: const token = localStorage.getItem('token');
+799: headers: token ? { Authorization: `Bearer ${token}` } : {},
+816: const token = localStorage.getItem('token');
+818: headers: token ? { Authorization: `Bearer ${token}` } : {},
+828: headers: token ? { Authorization: `Bearer ${token}` } : {},
+843: const ANIMAL_DETAILS_ENDPOINT = 'http://localhost:4000/api/animal/animals';
+891: const token = localStorage.getItem('token');
+892: const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
+932: const token = localStorage.getItem('token');
+934: headers: token ? { Authorization: `Bearer ${token}` } : {},
+=== LINES 995-1010 (view loaders) ===
+  };
+
+  useEffect(() => {
+    if (activeView === 'farmers') {
+      fetchFarmers();
+    } else if (activeView === 'customers') {
+      fetchCustomers();
+    } else if (activeView === 'hotels') {
+      fetchHotels();
+    } else if (activeView === 'animals') {
+      fetchAnimals();
+    }
+  }, [activeView]);
+
+  const fetchAgreementPdf = async (agreementId: string) => {
+    try {
+=== LINES 1155-1180 (page titles) ===
+              <Menu size={20} />
+            </button>
+            <div>
+              <h1 className="text-base font-bold text-slate-800">
+                {activeView === 'farmers'
+                  ? 'Manage Farmers'
+                  : activeView === 'customers'
+                  ? 'Manage Customers'
+                  : activeView === 'hotels'
+                  ? 'Manage Hotels'
+                  : activeView === 'animals'
+                  ? 'All Livestock'
+                  : 'Admin Overview'}
+              </h1>
+              <p className="text-[11px] text-slate-400 hidden sm:block">
+                {activeView === 'farmers'
+                  ? 'View and manage registered farmers'
+                  : activeView === 'customers'
+                  ? 'View and manage registered customers'
+                  : activeView === 'hotels'
+                  ? 'View and manage registered hotels'
+                  : activeView === 'animals'
+                  ? 'View and manage all registered livestock'
+                  : "Welcome back, here's what's happening"}
+              </p>
+            </div>
+=== LINES 1436-1470 (view switch) ===
+          {activeView === 'farmers' ? (
+            <FarmersView
+              farmers={farmers}
+              loading={farmersLoading}
+              error={farmersError}
+              onRetry={fetchFarmers}
+              onDelete={deleteFarmer}
+              onUpdateRole={updateFarmerRole}
+              onView={viewFarmer}
+            />
+          ) : activeView === 'customers' ? (
+            <FarmersView
+              farmers={customers}
+              loading={customersLoading}
+              error={customersError}
+              onRetry={fetchCustomers}
+              onDelete={deleteCustomer}
+              onUpdateRole={updateCustomerRole} onView={viewFarmer}
+              title="Manage Customers"
+              subtitle="All registered customers on the platform"
+            />
+          ) : activeView === 'animals' ? (
+            <>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h1 className="text-xl font-bold text-slate-800">All Livestock</h1>
+                  <p className="text-xs text-slate-400 mt-0.5">Manage and view all registered animals in the database</p>
+                </div>
+                <button
+                  onClick={fetchAnimals}
+                  className="flex items-center gap-1.5 text-xs font-medium text-slate-600 border border-slate-200 bg-white px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+                >
+                  <RefreshCw size={14} /> Refresh
+                </button>
